@@ -519,8 +519,8 @@ public abstract partial class AbstractActorEntity : CharacterBody2D, IEntity, IC
         else if (_body != null)
         {
             // 轨道驱动 offset 的身体层（怪物）：负 scale 让 offset 一起镜像（同旧 MonsterDir.scale.x = ±1）。
-            // _body 是纯显示节点，负缩放没有物理节点的问题。
-            _body.Scale = new Vector2(mirror ? -1 : 1, 1);
+            // 保留身体素材的密度缩放，转向只改变横轴符号，不影响实体根和物理层。
+            _body.Scale = new Vector2((mirror ? -1 : 1) * Mathf.Abs(_body.Scale.X), _body.Scale.Y);
         }
 
         // 判定盒用父容器负 scale 镜像（同旧 base_damagebox.scale.x = ±1）：动画轨道写的是原生朝左坐标，

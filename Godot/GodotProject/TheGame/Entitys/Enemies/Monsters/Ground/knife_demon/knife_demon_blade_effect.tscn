@@ -13,9 +13,10 @@ _player = NodePath("AnimationPlayer")
 _hitBox = NodePath("HitBox")
 
 [node name="Sprite" type="AnimatedSprite2D" parent="." unique_id=1996120386]
+scale = Vector2(0.5, 0.5)
 sprite_frames = ExtResource("2_vijwv")
 animation = &"play"
-offset = Vector2(-137.5, 2.5)
+offset = Vector2(-275, 5)
 
 [node name="HitBox" type="Area2D" parent="." unique_id=2055153108]
 collision_layer = 64

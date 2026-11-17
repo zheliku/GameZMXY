@@ -6,6 +6,7 @@ individually centered. Five visually reviewed actors receive action-level correc
 """
 import argparse
 from copy import deepcopy
+import hashlib
 import json
 import math
 import re
@@ -14,6 +15,128 @@ from PIL import Image
 
 from prepare_official_garuda_level import _pack_layer, compact_registered_atlas
 from import_official_sea_monsters import frames_resource, ACTORS, PROJECT
+
+
+def install_density_sample(args):
+    """Install authorized Monster1 density samples without regenerating gameplay tracks."""
+    sample = json.loads(args.approved_density_sample.read_text(encoding='utf-8'))
+    contracts = {'huaguoshan_monkey': (69, 23, [178, 144]),
+                 'demon_monkey': (78, 20, [256, 230]),
+                 'gorilla': (85, 23, [402, 328])}
+    name = sample['actor']
+    if sample.get('original_slots_preserved'):
+        # Category batches already verified every source frame against the
+        # installed registration and retain each original slot's atlas anchor.
+        visual_node = sample.get('visual_node','m_Body')
+        frames_path = Path(sample['frames_path'])
+        scene_path = Path(sample['scene_path'])
+        atlas_path = Path(sample['atlas_path'])
+        baseline = args.output.parent / 'before'
+        repo = PROJECT.parents[1]
+        baseline_scene = (baseline / scene_path.relative_to(repo)).read_text(encoding='utf-8-sig')
+        library_path = PROJECT / re.search(r'type="AnimationLibrary"[^\n]*path="res://([^\"]+)"', baseline_scene)[1]
+        text = (baseline / frames_path.relative_to(repo)).read_text(encoding='utf-8-sig')
+        for identity, entry in sample['atlas_regions'].items():
+            pattern = r'(\[sub_resource type="AtlasTexture" id="'+re.escape(identity)+r'"\]\n)(.*?)(?=\n\[|\Z)'
+            match = re.search(pattern,text,re.S)
+            block = match[2]
+            for key in ['region','margin']:
+                value = key+' = Rect2('+', '.join(map(str,entry[key]))+')'
+                block,count = re.subn(r'^'+key+r' = Rect2\([^\n]+\)',value,block,flags=re.M)
+                if not count:
+                    block = block.rstrip('\n')+'\n'+value+'\n'
+            text = text[:match.start(2)]+block+text[match.end(2):]
+        scene = (baseline / scene_path.relative_to(repo)).read_text(encoding='utf-8-sig')
+        match = re.search(r'(\[node name="'+visual_node+r'"[^\n]*\]\n)(.*?)(?=\n\[)',scene,re.S)
+        body = match[2]
+        body = re.sub(r'^offset = Vector2\(([^)]+)\)',
+            lambda v:'offset = Vector2('+', '.join(format(float(x)*2,'g') for x in v[1].split(','))+')',body,flags=re.M)
+        scene = scene[:match.start(2)]+'scale = Vector2(0.5, 0.5)\n'+body+scene[match.end(2):]
+        library = (baseline / library_path.relative_to(repo)).read_text(encoding='utf-8-sig')
+        pattern = r'(tracks/\d+/path = NodePath\("[^\"]*'+visual_node+r':offset"\).*?"values": \[)([^\]]+)(\])'
+        def double_offsets(match):
+            values = re.sub(r'Vector2\(([^)]+)\)',lambda v:'Vector2('+', '.join(format(float(x)*2,'g') for x in v[1].split(','))+')',match[2])
+            return match[1]+values+match[3]
+        library,offset_tracks = re.subn(pattern,double_offsets,library,flags=re.S)
+        atlas_path.write_bytes(Path(sample['output']).read_bytes())
+        for path,content in [(frames_path,text),(scene_path,scene),(library_path,library)]:
+            path.write_text(content,encoding='utf-8',newline='\n')
+        args.output.mkdir(parents=True,exist_ok=True)
+        (args.output/'installation.json').write_text(json.dumps({'actor':name,'density':2,
+            'frames':sample['frames'],'shared_poses':sample['poses'],'offset_tracks_updated':offset_tracks,
+            'atlas_sha256':hashlib.sha256(atlas_path.read_bytes()).hexdigest(),
+            'installed_files':[str(p) for p in [atlas_path,frames_path,scene_path,library_path]],
+            'runtime_root_or_physics_changed':False},indent=2),encoding='utf-8')
+        print(f'{name.upper()} BATCH DENSITY INSTALL PASS: original slots, registration, timing and identities')
+        return
+    if name not in contracts or sample['source_sha256'] != '5bd88da4211870f2ca2354b7cec8d1790747869641c11fe553910b10fe2a264a':
+        raise ValueError('This density route is only registered for the three Monster1 ground actors')
+    frame_count, pose_count, canvas = contracts[name]
+    layer = sample['layers']['2']
+    directory = PROJECT / 'TheGame/Sprites/Characters/Enemies/Monsters/Ground' / name
+    atlas_path = directory / f'{name}_official_body.png'
+    frames_path = directory / f'{name}_official_frames.tres'
+    scene_path = PROJECT / f'TheGame/Entitys/Enemies/Monsters/Ground/{name}/{name}_entity.tscn'
+    library_path = PROJECT / f'TheGame/Entitys/Animations/Enemies/Monsters/Ground/{name}/{name}_anim_library.tres'
+    text = frames_path.read_text(encoding='utf-8-sig')
+    cells = {}
+    for entry in re.finditer(r'"frames": \[(.*?)\],\n"loop": (\d+),\n"name": &"([^"]+)",\n"speed": ([\d.]+)', text, re.S):
+        ids = re.findall(r'SubResource\("([^"]+)"\)', entry[1])
+        poses = layer['poses'][entry[3]]
+        if len(ids) != len(poses) or float(entry[4]) != 24:
+            raise ValueError('Reviewed density sample does not match the installed animation timing')
+        for identity, cell in zip(ids, poses):
+            if identity in cells and cells[identity] != cell:
+                raise ValueError('Reviewed sample changes an existing shared pose identity')
+            cells[identity] = cell
+    if sum(len(poses) for poses in layer['poses'].values()) != frame_count or len(cells) != pose_count:
+        raise ValueError(f'Expected the complete {frame_count}-frame, {pose_count}-pose {name} sample')
+    for identity, cell in cells.items():
+        pattern = r'(\[sub_resource type="AtlasTexture" id="'+re.escape(identity)+r'"\]\n)(.*?)(?=\n\[|\Z)'
+        match = re.search(pattern, text, re.S)
+        block = match[2]
+        for key in ['region', 'margin']:
+            if key == 'margin' and not any(layer['atlas_regions'][str(cell)][key]):
+                block = re.sub(r'^margin = Rect2\([^\n]+\)\n?', '', block, flags=re.M)
+                continue
+            value = 'Rect2('+', '.join(map(str, layer['atlas_regions'][str(cell)][key]))+')'
+            block, count = re.subn(r'^'+key+r' = Rect2\([^\n]+\)', key+' = '+value, block, flags=re.M)
+            if key == 'margin' and count == 0:
+                # The original demon monkey uses full grid cells, without margins.
+                block = block.rstrip('\n')+'\nmargin = '+value+'\n'
+                count = 1
+            if count != 1:
+                raise ValueError('Expected an existing registered '+key)
+        text = text[:match.start(2)]+block+text[match.end(2):]
+    offset = 'Vector2('+', '.join(format(value, 'g') for value in layer['sprite_offset'])+')'
+    scene = scene_path.read_text(encoding='utf-8-sig')
+    match = re.search(r'(\[node name="m_Body"[^\n]*\]\n)(.*?)(?=\n\[)', scene, re.S)
+    body = re.sub(r'^scale = [^\n]*\n', '', match[2], flags=re.M)
+    body, count = re.subn(r'^offset = Vector2\([^\n]+\)', 'offset = '+offset, body, flags=re.M)
+    if count != 1:
+        raise ValueError('Expected the current body registration offset')
+    scene = scene[:match.start(2)]+'scale = Vector2(0.5, 0.5)\n'+body+scene[match.end(2):]
+    library = library_path.read_text(encoding='utf-8-sig')
+    pattern = r'(tracks/\d+/path = NodePath\("m_Body:offset"\).*?"values": \[)([^\]]+)(\])'
+    library, offset_tracks = re.subn(pattern, lambda item: item[1]+offset+item[3], library, flags=re.S)
+    if offset_tracks != 6:
+        raise ValueError('Expected RESET and five existing body-offset tracks')
+    source = Path(layer['output'])
+    with Image.open(source) as image:
+        if list(image.size) != layer['storage_size'] or layer['cell_size'] != canvas:
+            raise ValueError('Density sample dimensions differ from its registered canvas')
+    # Complete all contract checks before writing the four authorized resources.
+    atlas_path.write_bytes(source.read_bytes())
+    frames_path.write_text(text, encoding='utf-8', newline='\n')
+    scene_path.write_text(scene, encoding='utf-8', newline='\n')
+    library_path.write_text(library, encoding='utf-8', newline='\n')
+    args.output.mkdir(parents=True, exist_ok=True)
+    result = {'actor': sample['actor'], 'density': 2, 'source_sha256': sample['source_sha256'],
+        'approved_sample': str(args.approved_density_sample.resolve()), 'frames': frame_count, 'shared_poses': pose_count,
+        'atlas_sha256': hashlib.sha256(source.read_bytes()).hexdigest(), 'offset_tracks_updated': offset_tracks,
+        'runtime_root_or_physics_changed': False, 'installed_files': [str(path) for path in [atlas_path,frames_path,scene_path,library_path]]}
+    (args.output / 'installation.json').write_text(json.dumps(result, indent=2)+'\n', encoding='utf-8')
+    print(f'{name.upper()} DENSITY INSTALL PASS: {frame_count} frames, {pose_count} shared poses, original paths and resource identities')
 
 
 def prepare(args):
@@ -96,7 +219,13 @@ def prepare(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--manifest', type=Path, required=True)
+    source = parser.add_mutually_exclusive_group(required=True)
+    source.add_argument('--manifest', type=Path)
+    source.add_argument('--approved-density-sample', type=Path)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--extra-manifest', type=Path, nargs='*', default=[])
-    prepare(parser.parse_args())
+    args = parser.parse_args()
+    if args.approved_density_sample:
+        install_density_sample(args)
+    else:
+        prepare(args)

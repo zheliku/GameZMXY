@@ -35,6 +35,7 @@
 | --- | --- |
 | addons/TopMenu/GameFrameworkTopMenu.Generate.cs | Collection Res 过滤链排除 Markdown，防止 AGENTS.md 被作为同名资源收集；仅此一行过滤 |
 | addons/ExportInspector/ExportInspector.cs | 2026-10-15 用户授权扫描修补：先读脚本依赖元数据，只加载候选包标记并校验；条目扫描和打包复用已识别标记，避免提前加载普通资源触发编辑器 GCHandle 异常；仅此扫描与排除逻辑 |
+| addons/ezpz_inspector/CustomInspectorPlugin.cs、addons/ComponentInsoector/ComponentInsoector.cs | 2026-11-15用户明确要求修复打开Godot即出现的RefCounted.Free错误：前者直接读取被检查实例GetType，去掉用于取类型的script.New/Free；后者仅将卸载时14个EditorInspectorPlugin的Free改为Remove后Dispose。只修这两处实际错误，不扩大插件重构范围 |
 | Framework/GodotGameFrameworkCore/Base/BaseComponent.cs | 2026-10-31 用户要求修复框架关停异常：自动关停从 OnPreDestroy 提前至 OnExitTree，并调用既有 GameEntry.Shutdown(None) 清理模块及组件注册；避免在 HttpRequest/声音辅助节点销毁后清理代理，不改其他生命周期 |
 | Framework/GameFramework.tscn 的 Procedure.Procedures | Launch、Update、Prepare、Preload、Title、LoadGame、Character、Map、Level；2026-10-15 用户要求整理准备流程并重命名读档流程，登记 Prepare 与 LoadGame；EnterProcedure 不变；新增其他流程另行授权 |
 | Framework/GodotGameFrameworkCore/UI/UIExtension.cs、Entity/EntityExtension.cs | 历史E前缀迁移仅同步过6处项目配置枚举参数。用户随后明确本次规范化不动GGF：两文件保持ef54cbb原字节，Godot工程以编译别名把既有EUIFormId/EEntityId引用绑定到正式新配置类型；不据此扩大框架修改授权 |

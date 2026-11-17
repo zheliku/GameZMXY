@@ -31,14 +31,21 @@ func _validate() -> void:
         if name in ["Qianan", "Donghai", "Shazhiwoliu"]:
             var official: Vector2 = {"Qianan": Vector2(460, 373.15), "Donghai": Vector2(612.7, 418.85), "Shazhiwoliu": Vector2(766.55, 500.15)}[name]
             assert((button.position + button.pivot_offset).distance_to(official) < .01, "Official coast origin shifted: " + name)
-            assert(glow.size.is_equal_approx(glow.texture.get_size()) and glow.scale == Vector2.ONE,
-                "Coastal image must retain official pixel scale")
+            var density := glow.texture.get_size().x / glow.size.x
+            assert((glow.size * density).is_equal_approx(glow.texture.get_size()) and glow.scale == Vector2.ONE,
+                "Coastal source density must preserve the registered logical canvas")
             assert(button.texture_click_mask != null)
             var hint: Sprite2D = button.get_node("CurrentHint")
-            assert(hint.position.distance_to(button.size * .5) < .01 and hint.scale.is_equal_approx(Vector2.ONE),
+            assert(hint.position.distance_to(button.size * .5) < .01 and hint.scale.is_equal_approx(Vector2.ONE / density),
                 "Current registration mismatch %s: hint=%s size=%s scale=%s" % [name, hint.position, button.size, hint.scale])
+            var drawing := Rect2(hint.position + hint.get_rect().position * hint.scale, hint.get_rect().size * hint.scale)
+            assert(Rect2(Vector2.ZERO, button.size).encloses(drawing), "Current transparent crop escapes its logical canvas: " + name)
+        elif name == "Niumogu":
+            # The bull-valley repair intentionally preserves its official off-center hover.
+            assert(glow.position.is_equal_approx(Vector2(-4.7, 34)) and glow.size == Vector2(176, 125))
         else:
-            assert((glow.position + glow.size * .5).distance_to(button.size * .5) < .01)
+            assert((glow.position + glow.size * .5).distance_to(button.size * .5) < .01,
+                "Hover center mismatch %s: position=%s glow_size=%s button_size=%s" % [name, glow.position, glow.size, button.size])
         player.play(LOCATIONS[name] + "/RESET")
         player.advance(0)
     await process_frame
@@ -52,7 +59,8 @@ func _validate() -> void:
         player.seek(.5, true, true)
         player.pause()
         var center := glow.get_transform() * (glow.size * .5)
-        assert(center.distance_to(button.size * .5) < .01, "Hover origin shifted: " + name)
+        var expected_center := Vector2(83.3, 96.5) if name == "Niumogu" else button.size * .5
+        assert(center.distance_to(expected_center) < .01, "Hover origin shifted: " + name)
         # The center and expanded hit contour are checked through the real button implementation.
         var hits := 0
         for y in range(0, int(button.size.y), 4):

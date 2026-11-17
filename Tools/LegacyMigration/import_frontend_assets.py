@@ -2,17 +2,44 @@
 
 Images and music are copied verbatim. No legacy scripts, scenes or import
 metadata are copied. Character cards use export_official_character_cards.py.
+An approved peripheral map uses --approved-map; its original center is checked
+against the read-only legacy image before replacing the formal PNG.
 """
 
+import argparse
 from pathlib import Path
 import math
 import shutil
 import struct
+import sys
 import wave
 
 ROOT = Path(__file__).resolve().parents[2]
 LEGACY = Path('P:/Godot-Project/ZMXY_BHYH')
 GAME = ROOT / 'Godot/GodotProject/TheGame'
+
+
+def import_approved_map(source: Path) -> None:
+    """Install one reviewed shared background while retaining its original core."""
+    from PIL import Image
+
+    with Image.open(source) as expanded, Image.open(LEGACY / 'Art/game_pic/183.png') as original:
+        if expanded.size != (1408, 590) or original.size != (940, 590):
+            raise ValueError('Approved map must be 1408x590 with the original 940x590 core')
+        if expanded.convert('RGBA').crop((234, 0, 1174, 590)).tobytes() != original.convert('RGBA').tobytes():
+            raise ValueError('Map center differs from the preserved original; refusing replacement')
+    destination = GAME / 'Sprites/UI/frontend/journey_map.png'
+    shutil.copyfile(source, destination)
+    print(f'APPROVED MAP IMPORT PASS: {source} -> {destination}; 554600 original pixels unchanged')
+
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--approved-map', type=Path, help='Reviewed native-density 1408x590 peripheral extension')
+args = parser.parse_args()
+if args.approved_map:
+    import_approved_map(args.approved_map)
+    sys.exit(0)
+
 MAPPING = {
     'Art/HeroPicture/RoleProperiesBox/tsz.png': 'Sprites/UI/hud/hud_head_tangseng.png',
     'Art/MainGame/Bg1.png': 'Sprites/UI/frontend/title_backdrop.png',

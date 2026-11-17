@@ -11,6 +11,7 @@ using GameLogic;
 using GameLogic.Architecture;
 using GameLogic.Battle;
 using GameLogic.Config;
+using GameLogic.Display;
 using GameLogic.Equipment;
 using GameLogic.Heroes;
 using GameLogic.Input;
@@ -38,6 +39,8 @@ public sealed partial class FrontendSmokeScenario
 {
     private readonly Node _driver; // 引擎帧与窗口服务来源。
     private readonly Task _task; // 回归任务，故障也必须报告失败。
+    private readonly Window.ContentScaleAspectEnum _initialWindowAspect; // 同一平台所有流程必须保持相同策略。
+    private readonly Vector2I _initialContentScaleSize; // 切流程不能改逻辑画布尺寸。
     private string _failure; // 已捕获的首个失败证据。
 
     /// <summary>
@@ -47,6 +50,8 @@ public sealed partial class FrontendSmokeScenario
     public FrontendSmokeScenario(Node driver)
     {
         _driver = driver;
+        _initialWindowAspect = driver.GetWindow().ContentScaleAspect;
+        _initialContentScaleSize = driver.GetWindow().ContentScaleSize;
         _task = RunAsync();
     }
 
@@ -327,16 +332,28 @@ public sealed partial class FrontendSmokeScenario
                 ReferenceEquals(firstSaveSystem, flow.GetSystem<SaveSystem>()) && ReferenceEquals(firstEquipmentSystem, flow.GetSystem<EquipmentSystem>()),
                 "选角到地图更换了档案作用域");
             Check(!Find<AbstractHeroEntity>().Any() && !Find<LevelViewController>().Any(), "点击花果山之前已创建关卡");
+            await CheckMapLayoutsAsync();
             await CaptureAsync("map_form");
             if (OS.GetCmdlineUserArgs().Contains("--map-buttons-only"))
             {
                 await MoveMouseAsync(new Vector2(900, 560));
-                TextureButton settingsToken = map.GetNode<TextureButton>("Frame/m_Settings");
+                TextureButton settingsToken = map.GetNode<TextureButton>("m_Settings");
                 AnimationPlayer animation = settingsToken.GetNode<AnimationPlayer>("m_SettingsAnimation");
-                Button skillButton = map.GetNode<Button>("Frame/m_Skills");
-                TextureButton saveButton = map.GetNode<TextureButton>("Frame/m_Save");
+                Button skillButton = map.GetNode<Button>("m_Skills");
+                TextureButton saveButton = map.GetNode<TextureButton>("m_Save");
                 AnimatedSprite2D skillArtwork = skillButton.GetNode<AnimatedSprite2D>("Artwork");
                 Label settingsCaption = settingsToken.GetNode<Label>("Caption");
+                Label saveCaption = saveButton.GetNode<Label>("Caption");
+                Label skillCaption = skillButton.GetNode<Label>("Caption");
+                foreach (Label menuCaption in new[] { saveCaption, skillCaption, settingsCaption })
+                {
+                    Check(!menuCaption.HasNode("Ink") && menuCaption.MouseFilter == Control.MouseFilterEnum.Ignore &&
+                        menuCaption.GetThemeFont("font") == settingsCaption.GetThemeFont("font") &&
+                        menuCaption.GetThemeFontSize("font_size") == 20,
+                        "入口文字未使用共用字体Label，或仍有多余墨底覆盖");
+                }
+                Check(saveCaption.Text == "保存游戏" && skillCaption.Text == "学习技能" && !skillCaption.Visible,
+                    "独立入口文字或技能初始可见性错误");
                 Check(!map.HasNode("m_Back"), "地图仍保留独立返回主菜单");
                 await _driver.ToSignal(_driver.GetTree().CreateTimer(.9), SceneTreeTimer.SignalName.Timeout);
                 Check(skillArtwork.Animation == "idle" && skillArtwork.Frame == 0 && !skillArtwork.IsPlaying() &&
@@ -348,15 +365,16 @@ public sealed partial class FrontendSmokeScenario
                     "设置标题没有使用海报字形、匹配字号和黑白描边");
                 Check(saveButton.TextureHover.ResourcePath.EndsWith("map_save_game_hover.png") &&
                     saveButton.TextureHover != saveButton.TextureNormal, "保存按钮仍然缺少官方悬停态");
-                await MoveMouseAsync(saveButton.GetGlobalRect().GetCenter());
+                await MoveMouseAsync(saveCaption.GetGlobalRect().GetCenter());
                 Check(saveButton.GetDrawMode() == BaseButton.DrawMode.Hover, "保存按钮没有响应真实悬停");
                 await CaptureAsync("map_save_official_hover");
                 await MoveMouseAsync(new Vector2(900, 560));
                 Check(settingsToken.TextureNormal.ResourcePath.EndsWith("map_return_title.png") &&
                     settingsToken.GetNode<Label>("Caption").Text == "游戏设置", "设置入口没有复用原版令牌");
                 await CaptureAsync("map_settings_token_idle");
-                await MoveMouseAsync(settingsToken.GetGlobalRect().GetCenter());
-                await WaitUntilAsync(() => settingsToken.SelfModulate.R > 1.05f, "设置令牌悬停未提亮");
+                await MoveMouseAsync(settingsCaption.GetGlobalRect().GetCenter());
+                await WaitUntilAsync(() => settingsToken.SelfModulate.R > 1.05f,
+                    $"设置令牌悬停未提亮：hover={_driver.GetViewport().GuiGetHoveredControl()?.GetPath()}, position={settingsToken.GetGlobalRect().GetCenter()}, animation={animation.CurrentAnimation}");
                 Check(settingsToken.Scale == Vector2.One &&
                     animation.GetAnimation("hover").LoopMode == Animation.LoopModeEnum.None,
                     "设置令牌仍反复缩放");
@@ -364,14 +382,14 @@ public sealed partial class FrontendSmokeScenario
                 await MoveMouseAsync(new Vector2(900, 560));
                 Check(settingsToken.Scale == Vector2.One && Math.Abs(settingsToken.SelfModulate.R - .9f) < .001,
                     "设置令牌移出后未恢复常态亮度");
-                await ClickAsync(map, "Frame/m_Settings");
+                await ClickAsync(map, "m_Settings");
                 SettingsForm settingsForm = await WaitForAsync<SettingsForm>();
                 await ClickAsync(settingsForm, "Scroll/m_Close");
                 await CheckMapSkillPurchaseAsync(map, flow);
                 // 制造尚未手动保存的地图进度，不能用刚保存过的空变化证明返回会写盘。
                 flow.GetSystem<ProfileSystem>().AddSoul(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 17);
                 flow.GetSystem<ProfileSystem>().AddExperience(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 3);
-                await ClickAsync(map, "Frame/m_Settings");
+                await ClickAsync(map, "m_Settings");
                 settingsForm = await WaitForAsync<SettingsForm>();
                 SaveModel saveModel = flow.GetModel<SaveModel>();
                 long originalUnit = saveModel.ActiveSlotUnitId;
@@ -400,7 +418,7 @@ public sealed partial class FrontendSmokeScenario
                 await ClickAsync(savedForms, "Frame/Slots/m_Slot2");
                 MapForm reusedMap = await WaitForAsync<MapForm>();
                 Check(ReferenceEquals(map, reusedMap), "设置返回后没有复用地图窗口");
-                await ClickAsync(reusedMap, "Frame/m_Settings");
+                await ClickAsync(reusedMap, "m_Settings");
                 settingsForm = await WaitForAsync<SettingsForm>();
                 Check(SmokeInspection.CallbackCount(settingsForm, "TitleRequested") == 1,
                     "地图设置复用时重复或漏绑导航");
@@ -416,7 +434,7 @@ public sealed partial class FrontendSmokeScenario
                 await CheckLevelGuideAsync(map);
                 return;
             }
-            await ClickAsync(map, "Frame/m_Settings");
+            await ClickAsync(map, "m_Settings");
             SettingsForm mapSettings = await WaitForAsync<SettingsForm>();
             Check(!GF.Base.IsGamePaused && ReferenceEquals(mapSettings, titleSettings), "地图设置错误暂停或未复用窗口");
             Check(!mapSettings.GetNode<Control>("Scroll/Content/Options/Navigation/m_ReturnMap").Visible, "地图设置多出返回地图");
@@ -424,7 +442,7 @@ public sealed partial class FrontendSmokeScenario
             await _driver.ToSignal(_driver.GetTree().CreateTimer(2.0), SceneTreeTimer.SignalName.Timeout);
             await CaptureAsync("map_settings_volume");
             await ClickAsync(mapSettings, "Scroll/m_Close");
-            await ClickAsync(map, "Frame/m_Settings");
+            await ClickAsync(map, "m_Settings");
             mapSettings = await WaitForAsync<SettingsForm>();
             Check(Math.Abs(mapSettings.GetNode<HSlider>("Scroll/Content/Options/m_AudioPanel/Music/m_MusicVolume").Value / 100 - GF.Sound.GetSoundGroup("Music").Volume) < .001,
                 "地图重新打开设置没有恢复音量");
@@ -474,7 +492,7 @@ public sealed partial class FrontendSmokeScenario
                 using var low = Image.LoadFromFile("res://.godot/validation/frontend/map_hover_low.png");
                 using var high = Image.LoadFromFile("res://.godot/validation/frontend/map_hover.png");
                 int changed = 0;
-                Rect2 region = location.GetGlobalRect();
+                Rect2 region = _driver.GetViewport().GetStretchTransform() * location.GetGlobalRect();
                 for (int y = (int)region.Position.Y; y < (int)region.End.Y; y++)
                 {
                     for (int x = (int)region.Position.X; x < (int)region.End.X; x++)
@@ -496,8 +514,8 @@ public sealed partial class FrontendSmokeScenario
             // 保存图标写入第二格；第六格建档后再读第二格，不能误读最新档。
             flow.GetSystem<ProfileSystem>().AddSoul(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), 7);
             int savedSoul = flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value;
-            await ClickAsync(map, "Frame/m_Save");
-            await WaitUntilAsync(() => !map.GetNode<BaseButton>("Frame/m_Save").Disabled, "手动保存反馈超时");
+            await ClickAsync(map, "m_Save");
+            await WaitUntilAsync(() => !map.GetNode<BaseButton>("m_Save").Disabled, "手动保存反馈超时");
             Check(await firstSaveSystem.PendingWrite && GF.Archive.CurrentCatalogue.SlotNumber == 2, "地图手动保存写错格");
             await CheckSaveFeedbackAsync(map);
             long secondId = GF.Archive.CurrentCatalogue.UnitId;
@@ -550,7 +568,7 @@ public sealed partial class FrontendSmokeScenario
                 "地图购买的主动技能或被动等级没有从磁盘恢复");
             GF.Fsm.GetModel<SaveModel>().ManualSave.Value = new(savedMapSerialId, SaveWritePhase.Succeeded);
             await MoveMouseAsync(new Vector2(30, 30));
-            Check(string.IsNullOrEmpty(map.GetNode<BaseButton>("Frame/m_Save").TooltipText), "保存按钮仍有多余悬停提示");
+            Check(string.IsNullOrEmpty(map.GetNode<BaseButton>("m_Save").TooltipText), "保存按钮仍有多余悬停提示");
             Check(GF.Archive.CurrentCatalogue.UnitId == secondId && GF.Archive.CurrentData.Heroes[0].Soul == savedSoul, "选择第二格读取成最新格或进度丢失");
             // 从普通树身进入悬停，再在仅放大图可见的位置实际点击进关。
             location = map.GetNode<TextureButton>("Frame/m_Huaguoshan");
@@ -559,6 +577,13 @@ public sealed partial class FrontendSmokeScenario
                 (location.GetNode<TextureRect>("LocationGlow").GetTransform() * new Vector2(40, 87));
             await ClickAsync(map, "Frame/m_Huaguoshan", expandedClick);
             BattleForm battleForm = await WaitForAsync<BattleForm>();
+            Vector2 battleView = _driver.GetViewport().GetVisibleRect().Size;
+            Check(_driver.GetWindow().ContentScaleAspect == _initialWindowAspect &&
+                _driver.GetWindow().ContentScaleSize == _initialContentScaleSize &&
+                Mathf.Abs(battleView.Y - 590) <= 1 &&
+                Mathf.Abs(battleView.X - _driver.GetWindow().Size.X * 590f / _driver.GetWindow().Size.Y) <= 1,
+                "进入关卡改变了平台统一的显示配置");
+            GD.Print($"SMOKE-FIXED-DISPLAY PASS: menu and battle share {_initialContentScaleSize}, {_initialWindowAspect}, logical={battleView}.");
             AbstractHeroEntity hero = Find<AbstractHeroEntity>().Single(x => x.IsShown);
             Check(Find<LevelViewController>().Count() == 1, "点击花果山未创建唯一关卡");
             LevelViewController level = SmokeInspection.Level((ProcedureLevel)GF.Procedure.CurrentProcedure);
@@ -800,13 +825,13 @@ public sealed partial class FrontendSmokeScenario
         await _driver.ToSignal(_driver.GetTree(), SceneTree.SignalName.ProcessFrame);
         HBoxContainer actions = character.GetNode<HBoxContainer>("Frame/Actions");
         Check(character.GetNode<Control>("Frame/Roles").Scale == Vector2.One &&
-            character.GetNode<Control>("Frame/Roles").GetChildren().OfType<Control>().All(card => card.Size == new Vector2(235, 590)) &&
-            Mathf.IsEqualApprox(actions.GetRect().GetCenter().X, 470) && actions.Position.Y == 556 &&
+            character.GetNode<Control>("Frame/Roles").GetChildren().OfType<Control>().All(card => card.Size == new Vector2(1049f / 4, 590)) &&
+            Mathf.IsEqualApprox(actions.GetRect().GetCenter().X, 1049f / 2) && actions.Position.Y == 556 &&
             actions.GetChildren().OfType<Button>().All(button => button.Size == new Vector2(94, 30) &&
                 button.GetThemeFontSize("font_size") == 18 &&
                 button.GetThemeStylebox("normal") is StyleBoxFlat style && style.BorderWidthLeft == 2 &&
                 style.BgColor.A > .95f && button.GetThemeFont("font").ResourcePath.EndsWith("game_font.tres")),
-            "选角卡片原尺寸、底部小按钮居中、底色边框或统一字体错误");
+            "选角卡片审定尺寸、底部小按钮居中、底色边框或统一字体错误");
         await CaptureAsync("character_centered_actions");
         await ClickAsync(character, "Frame/Roles/m_Wukong");
         await ClickAsync(character, "Frame/Roles/m_Wukong");
@@ -1423,12 +1448,24 @@ public sealed partial class FrontendSmokeScenario
     /// <returns>四栏交互检查任务。</returns>
     private async Task CheckCharacterHoverAsync(CharacterForm character)
     {
+        Check(_driver.GetWindow().ContentScaleAspect ==
+            Window.ContentScaleAspectEnum.KeepHeight,
+            "正式选角未沿用项目KeepHeight视口策略");
+        await CheckActualMenuViewportAsync("character_actual");
+        await CheckCharacterLayoutsAsync();
         Control[] roles = character.GetNode("Frame/Roles").GetChildren().OfType<Control>().ToArray();
         Label marker = character.GetNode<Label>("Frame/m_PlayerOne");
         Check(roles.Length == 4 && roles.Take(2).All(role => role is TextureButton) &&
             roles.Skip(2).All(role => role is TextureRect), "角色节点未按两名已开放角色和两栏占位分组");
-        Check(roles.All(role => role.Size.IsEqualApprox(new Vector2(235, 590))) && marker.Text == "1P", "四栏构图或玩家标记错误");
-        Check(roles.All(role => role.GetChildCount() == 0), "完整卡片仍叠加重复姓名或笔刷组件");
+        Check(roles.All(role => role.Size.IsEqualApprox(new Vector2(1049f / 4, 590))) && marker.Text == "1P", "四栏构图或玩家标记错误");
+        Check(roles.All(role => role.GetChildCount() == 4 &&
+            role.GetNode("MaskedBackground") is Polygon2D &&
+            role.GetNode<TextureRect>("Portrait").Size.IsEqualApprox(new Vector2(420, 590)) &&
+            role.GetNode("Ink") is NinePatchRect &&
+            role.GetNode<Label>("Caption").GetThemeFont("font").ResourcePath.EndsWith("game_font.tres") &&
+            role.GetNode<Label>("Caption").GetThemeFontSize("font_size") == 36 &&
+            role.GetNode<Label>("Caption").Scale == Vector2.One),
+            "卡片分层、唯一原生姓名或人物核心比例错误");
         await MoveMouseAsync(new Vector2(-5, -5));
         Check(!marker.Visible && roles.All(role => Mathf.IsEqualApprox(((ShaderMaterial)role.Material).GetShaderParameter("grayscale").AsSingle(), 1f)), "无悬停时不是全灰或标记未隐藏");
         await CaptureAsync("character_idle");
@@ -1468,6 +1505,100 @@ public sealed partial class FrontendSmokeScenario
     }
 
     /// <summary>
+    /// 用正式C#窗口验证两主构图及手机兼容；触屏选择仅在隔离实例反射设置，不改变设备或项目默认值。
+    /// </summary>
+    /// <returns>原生分层、字体、缩放与连续改尺寸检查任务。</returns>
+    private async Task CheckCharacterLayoutsAsync()
+    {
+        var viewport = new SubViewport { RenderTargetUpdateMode = SubViewport.UpdateMode.Always };
+        viewport.World2D = new World2D();
+        viewport.Size2DOverrideStretch = true;
+        viewport.Size = new Vector2I(1920, 1080);
+        viewport.Size2DOverride = new Vector2I(1049, 590);
+        _driver.AddChild(viewport);
+        CharacterForm form = GD.Load<PackedScene>("res://TheGame/UIs/character_form.tscn").Instantiate<CharacterForm>();
+        viewport.AddChild(form);
+        form.OnInit(0, "res://TheGame/UIs/character_form.tscn", null, true, true, null);
+        form.OnOpen(new CharacterFormData(2));
+        Vector2I desktopReference = ProjectSettings.GetSetting("game/ui/reference_size").AsVector2I();
+        Vector2I androidReference = ProjectSettings.GetSetting("game/ui/reference_size.android").AsVector2I();
+        Check(desktopReference == new Vector2I(1920, 1080) && androidReference == new Vector2I(2400, 1080) &&
+            ProjectSettings.GetSettingWithOverride("game/ui/reference_size").AsVector2I() ==
+                (OS.HasFeature("android") ? androidReference : desktopReference),
+            "项目设置没有保留电脑16:9/Android20:9特性覆盖");
+        DisplaySystem display = GF.Fsm.GetSystem<DisplaySystem>();
+        Check(display.Initialized && ReferenceEquals(display, form.GetSystem<DisplaySystem>()) &&
+            display.MenuDesignSize == new Vector2(1049, 590) &&
+            SmokeInspection.ReadField<Vector2>(form, "_designSize") == display.MenuDesignSize,
+            "选角未消费应用共用DisplaySystem，或Windows构图错误");
+        try
+        {
+            foreach ((bool touch, int width) in new[] { (false, 1920), (true, 1920), (true, 2280),
+                         (true, 2340), (true, 2400), (true, 2520) })
+            {
+                Vector2I reference = touch ? androidReference : desktopReference;
+                Vector2 design = new(Mathf.CeilToInt(reference.X * 590f / reference.Y), 590);
+                typeof(CharacterForm).GetField("_designSize", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .SetValue(form, design);
+                viewport.Size = new Vector2I(width, 1080);
+                viewport.Size2DOverride = new Vector2I(Mathf.CeilToInt(width * 590f / 1080), 590);
+                // The first touch case shares the PC size; subsequent cases must exercise Resized itself.
+                if (width == 1920)
+                {
+                    typeof(CharacterForm).GetMethod("LayoutCards", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(form, null);
+                }
+
+                for (int frame = 0; frame < 3; frame++)
+                {
+                    await _driver.ToSignal(_driver.GetTree(), SceneTree.SignalName.ProcessFrame);
+                }
+
+                Control canvas = form.GetNode<Control>("Frame");
+                Control[] cards = form.GetNode("Frame/Roles").GetChildren().OfType<Control>().ToArray();
+                float designWidth = touch ? 1312 : 1049;
+                Check(canvas.Size.IsEqualApprox(new Vector2(designWidth, 590)) &&
+                    Mathf.IsEqualApprox(canvas.Scale.X, canvas.Scale.Y), "选角主构图或等比Fit错误");
+                for (int i = 0; i < cards.Length; i++)
+                {
+                    Control card = cards[i];
+                    Polygon2D background = card.GetNode<Polygon2D>("MaskedBackground");
+                    Vector2 insets = background.GetMeta("right_insets").AsVector2();
+                    NinePatchRect ink = card.GetNode<NinePatchRect>("Ink");
+                    Label caption = card.GetNode<Label>("Caption");
+                    Check(card.Position.IsEqualApprox(new Vector2(i * designWidth / 4, 0)) &&
+                        card.Size.IsEqualApprox(new Vector2(designWidth / 4, 590)) &&
+                        (ink.Size * ink.Scale).IsEqualApprox(card.Size), "四卡有间距或墨框未随卡宽延展");
+                    Check(Mathf.IsEqualApprox(background.Polygon[0].Y, 12.912295f) &&
+                        Mathf.IsEqualApprox(background.Polygon[2].X, card.Size.X - insets.X) &&
+                        background.Polygon.SequenceEqual(background.UV) &&
+                        background.UseParentMaterial && ink.UseParentMaterial &&
+                        card.GetNode<TextureRect>("Portrait").UseParentMaterial, "背景遮罩、UV或灰度层继承错误");
+                    Check(caption.Scale == Vector2.One &&
+                        Mathf.IsEqualApprox(caption.GetRect().GetCenter().X / card.Size.X, caption.AnchorLeft + .5f) &&
+                        caption.Text == new[] { "孙悟空", "唐僧", "猪八戒", "沙僧" }[i] &&
+                        caption.MouseFilter == Control.MouseFilterEnum.Ignore, "姓名位置、独立缩放或输入穿透错误");
+                }
+
+                ((ShaderMaterial)cards[1].Material).SetShaderParameter("grayscale", 0f);
+                Label marker = form.GetNode<Label>("Frame/m_PlayerOne");
+                marker.Visible = true;
+                marker.Position = new Vector2(designWidth * .375f - marker.Size.X / 2, marker.Position.Y);
+                await _driver.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+                string name = $"character_{(touch ? "android" : "windows")}_{width}";
+                Check(viewport.GetTexture().GetImage().SavePng($"res://.godot/validation/frontend/{name}.png") == Error.Ok,
+                    "选角构图截图保存失败");
+                GD.Print($"SMOKE-CHARACTER-LAYOUT PASS: {name}, design={canvas.Size}, frameScale={canvas.Scale}, gap=0, nativeCaption=4, sourceMask=4.");
+            }
+        }
+        finally
+        {
+            form.OnClose(false, null);
+            form.OnRecycle();
+            viewport.Free();
+        }
+    }
+
+    /// <summary>
     /// 从地图打开设置，经实际导航按钮返回主菜单。
     /// </summary>
     /// <param name="map">本次显示的地图。</param>
@@ -1477,13 +1608,16 @@ public sealed partial class FrontendSmokeScenario
         ProfileModel profile = GF.Fsm.GetModel<ProfileModel>();
         GameData expected = GF.Fsm.GetUtility<SaveDataUtility>().Capture(profile, GF.Fsm.GetModel<SkillModel>());
         long unitId = GF.Fsm.GetModel<SaveModel>().ActiveSlotUnitId;
-        await ClickAsync(map, "Frame/m_Settings");
+        await ClickAsync(map, "m_Settings");
         SettingsForm settings = await WaitForAsync<SettingsForm>();
         Check(settings.GetNode<Control>("Scroll/Content/Options/Navigation/m_ReturnTitle").Visible &&
             SmokeInspection.CallbackCount(settings, "TitleRequested") == 1,
             "地图设置没有显示或绑定返回主菜单");
         await ClickAsync(settings, "Scroll/Content/Options/Navigation/m_ReturnTitle");
         await WaitForAsync<StartForm>();
+        Check(_driver.GetWindow().ContentScaleAspect == _initialWindowAspect &&
+            _driver.GetWindow().ContentScaleSize == _initialContentScaleSize,
+            "返回标题改变了平台统一显示配置");
         await CheckSavedProfileAsync(expected, unitId);
     }
 
@@ -1527,33 +1661,36 @@ public sealed partial class FrontendSmokeScenario
         Check(flow.GetModel<HeroModel>() == null && flow.GetModel<LevelModel>() == null &&
             !Find<AbstractHeroEntity>().Any() && !Find<LevelViewController>().Any(), "地图学技前已创建战斗英雄或关卡");
 
-        AnimatedSprite2D skillArtwork = map.GetNode<AnimatedSprite2D>("Frame/m_Skills/Artwork");
+        AnimatedSprite2D skillArtwork = map.GetNode<AnimatedSprite2D>("m_Skills/Artwork");
+        Label skillCaption = map.GetNode<Label>("m_Skills/Caption");
         Check((skillArtwork.GlobalPosition - map.GlobalPosition).IsEqualApprox(new Vector2(77.5f, 85)) &&
-            string.IsNullOrEmpty(map.GetNode<Button>("Frame/m_Skills").Text) &&
+            string.IsNullOrEmpty(map.GetNode<Button>("m_Skills").Text) &&
             skillArtwork.SpriteFrames.GetFrameCount("hover") == 15 &&
             skillArtwork.SpriteFrames.GetFrameCount("available") == 19,
             "地图技能入口未使用对齐后的布局及完整官方悬停/可购动画");
+        await MoveMouseAsync(new Vector2(-5, -5));
         await MoveMouseAsync(skillArtwork.GlobalPosition);
-        Check(skillArtwork.Animation == "hover", "地图技能真实悬停未切换官方第2态");
+        Check(skillArtwork.Animation == "hover" && skillCaption.Visible, "地图技能真实悬停未显示第2态及独立题签");
         int hoverFrame = skillArtwork.Frame;
+        GD.Print($"SMOKE-MAP-SKILL HOVER: frame={hoverFrame}, playing={skillArtwork.IsPlaying()}, speed={skillArtwork.SpeedScale}, fps={skillArtwork.SpriteFrames.GetAnimationSpeed("hover")}.");
         await WaitUntilAsync(() => skillArtwork.Frame != hoverFrame, "官方地图技能悬停子动画没有播放");
         await WaitUntilAsync(() => !skillArtwork.IsPlaying(), "官方技能展开到第15帧后没有停止");
-        Check(skillArtwork.Frame == 14, "官方技能展开没有停在末帧");
+        Check(skillArtwork.Frame == 14 && skillCaption.Visible, "官方技能展开没有停在末帧或独立题签消失");
         await _driver.ToSignal(_driver.GetTree().CreateTimer(.8), SceneTreeTimer.SignalName.Timeout);
         Check(skillArtwork.Frame == 14 && !skillArtwork.IsPlaying(), "保持悬停时技能展开被循环重播");
         await CaptureAsync("map_skill_entry_hover");
         await MoveMouseAsync(new Vector2(-5, -5));
-        Check(skillArtwork.Animation == "idle" && skillArtwork.Frame == 0, "移出地图技能入口未恢复官方静止第1态");
+        Check(skillArtwork.Animation == "idle" && skillArtwork.Frame == 0 && !skillCaption.Visible, "移出地图技能入口未恢复静止第1态或未隐藏题签");
         await CaptureAsync("map_skill_entry_idle");
         // 原版从技能页回到地图会重新按余额选择第3态。
-        await ClickAsync(map, "Frame/m_Skills");
+        await ClickAsync(map, "m_Skills");
         SkillForm preview = await WaitForAsync<SkillForm>();
         await ClickAsync(preview, "Content/Header/m_Back");
-        Check(initialSoul >= 160 && skillArtwork.Animation == "available", "地图技能返回后未恢复原版可购提示");
+        Check(initialSoul >= 160 && skillArtwork.Animation == "available" && !skillCaption.Visible, "地图技能返回后未恢复可购提示或误显示题签");
         int availableFrame = skillArtwork.Frame;
         await WaitUntilAsync(() => skillArtwork.Frame != availableFrame, "官方地图可购发光子动画没有播放");
         await CaptureAsync("map_skill_entry_available");
-        await ClickAsync(map, "Frame/m_Skills");
+        await ClickAsync(map, "m_Skills");
         SkillForm form = await WaitForAsync<SkillForm>();
         Check(GF.Procedure.CurrentProcedure is ProcedureMap && !GF.Base.IsGamePaused &&
             flow.GetModel<HeroModel>() == null && flow.GetModel<LevelModel>() == null,
@@ -1577,7 +1714,7 @@ public sealed partial class FrontendSmokeScenario
         await ClickAsync(form, "Content/Header/m_Back");
         Check(!GF.UI.HasUIForm(firstSerial) && !GF.Base.IsGamePaused && map.Visible,
             "地图技能窗关闭后仍保留交互、暂停或遮挡地图");
-        await ClickAsync(map, "Frame/m_Skills");
+        await ClickAsync(map, "m_Skills");
         form = await WaitForAsync<SkillForm>();
         Check(form.GetNode<BaseButton>("Content/m_ActivePage/m_WukongRows/Skill1/IconCell/Icon").Disabled &&
             form.GetNode<Label>("Content/Footer/Balance/m_Soul").Text == profile.GetSoul(profile.HeroOf(PlayerSlot.P1)).Value.ToString(),
@@ -1586,6 +1723,122 @@ public sealed partial class FrontendSmokeScenario
         Check(flow.GetModel<HeroModel>() == null && flow.GetModel<LevelModel>() == null &&
             !Find<AbstractHeroEntity>().Any() && !Find<LevelViewController>().Any(), "地图购买技能创建了战斗实体或模型");
         GD.Print("SMOKE-MAP-SKILLS PASS: native map entry, active/passive purchase, wallet refresh, reopen and no battle scope.");
+    }
+
+    /// <summary>
+    /// 验证地图共用母版裁切、左侧菜单锚点和原地点在不同画布中的注册。
+    /// </summary>
+    /// <returns>正式C#地图场景的连续改尺寸与截图任务。</returns>
+    private async Task CheckMapLayoutsAsync()
+    {
+        Check(_driver.GetWindow().ContentScaleAspect ==
+            Window.ContentScaleAspectEnum.KeepHeight,
+            "正式地图未沿用项目KeepHeight视口策略");
+        await CheckActualMenuViewportAsync("map_actual");
+        var viewport = new SubViewport { RenderTargetUpdateMode = SubViewport.UpdateMode.Always };
+        viewport.World2D = new World2D();
+        viewport.Size2DOverrideStretch = true;
+        viewport.Size = new Vector2I(1920, 1080);
+        viewport.Size2DOverride = new Vector2I(1049, 590);
+        _driver.AddChild(viewport);
+        MapForm form = GD.Load<PackedScene>("res://TheGame/UIs/map_form.tscn").Instantiate<MapForm>();
+        viewport.AddChild(form);
+        form.OnInit(0, "res://TheGame/UIs/map_form.tscn", null, true, true, null);
+        form.OnOpen(null);
+        try
+        {
+            Control frame = form.GetNode<Control>("Frame");
+            TextureRect background = frame.GetNode<TextureRect>("Background");
+            Control[] menu = { form.GetNode<Control>("m_Skills"), form.GetNode<Control>("m_Save"),
+                form.GetNode<Control>("m_Settings") };
+            Vector2[] menuPositions = { new(26, 43), new(5.5f, 166.5f), new(17, 323) };
+            MapLocationButton[] locations = frame.GetChildren().OfType<MapLocationButton>().ToArray();
+            Dictionary<MapLocationButton, Rect2> locationRects = locations.ToDictionary(button => button, button => button.GetRect());
+            Check(locations.Length == 10 && background.Texture.GetSize() == new Vector2(1408, 590) &&
+                background.Texture.ResourcePath.EndsWith("journey_map.png"), "地图未使用唯一正式扩图母版");
+            Texture2D sharedTexture = background.Texture;
+            foreach (int width in new[] { 1920, 2280, 2340, 2400, 2520, 1920 })
+            {
+                viewport.Size = new Vector2I(width, 1080);
+                viewport.Size2DOverride = new Vector2I(Mathf.CeilToInt(width * 590f / 1080), 590);
+                for (int tick = 0; tick < 3; tick++)
+                {
+                    await _driver.ToSignal(_driver.GetTree(), SceneTree.SignalName.ProcessFrame);
+                }
+
+                Check(frame.Size == new Vector2(940, 590) &&
+                    Mathf.IsEqualApprox(frame.Position.X, (form.Size.X - 940) / 2) &&
+                    locations.All(button => button.GetRect() == locationRects[button] && button.Scale == Vector2.One),
+                    "地图原逻辑核心或地点注册随比例改变");
+                Check(ReferenceEquals(background.Texture, sharedTexture) &&
+                    background.Position == new Vector2(-234, 0) && background.Size == new Vector2(1408, 590) &&
+                    background.MouseFilter == Control.MouseFilterEnum.Ignore &&
+                    background.GetGlobalRect().Position.X <= 0 && background.GetGlobalRect().End.X >= form.Size.X,
+                    "地图未共用母版裁切、覆盖不足或背景拦截输入");
+                for (int i = 0; i < menu.Length; i++)
+                {
+                    Check(menu[i].GetParent() == form && menu[i].AnchorLeft == 0 && menu[i].AnchorRight == 0 &&
+                        menu[i].Position == menuPositions[i] && menu[i].Scale == Vector2.One,
+                        "地图菜单没有固定在可用画布左侧");
+                }
+
+                await _driver.ToSignal(RenderingServer.Singleton, RenderingServer.SignalName.FramePostDraw);
+                Check(viewport.GetTexture().GetImage().SavePng($"res://.godot/validation/frontend/map_shared_{width}.png") == Error.Ok,
+                    "地图正式接入预览保存失败");
+                GD.Print($"SMOKE-MAP-LAYOUT PASS: {width}x1080, sharedBackground=1, leftMenu=3, registeredLocations=10, core=940x590.");
+            }
+        }
+        finally
+        {
+            form.OnClose(false, null);
+            form.OnRecycle();
+            viewport.Free();
+        }
+    }
+
+    /// <summary>
+    /// 在真实主窗口验证菜单铺满，并采集窗口/当前显示器全屏截图；退出恢复原窗口状态。
+    /// </summary>
+    /// <param name="name">本次正式菜单截图前缀。</param>
+    /// <returns>主窗口比例检查与全屏往返任务。</returns>
+    private async Task CheckActualMenuViewportAsync(string name)
+    {
+        Window window = _driver.GetWindow();
+        Window.ModeEnum mode = window.Mode;
+        Vector2I size = window.Size;
+        Vector2I position = window.Position;
+        try
+        {
+            foreach (bool fullscreen in new[] { false, true })
+            {
+                if (fullscreen)
+                {
+                    window.Mode = Window.ModeEnum.ExclusiveFullscreen;
+                }
+
+                for (int frame = 0; frame < 5; frame++)
+                {
+                    await _driver.ToSignal(_driver.GetTree(), SceneTree.SignalName.ProcessFrame);
+                }
+
+                Vector2 view = _driver.GetViewport().GetVisibleRect().Size;
+                Check(Mathf.Abs(view.Y - 590) <= 1 &&
+                    Mathf.Abs(view.X - window.Size.X * 590f / window.Size.Y) <= 1,
+                    "真实菜单视口仍被旧画布限制，未覆盖整个窗口");
+                await CaptureAsync(name + (fullscreen ? "_fullscreen" : "_windowed"));
+                GD.Print($"SMOKE-MENU-VIEWPORT PASS: {name}, physical={window.Size}, logical={view}, fullscreen={fullscreen}.");
+            }
+        }
+        finally
+        {
+            window.Mode = mode;
+            window.Size = size;
+            window.Position = position;
+            for (int frame = 0; frame < 3; frame++)
+            {
+                await _driver.ToSignal(_driver.GetTree(), SceneTree.SignalName.ProcessFrame);
+            }
+        }
     }
 
     /// <summary>
@@ -1607,11 +1860,11 @@ public sealed partial class FrontendSmokeScenario
 
         // 在现有结果事件边界模拟写入失败，不破坏文件，也不增加生产测试接口。
         GF.Fsm.GetModel<SaveModel>().ManualSave.Value = new(map.SerialId, SaveWritePhase.Failed);
-        await WaitUntilAsync(() => map.GetNode<BaseButton>("Frame/m_Save").SelfModulate == new Color(1f, .55f, .55f), "失败结果未更新按钮状态");
-        Check(!feedback.Visible && !map.GetNode<BaseButton>("Frame/m_Save").Disabled, "写入失败误报成功或不能重试");
+        await WaitUntilAsync(() => map.GetNode<BaseButton>("m_Save").SelfModulate == new Color(1f, .55f, .55f), "失败结果未更新按钮状态");
+        Check(!feedback.Visible && !map.GetNode<BaseButton>("m_Save").Disabled, "写入失败误报成功或不能重试");
         await CaptureAsync("map_save_failure");
-        await ClickAsync(map, "Frame/m_Save");
-        await WaitUntilAsync(() => !map.GetNode<BaseButton>("Frame/m_Save").Disabled, "再次保存未完成");
+        await ClickAsync(map, "m_Save");
+        await WaitUntilAsync(() => !map.GetNode<BaseButton>("m_Save").Disabled, "再次保存未完成");
         // 绑定结果同步提交，GGF 的一次性保存成功事件在下一轮分发。
         await WaitUntilAsync(() => feedback.Visible && animation.IsPlaying(), "再次保存成功事件未显示提示");
         Check(feedback.Text == "保存成功！" && Mathf.IsEqualApprox(feedback.Modulate.A, 1f), "再次实际保存未刷新提示或沿用旧透明度");
@@ -1651,7 +1904,7 @@ public sealed partial class FrontendSmokeScenario
                     button.GetNode<TextureRect>("LocationGlow").Visible, "透明岸内不能稳定保持悬停：" + name);
             }
             await CaptureAsync("map_" + name.ToLowerInvariant() + "_hover");
-            await ClickAsync(map, "m_" + name, point);
+            await ClickAsync(map, "Frame/m_" + name, point);
             await WaitUntilAsync(() => Find<LevelViewController>().Any() && Find<AbstractHeroEntity>().Any(hero => hero.IsShown), "沿海点击没有进入关卡：" + name);
             BattleForm battle = await WaitForAsync<BattleForm>();
             Check(GF.Fsm.GetModel<LevelModel>().LevelId == id, "沿海点击进入了错误关卡");
@@ -1811,12 +2064,18 @@ public sealed partial class FrontendSmokeScenario
         /// <summary>
         /// 实际初始化次数。
         /// </summary>
-        public int InitCount { get; private set; }
+        public int InitCount
+        {
+            get; private set;
+        }
 
         /// <summary>
         /// 实际解除次数。
         /// </summary>
-        public int DeinitCount { get; private set; }
+        public int DeinitCount
+        {
+            get; private set;
+        }
 
         /// <inheritdoc />
         protected override void OnInit()
@@ -1851,12 +2110,18 @@ public sealed partial class FrontendSmokeScenario
         /// <summary>
         /// 实际初始化次数。
         /// </summary>
-        public int InitCount { get; private set; }
+        public int InitCount
+        {
+            get; private set;
+        }
 
         /// <summary>
         /// 实际解除次数。
         /// </summary>
-        public int DeinitCount { get; private set; }
+        public int DeinitCount
+        {
+            get; private set;
+        }
 
         /// <inheritdoc />
         protected override void OnInit()

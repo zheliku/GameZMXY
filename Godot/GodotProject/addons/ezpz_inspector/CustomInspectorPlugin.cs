@@ -111,9 +111,7 @@ namespace Calcatz.EzpzInspector {
             if (scriptVariant.AsGodotObject() is not CSharpScript script) return false;
             if (!string.IsNullOrEmpty(script.ResourcePath)) {
                 if (!typeCache.TryGetValue(script.ResourcePath, out var type)) {
-                    var temp = script.New().AsGodotObject();
-                    type = temp.GetType();
-                    temp.Free();
+                    type = @object.GetType();
                     typeCache.Add(script.ResourcePath, type);
 
                     var methods = GetExportedButtonMethods(type);

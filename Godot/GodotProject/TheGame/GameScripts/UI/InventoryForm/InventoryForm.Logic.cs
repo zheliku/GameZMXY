@@ -177,16 +177,12 @@ public partial class InventoryForm : IController
     }
 
     /// <summary>
-    /// 暂停战斗时，角色预览仍按真实时间播放。
+    /// 框架界面更新；独立角色预览由自身原生节点推进。
     /// </summary>
     /// <param name="elapseSeconds">游戏秒数。</param>
     /// <param name="realElapseSeconds">真实秒数。</param>
     public void OnUpdate(float elapseSeconds, float realElapseSeconds)
     {
-        if (_inventoryData != null)
-        {
-            _character.AdvancePreview();
-        }
     }
 
     /// <summary>

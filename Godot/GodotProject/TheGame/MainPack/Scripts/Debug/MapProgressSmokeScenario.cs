@@ -93,7 +93,7 @@ public sealed class MapProgressSmokeScenario(Node driver)
                 MapForm map = VisibleMap();
                 CheckMap(map, _levelId);
                 _closedMapSerial = map.SerialId;
-                map.GetNode<BaseButton>("Frame/m_Settings").EmitSignal(BaseButton.SignalName.Pressed);
+                map.GetNode<BaseButton>("m_Settings").EmitSignal(BaseButton.SignalName.Pressed);
                 _step = 2;
                 return;
             }

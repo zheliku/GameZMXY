@@ -1,6 +1,250 @@
 # 素材来源与复现
 
-## A2英雄与背包原路径高清替换（2026-11-14，待用户审图）
+## 完整待机preview与地图原图恢复（2026-11-17）
+
+按用户最新要求，背包从backpack_v2短展示/单姿态切换为Git历史已有的Role_v7完整wait，不重画新动作。复用已审当前战斗PNG的原源2倍像素，export_official_inventory_preview.py新增--animated-idle入口，只提取idle1身体/武器帧到原26个preview路径，独立外观字典与UID不改。保留原100/91时刻和24fps、完整共同格及逐帧遮挡；六列400源像素格=200逻辑格。悟空13身体/11武器姿态，唐僧10/8，去重不删除任何时刻。
+
+每英雄两层采用同一固定舞台平移，悟空(-2,-2)、唐僧(2,10)源像素，使首姿态接回当前展示注册；所有时刻相同，不按可见框居中。26图逐格与经相同平移的高精度源完全相同、无内容裁损或插值。原动画/图集和本轮来源散列、source_sequences/source_cell_maps、候选及自然播放录像保存在art_preview_animated_idle_20261117；战斗源和玩法资源保持原字节。
+
+地图最终去字图复用art_map_caption_install_20261116/before中的先前source-glyph-only版本，其字形遮罩来自原独立bitmap497/500/489。map_save_game/map_save_game_hover/map_skills只在字形遮罩内将RGB归黑，原alpha和遮罩外RGBA严格一致；完整黑色笔刷不挖空。map_return_title保持HEAD原件，三入口Label显示文字，不叠额外Ink层。保存hover有实际引用、普通/悬停不同，保留。旧import/UID保持，仅无消费者的新map_menu_caption_ink及import删除。误恢复烘焙文字的中间版本已纠正；修正版与当前Git基线备份在art_map_caption_background_fix_20261117。
+
+电脑16:9、手机20:9/21:9及去字图、英雄实际动作的审查证据留在既有.godot/validation各批过程目录；文档图片副本已解除引用，按用户要求待删除，目前执行工具拒绝删除。正式引用仍是TheGame原路径，不复制手机运行素材。
+
+本轮再次读取OtherMat_v9的shape389→bitmap388内嵌JPEG，原生仍940×590；journey_map中央940×590与只读旧183.png的554600像素全等，正式1408×590仅扩外围。没有同内容高精度原画可供本轮重导，不将普通放大当作高清替换。全项目扫描与实际地图截图见同目录；原来源和重复动画帧保留。
+
+全屏模糊复核后另试Swin2SR Classical x2恢复：ONNX来自[Xenova/swin2SR-classical-sr-x2-64](https://huggingface.co/Xenova/swin2SR-classical-sr-x2-64)，冻结revision `71e28a83cfb61f5dc95bafdeebf2815167914f2b`、模型SHA256 `6dde3fe2440543ccae7c40d175609f83c18aeaa3d8456745c4329ef97ae744bd`，上游caidas/mv-lab、Apache-2.0。使用本地DirectML的Classical x2推理，不使用生成式提示词、GAN/realworld分支或图像重画；复用已有残差回投影与透明RGB延展，仅离线诊断，不是高精度原源。正式资源未替换，模型/来源/环境和候选留art_map_density_recheck_20261117，有限改善未达到1080p主体验收；同目录保留地图/入口1080p对照。
+
+## 跨类别接入撤回后的来源状态（2026-11-17）
+
+本轮按用户要求撤回Boss及其后续连续跨类接入，不制作新素材。正式文件恢复自art_boss_batch_install_20261117/baseline.json对应的原文件散列，覆盖原资源、动画、场景、作者工具及消费者；撤回批次21个新增文件同步撤出运行路径。所有256个恢复目标都有散列匹配的原件；其中255个直接来自既有before备份，UiSmokeScenario.Bull.cs来自HEAD并按原CRLF恢复，散列严格一致。
+
+回退前400个改动文件、原Git索引与二进制补丁完整保存在art_batch_rollback_20261117；后续各类候选和来源目录仍保留，不把撤回等同来源丢失。用户已确认保留普通怪物、此前已审成果及英雄规范修复，普通怪物整批画面仍待审查。唐僧/悟空preview各13张、2400×400六列，均属HEAD既有英雄重导批次；本轮不重新放大、不改图集或动作。
+
+保留上述怪物资源时，地图浮层沿用原各身体atlas，只同步11个AtlasTexture.region到当前idle可见裁片（本批10主体+此前猴兵）。复用art_map_portraits_20261117/sources与原散列、原生裁片证据核对；没有保留后批共享头像新图集/导出入口。11处region外序列化内容严格相同，来源裁片RGBA全等，详见Validation回退后验证。
+
+## 普通怪物类别批量原路径接入与英雄图集修复
+
+最新授权按“全部普通怪物一批、全部Boss一批”直接制作接入并留Git整体查阅，取代逐物种待审。妖猴小样已经用户通过，实际正式采用原网格2048×690（不是历史1024×845紧凑候选）。所有当前PNG/.import/UID、SpriteFrames子资源ID和动作序列保持；仅源像素、region/margin、Sprite身体scale0.5及原offset像素值换算。其余怪物保留原槽位注册基准，透明padding容纳采样边缘；未改变逻辑画布、绘制顺序或判定。
+
+来源仍为OfficialReference核验的Monster_v1/Monster2_v4及既有stick清理版。gorilla/shrimp/tide/turtle沿enemy_fidelity_20261030/grounded，保留逐帧死亡修正；妖猴沿ground_monsters原注册，bull_guard沿bull_art，knife沿qixing/registered，飞妖沿garuda/native_manifest，灯笼鱼沿east_sea，召唤鲨鱼/其效果沿shark_art原manifest。所有父矩阵均保持；不重新运行会覆盖玩法的旧原生导入器。
+
+| 图集 | 源帧/姿态 | 正式2倍尺寸 | 来源结果 |
+| --- | --- | --- | --- |
+| bull_guard | 83/27 | 1024×2284 | 原矢量完整高清 |
+| demon_monkey | 78/20 | 2048×690 | 原矢量完整高清 |
+| flying_demon | 85/33 | 6240×2200 | 原矢量完整高清 |
+| gorilla | 85/23 | 2048×1184 | 原矢量完整高清 |
+| knife_demon | 83/25 | 3120×1144 | 部分完成，bitmap 478保持源精度 |
+| knife_demon_blade | 27/22 | 5328×114 | 原矢量完整高清 |
+| lantern_fish | 87/87 | 4832×2176 | 原矢量完整高清 |
+| shark_spawn | 177/74 | 4096×3936 | 部分完成，bitmap 244保持源精度 |
+| shark_spawn_warning | 25/23 | 1024×928 | 原矢量完整高清 |
+| shrimp_demon | 79/29 | 2048×1180 | 原矢量完整高清 |
+| tide_demon | 95/46 | 2048×3056 | 部分完成，bitmap 699保持源精度 |
+| turtle_minister | 98/57 | 4096×1736 | 部分完成，bitmap 1203,1207保持源精度 |
+
+
+source/variant散列、纯矢量/位图/滤镜依赖及原密度逐帧复现结果在`art_ground_batch_install_20261116/<名称>/density_manifest.json`；正式4资源与before/对照在installation.json及installation_verification.json。复用prepare_grounded_enemy_art.py已授权密度入口，读取批次before，避免重复接入累计缩放；prepare_batch.py沿既有FFDec源注册链试导，原XML/SWF不动。最低线宽按原1倍有效20TWIPS离线规范，滤镜预算依密度四次方扩大，不更改源滤镜半径/颜色/强度/时序。
+
+以下四图明确保留原版：bat（26个位图）、cave_brute（位图姿态序列）；shark_spawn_slash主体bitmap293、shark_spawn_tornado十位图267..285。斩击/旋风2倍试导已撤回到本轮before，候选仅离线保留，不计高清。上述四图和四混合主体合计新增8来源限制，仍需同内容高精度来源；没有AI重画。旧15张分动作图不参与当前正式播放，保留未勾。
+
+悟空战斗图集仅置换0/1/85三格：原待机置0、原85姿态置1、透明格置85。200逻辑格/六列和86共享姿态不变，13图/1170格RGBA逐项全等；技能透明时刻同步指向85，不能把透明格直接填成身体。install_official_hero_hd.py --visible-first复用原remap_frame_tracks，同步两个库与场景，原canonical installed/*.json的poses/motion_cells/source_cell_map已同步，未来--frame-map仍能复现。原52图高清内容未重画；首格修复不增加完成量。预览沿backpack_v2官方62帧/1帧，修的是播放器驱动：自身真实时间_Process+原生autoplay取代窗口/面板转发，身体/武器图和预览库帧序不改。
+
+## 妖猴原矢量2倍完整动作小样（历史；已审，正式保留原网格见上节）
+
+来源沿既有export_official_ground_monsters.py：Monster_v1恢复SHA256=`5bd88da4211870f2ca2354b7cec8d1790747869641c11fe553910b10fe2a264a`，export.monster.Monster2；复用`action_origin_review/ground_monsters_export/monster1_art.swf`及原manifest父矩阵，不使用不含妖猴的grounded清单。sprite57/60/67/73/80分别run16/hurt13/attack_1 12/death22/idle15，78帧24fps，递归依赖只有shape/sprite、无bitmap/filter。旧2026-10-26“88帧含after_hurt”是历史导入状态；当前正式五动作78帧，本批不删帧、不恢复未使用的旧动作。
+
+FFDec26.3在1倍逐帧复现正式SpriteFrames可见RGBA/alpha；共用128×115逻辑画布，左上(-68,-71)、offset(-4,-13.5)，原父平移按逻辑floor注册，无额外死亡落地修正。普通zoom2导致原细描边变细，核实原BitmapExporter.lineStyle的最小线宽为输出1px。最终仅离线临时XML将依赖内167条LINESTYLE.width从1TWIP规范成原密度有效20TWIPS，保持逻辑1px描边；两版1倍78帧完整RGBA全等。恢复167字段后XML与原树完全相同，路径/颜色/绘制深度/时间轴不改；不是AI重绘或插值放大。原SWF/XML文件保持，临时variant和全部散列/字段变更记录在sample_manifest.json.stroke_fidelity。
+
+最终候选`art_demon_monkey_sample_20261116/demon_monkey_2x.png`为1024×845、20共享姿态、256×230注册画布；原78帧时间索引完整，compact_registered_atlas裁透明边并以margin恢复共同画布。1倍/2倍各78帧装箱解包RGBA全等；实际采样差异与审图见Validation。正式PNG UID `uid://duybemtonqsd7`、SpriteFrames `uid://dx8qlss6tc7ff`、AnimationLibrary `uid://denuc0ot4c0gs`和全部原文件本轮保持。旧五张分动作图不是本批替换目标，不勾完成。
+
+## 花果山猴兵已审2倍正式接入（2026-11-16）
+
+用户通过下节小样并要求最小接入。原Monster_v1/grounded注册来源、69帧与23姿态保持；正式huaguoshan_monkey_official_body.png逐字节采用已审monkey_2x.png（512×1018），原PNG `.import`/UID `uid://u5ac8itnrlqb`保持。原SpriteFrames UID `uid://dsjfyh1o0sr4w`、23子资源ID、69帧引用/顺序/duration/24fps/loop不变，只改region/margin像素。场景只改m_Body scale0.5、offset(-9,-2)，动画库只改6条offset值，其他轨道/方法/标记/几何不变。
+
+作者入口复用Tools/LegacyMigration/prepare_grounded_enemy_art.py的`--approved-density-sample`分支，输入已审sample_manifest，校验23共享姿态映射后写原4个资源并输出installation.json；原`--manifest`路线保持。旧PNG/导入、帧资源、库、场景与代码备份在`.godot/validation/art_monkey_install_20261116/before/`，旧5张分动作PNG不改。未新增高清目录、运行时素材副本或密度系统。
+
+真实调用链的AbstractActorEntity.SetFacing此前把AnimatedSprite2D身体scale重设±1，本轮只改为保留缩放幅度、切换横轴符号；原offset继续随scale镜像，判定容器仍±1。正式69帧解包与已审RGBA全等，138真实朝向检查/30张双端图及GGF攻击受击死亡回池验证见Validation；图像完成59/667、配套19/182。Android真机和其他角色/位图仍未完成。
+
+## 花果山猴兵原矢量2倍完整动作小样（2026-11-16，历史；已审接入见上节）
+
+原包Monster_v1恢复后SHA256仍`5bd88da4211870f2ca2354b7cec8d1790747869641c11fe553910b10fe2a264a`。沿既有export_official_ground_monsters.py产物`action_origin_review/ground_monsters_export/monster1_art.swf`（只移除源stick判定显示元件），与prepare_grounded_enemy_art.py已审注册结果`enemy_fidelity_20261030/grounded/manifest.json`重导，不直接覆盖正式导出器。五动作sprite89/92/101/108/109分别run16/hurt13/attack_1 24/death15/idle1，完整69帧24fps；实际递归依赖无位图或滤镜，具体ID和XML/SWF散列留sample_manifest.json。
+
+FFDec26.3在zoom1/2原生渲染，1倍69帧按当前共同89×72逻辑画布及offset(-4.5,-1)还原，与正式SpriteFrames每帧可见RGBA/alpha严格相同。2倍注册画布178×144，原动作父平移的逻辑floor规则及死亡逐帧落地修正保留；不按可见框重新居中。复用compact_registered_atlas装箱仍23个共享姿态、69帧序，2倍存储512×1018，无帧删减。
+
+候选及源记录在`.godot/validation/art_monkey_sample_20261116/`。当前正式PNG/.import/UID/SpriteFrames/动画库/场景不改；仅内存预览m_Body scale0.5与offset键按密度换算，实体根/碰撞/判定轨保持。候选出现栅格采样差而非字节全等，待用户审图；旧五张分动作PNG不是当前正式动画消费者，本轮保持，不能按一张候选勾全猴兵六图完成。
+
+## UI与伤害数字源类型复核（2026-11-16）
+
+同版OtherMat：当前hurtnum0～9、bnum0～9、pnum0～9以及miss分别直接对应30×30、42×42、30×30、55×24的DefineBitsLossless2Tag；本轮核对所有符号ID/原尺寸，未做数字RGBA逐字验证或高清替换。技能页头像382/386亦有377/379/383小位图依赖，不能推广“sprite就是矢量”；尚未把技能页头像等同HUD83×76的来源身份。
+
+同版Commonv3720散列`53722c6c8615d2542de2e3cc255a68c5d80712c6b8097aaecae6bc7be0a40ab2`：369底板是纯矢量；装备376、赠送367、出售381含Lossless2位图依赖。复用export_official_inventory_actions.py的IMAGES映射离线导出六PNG，与正式1倍RGBA六图全部一致，旧“菜单来源为矢量元件”不能用于五张按钮，已更正下文。新增9项来源限制（五按钮/四种当前数字）；菜单底板查源完成但尚未制作2倍。具体ID/尺寸/散列见本轮ui_source_audit.json，所有正式原图保持，不声称外部高精度源穷尽。
+
+## 三入口已审统一题签正式接入（2026-11-16）
+
+用户审查通过并要求按版接入。正式map_save_game{,_hover}.png、map_return_title.png、map_skills.png逐字节采用`.godot/validation/art_map_caption_uniform_20261116/`已审artwork输出，原路径及全部旧.import/UID保持；新增map_menu_caption_ink.png（276×72，导入UID `uid://fndbdvmnxm2n`），逐字节采用已审共用墨迹。来源仍为下节原497/500/489 alpha与原令牌题签带近黑像素，不采用EDSR恢复候选，不新增生成式内容。
+
+原PNG/导入/场景/测试/资源常量及文档备份位于`.godot/validation/art_map_caption_install_20261116/before/`。install_approved.py校验四源散列后接入，原SpriteFrames字节、四图题签遮罩外RGBA保持；三个Caption下各一原生TextureRect复用同纹理，138×36逻辑尺寸、相对位置(-19,-2.5)、中心x74与已审样稿一致。技能随原Caption显隐，业务脚本与绑定不改。既有Collection Res生成器登记新增1图，未手改生成文件。
+
+正式20张双端比例/状态图、12张已审对应像素全等与真实鼠标/GGF复用验证见Validation。本批仅完成题签结构/视觉统一；书本/卷轴/令牌细节及原墨迹alpha未恢复真实高精度，清单新增该图后58/667，未把题签接入算图形高清。
+
+## 三入口统一墨底/文字位置小样（2026-11-16，历史小样；已审接入见上节）
+
+修正用户指出的题签不一致：当前保存/技能源题签约137px宽、令牌112px，本轮仅离线分离旧底，统一使用一张由原墨迹合成的276×72 PNG，按138×36逻辑尺寸显示；不是新绘图案，也不计高清。原Font/20号字和描边保持，三个Label同100×31，根坐标中心x74，Label相对墨底偏移固定；保存中心y79、技能84保持，令牌局部中心95.5。按钮、书本/卷轴/令牌主体位置及原动画时序不动。
+
+来源仍为既有OtherMat bitmap497/500/489独立alpha和当前map_return_title112×114。保存两态及技能15个hover槽只清原题签alpha覆盖的像素；令牌只清旧题签带y80～111的近黑像素，彩色主体与下尖保留。四图遮罩外RGBA严格相同，before/、遮罩、来源散列与prepare_uniform.py留`.godot/validation/art_map_caption_uniform_20261116/`。共用墨底取上述原alpha对齐后的并集，无生成式补画；2倍alpha插值不冒称恢复了原图细节。
+
+preview_uniform.gd沿原场景内存挂同纹理的TextureRect在Caption下，MouseFilter.Ignore、show_behind_parent；技能随Caption只在hover显示。正式PNG/.import/UID、SpriteFrames/场景/C#不改。当前样稿及实际字形/源保护验证见Validation，待审图后再接入。
+
+## 底图与入口图标原图约束恢复小样（2026-11-16，未接入）
+
+输入为当前正式journey_map1408×590、已去字的map_save_game两态138×93、原map_return_title112×114，逐张散列与PNG副本留`.godot/validation/art_bitmap_consistency_20261116/`。原EDSR_x2.pb仍为`585623221baa070279a0d1e7e113a4c3faba0f318ca7fdd9a65d9afc0763d9b4`，未使用生成式重画；地图原推理输出仅在输入散列相同时复用。小样使用透明区最近可见RGB延展、原模型2倍恢复及12次原图残差回投影；alpha仅线性增密，PNG尺寸翻倍不代表新增真实源细节。复现脚本restore_sample.py和独立测量/原生预览在同目录，无正式工具或资源变化。
+
+更大位图补查：P:/Godot-Project共4331张图像路径，当前工程外3669张可读；按尺寸和感知哈希筛查未发现同内容高精度原件。结果larger_bitmap_source_search.json只作本地候选清单，不能推断外部无原稿。官方矢量补查：同版OtherMat RoleInfo.btn_back_menu244的241/242/243形状实际是“返回主菜单”字形，已原生2倍导出查看，不是红色令牌；没有借用该元件换图。
+
+输出地图2816×1180、保存两态276×186、令牌224×228，只作未审恢复候选。独立回采样与1080p/200%检查见Validation：改善有限、地图仍软，不能称真高清；正式来源/路径/UID与此前登记保持，图形高清状态不勾。
+
+## A2地图入口原生题签与位置修正接入（2026-11-16）
+
+用户已认可分层小样，随后要求令牌文字不要偏下。正式map_save_game{,_hover}.png及map_skills.png原路径接入已审去字版；书页/毛笔/卷轴保持，3PNG完整alpha和源字形遮罩外RGBA与before原图全等。map_return_title.png、map_skills_frames.tres和全部旧.import/UID原字节保持。新增保存/技能原生Label复用已有caption_font，令牌原生Label从(8.5,83)改(10.5,78)，即右2/上5，三个标题根坐标水平中心x77.5；保存(72,79)、技能(51.5,84)局部中心保持小样。原1/15/19帧24fps不改，技能只在hover显示文字。
+
+原图/场景/C#备份和核对在`.godot/validation/art_a2_map_menu_install_20261116/before/`，来源处理仍为上轮source_audit/layers/make_text_split.py，不以新的官方重导替换像素不同的保存普通图。Ge绑定从原生成器产生，原生场景与4处既有生命周期同步题签，没有新增运行时统一布局系统。
+
+**图形精度未提高：** 当前地图1408×590（旧中心940×590）、保存138×93、令牌112×114、卷轴59×33/58×37原位图保持；本批改善来自字体渲染，不把去字PNG称高清来源。用户指出全屏仍糊属实，窗口/4K输出不增加源细节。本地fla/psd/xcf/ai/svg/ora/kra/clip扫描只找到工程图标/主题SVG，未找到这些素材高精度原稿；扫描范围记录local_high_precision_source_search.json，不泛称外部已无来源。EDSR失败候选仍不采用；地图/图标图形高清继续未完成。
+
+## A2地图入口题签分层与来源限制（2026-11-16，小样待审）
+
+本批沿OtherMat_v9同散列和现有export_official_map_combo_ui.py查源，不修改正式导出器。用户明确要求保存按钮去烘焙文字、复用令牌原生Label，故分离题签属于本轮授权调整，不把字体变化冒称原位图完全保真。书本、毛笔、卷轴、墨框外围和原动画仍保护。
+
+| 资源 | 实际来源 | 本批处理/限制 |
+| --- | --- | --- |
+| map_skills.png | SelectPLace505.showBuySkill492；482静态、488展开、491光晕。bitmap479为59×33卷轴，484为58×37书页，489为137×28题签；483矢量morph做mask、486为边框。 | 混合来源，35帧按1/15/19和24fps保持；原图1倍重现RGBA全等。最终仅hover15帧删除原题签彩色字形，在按钮原位置放项目Label；位图图形仍未高清。 |
+| map_save_game.png | 旧Art/game_pic/level_choose/294.png；官方SimpleButton502 up/down为shape499，含bitmap498书本104×84与497题签137×28。 | 旧正式图与官方1倍重导并不全等（含书页/alpha差），所以保护当前原图，不直接换shape499。文字样稿从源497取得字形遮罩，只清字为墨色，保存位置/alpha保持。 |
+| map_save_game_hover.png | 官方SimpleButton502 over的shape501，复用498书本与500题签137×28。 | 1倍重现RGBA全等；按源500题签遮罩去字，字体复用令牌20号海报/金色/黑白描边。整张图仍受104×84书本源限制。 |
+| map_return_title.png | 旧Art/Game_2/Button/ButtonReturnMainMenu.png，112×114。 | 正式与旧源文件字节一致。已有独立“游戏设置”Label作为本批样式模板；令牌PNG不变，尚无已证实更高精度源。 |
+
+源题签字形遮罩从497/500的JPEG3独立alpha层及489的Lossless2 ARGB解码取得；最终仅覆盖其彩色字形及1像素邻域为原黑墨，整图alpha不变，遮罩外RGBA逐像素一致，不AI补画书本或环境。保存Label中心原图内(72,79)，技能hoverLabel中心按钮内(51.5,84)；源35帧、原轮廓/定位不变。原图片和场景保持，候选在`.godot/validation/art_a2_map_menu_20261116/text_split/`。
+
+另有原源2倍图和3张EDSR诊断，均未进入最终图形候选或正式资源。EDSR沿用登记的非GAN模型SHA256，保存普通/悬停可见RGB回采样MAE4.664/4.690，不能视为保真成功。最终样稿的提升来自Godot原生文字，书本/卷轴/令牌不因PNG更大而计高清完成。40张原生预览与3按钮点击/时序证据见Validation，清单4项来源受限继续未勾，完成量仍58/666。
+
+## A2已审光晕正式资源与分页（2026-11-16）
+
+用户已通过下节采样修正版画面。美术源仍为同散列OtherMat_v9及原shape454/461，沿既有coastal导出/作者链原路径接入：浅岸hover674×624、current3060×2264；东海hover1484×530、current与新增current_2各2832×2380。原normal透明图、hit_mask.res、全部已有.import/UID保留；原PNG/库/场景在`.godot/validation/art_a2_map_glow_install_20261116/before/`及Git历史，不设hd目录/后缀。
+
+| 当前动画 | 原2倍注册画布 | 共同透明裁切（输出像素） | 原生装箱与补偿 |
+| --- | --- | --- | --- |
+| 浅岸19帧 | 674×624 | [19,20,631,586]，每格612×566 | 5列×4行单页；CurrentHint scale0.5、offset(-12,-9)，原position(168.5,156)保持。 |
+| 东海19帧 | 1484×530 | [20,21,1436,497]，每格1416×476 | 两页各2列×5行，帧0～9/10～18；scale0.5、offset(-14,-6)，原position(371,132.5)保持。 |
+
+仅裁共同透明外围、无每帧居中；38帧还原到已审注册画布RGBA全等。脉动对称帧仍有颜色差，全部19帧保持，不能按alpha相同去重。原生库只为东海新增texture值轨（原0和10帧时刻），原frame键映射页内0～9/0～8；原时刻、24fps、长度、hover/RESET/其他轨不改。三张current理论RGBA8合计77.85MiB，较未裁切2倍减少15.47%，最大单边3060，仍不等于Android预算/性能通过。
+
+正式export_official_coastal_map.py新增显式--density/--only；密度2仅本批浅岸/东海已审源，采样补偿与下节相同。密度1默认全三地点9图仍与原RGBA全等。apply_official_coastal_map.gd读该manifest，用原生Sprite2D密度/offset和AnimationLibrary页轨写入，定向保留文本/UID；调用前校验已安装页SHA256，避免错把旧贴图配新网格。新页经现有Collection Res生成器登记，没有改框架、插件或另建加载系统。
+
+两处current纯矢量来源已完整接入；hover仅矢量光晕提升，137×28位图字图继续原精度，不计整图完成。采样残差为用户明确审查接受，未宣称像素全等；同一图集后续不得以光晕通过推断文字高清。正式预览、帧/输入/流程结果及T3进关阻断见Validation；本批图像文件计数58/666，来源受限34项仍明列。
+
+## A2地图光晕续研与采样修正版来源（2026-11-16，后获审查通过）
+
+用户要求继续本批。美术源仍为下节同散列OtherMat_v9；保留原SWF/原PNG，复用已核验coastal父矩阵/注册流程。最终试验入口为`.godot/validation/art_a2_map_glow_20261116/export_glow_fidelity_trial.py`，所有候选留忽略目录；正式export_official_coastal_map.py及游戏资源不改。
+
+核对安装版FFDec26.3字节码，并取同版本[Configuration.java](https://github.com/jindrapetrik/jpexs-decompiler/blob/version26.3.0/libsrc/ffdec_lib/src/com/jpexs/decompiler/flash/configuration/Configuration.java)、[Filtering.java](https://github.com/jindrapetrik/jpexs-decompiler/blob/version26.3.0/libsrc/ffdec_lib/src/com/jpexs/decompiler/flash/types/filters/Filtering.java)、[GLOWFILTER.java](https://github.com/jindrapetrik/jpexs-decompiler/blob/version26.3.0/libsrc/ffdec_lib/src/com/jpexs/decompiler/flash/types/filters/GLOWFILTER.java)和DROPSHADOWFILTER.java留档，URL/SHA256见本轮`references/provenance.json`。没有以master源码代替安装版作结论。Glow已有zoom倍乘；boxBlurPixelsLimit=1000的模糊预算才是厚光晕被压窄的主因，单纯再乘源半径不能修复。
+
+最终小样将离线模糊预算按密度四次方提高（1倍1000、2倍16000），并保留原1倍整数核宽及中心相位。临时2倍XML把相关40条Glow记录转换为相同底层dropShadow调用，核宽用原1倍round(blur)、中心补偿±0.25逻辑px，颜色、强度、passes、knockout和合成标记逐项保持。原Glow在FFDec内部本就委托零距离dropShadow；这里只表达密度变化的取样补偿。原源未改，所有非滤镜取样字段及完整轮廓/矩阵/时序经语义树核对一致，未调色、锐化、AI重画或插值旧PNG作为高清。最终只用已安装原CLI，不依赖研究期隔离Java滤镜原型。
+
+原密度6/6图RGBA严格重现；2倍悬停alpha总量为原1.00248/1.00120，当前19帧范围浅岸1.00211～1.05242、东海1.00327～1.02353，质心差最大0.697/0.774逻辑px。仍有小半径knockout/抗锯齿采样差，尚未像素全等或获审图认可。悬停的137×28位图字图仍原精度，两处current才是纯矢量光晕来源；全图高清状态和其他23张位图来源结论不因此改变。保留旧失败样本作根因对照，最新同尺寸/双端/动图和命令见Validation；四张可见图均未正式替换，完成量仍55/665。
+
+## A2地图地点来源核实与原源2倍失败小样（2026-11-15，历史）
+
+源为已登记OtherMat_v9，恢复后SHA256=`fa7681aad99fb06f50228530b7f70f6334a1d7052a7bb6ef2ce3c3d81867fd5e`。从SelectPLace505的s1_1～s4_1实际placement查wrapper的三状态身份，不按邻近数字猜源；完整30图依赖审计在`.godot/validation/art_a2_map_locations_20261115/source_audit.json`，既有XML与本轮新导出的source.xml逐tag一致。普通地点的current是19帧24fps位图加原GLOWFILTER，鲨之涡流48帧是位图旋转；均不能因外层是sprite/shape或动画而计纯矢量。
+
+| 地点/字段 | wrapper与normal/hover/current | 嵌入原精度与结论 |
+| --- | --- | --- |
+| 花果山s1_1 | 396 → 392/394/395 | bitmap390为68×78、393为160×174；current复用390加光晕。三图位图受限。 |
+| 水帘洞s1_2 | 403 → 399/401/402 | bitmap397为60×58、400为177×138；current复用397。三图位图受限。 |
+| 桃花源s1_3 | 410 → 406/408/409 | bitmap404为64×65、407为162×163；current复用404。三图位图受限。 |
+| 蝙蝠窟s2_1 | 417 → 413/415/416 | bitmap411为57×30、414为150×95；current复用411。三图位图受限。 |
+| 七星洞s2_2 | 431 → 427/429/430 | bitmap425为86×64、428为153×108；current复用425。三图位图受限。 |
+| 迦楼罗s2_3 | 424 → 420/422/423 | bitmap418为125×52、421为222×119；current复用418。三图位图受限。 |
+| 浅岸s3_1 | 460 → 453/458/459 | normal显示图全透明、输入为shape453；hover矢量shape454轮廓加bitmap456的137×28字图，current为shape454+原滤镜19帧。矢量线可重栅格，但本轮滤镜保真未通过。 |
+| 东海s3_2 | 468 → 453/465/467 | normal全透明、输入shape453；hover矢量shape461+bitmap463的137×28字图，current经466播放原shape461/滤镜19帧。限制同上。 |
+| 鲨之涡流s3_3 | 478 → 453/474/477 | normal全透明；hover依赖472(215×208)、471(137×28)、470(124×88)、469(110×76)，current48帧复用472。两张可见图位图受限。 |
+| 牛魔谷s4_1 | 445 → 441/443/444 | bitmap439为57×56、442为152×101；current复用439。三图位图受限。 |
+
+本批可见图共27项：23位图、2混合、2矢量滤镜动画。没有找到登记同版包中的同内容更高精度位图，未AI重画或增强；3张透明normal保持输入状态，不算新增高清。源XML tag审计与SWF散列冻结，不将模型产物/放大图片当官方源。
+
+浅岸/东海试制复用原export_official_coastal_map.py的同源共同注册流程，在忽略目录给试验副本增加density2和选图参数。原源1倍6图与正式PNG尺寸/解码RGBA完全一致；2倍保留原父矩阵、原逻辑裁切offset、19帧顺序/24fps，hit图仍原逻辑密度且字节像素一致。输出current分别3370×2496、7420×2120，RGBA8无mipmap理论32.09/60.01MiB；Android最大纹理/驻留未验，不能直接作为正式运行图。
+
+**保真未通过，不采用：** FFDec `-zoom 2`没有保留原逻辑光晕；离线把滤镜blurX/blurY/distance按密度补偿后仍显著变细/变透明。hover回采样alpha总量浅岸约0.5383、东海约0.4041；current19帧范围分别0.6262～1.9654、0.4627～1.9179，不能按PNG尺寸称高清。实际滤镜轮廓/透明度变化不属于允许的抗锯齿差异。两版诊断保留；试验修改已归档`export_official_coastal_map_density_trial.py`，正式导出器恢复开工原字节，正式素材/场景/动画不改。命令与18张原生预览、38帧及失败对照见Validation。
+
+## A1c已审地图接入与高清恢复限制（2026-11-15，当前）
+
+用户已批准下节外围样稿并要求继续。现正式`Sprites/UI/frontend/journey_map.png`原路径接入1408×590共享原密度扩图，SHA256=`40995cde090ae8dba497f43d4bbe626fd93b642228d212c0317e040345c85fba`；原`.import`/UID保留，原PNG归档于`.godot/validation/art_a1c_map_install_20261115/before/`及Git。原import_frontend_assets.py新增`--approved-map`入口，校验尺寸和中央940×590与只读旧183.png的RGBA字节一致后复制；错误尺寸/中心改变会拒绝替换。仍只一张正式背景，不复制PC/Android版本。
+
+背景逻辑位置(-234,0)、尺寸1408×590，中心554600像素RGBA差0，地点与原Frame940×590保持。技能/保存/设置只迁到既有全屏根的左锚点，局部位置/大小/动画保留。最新显示边界见CrossPlatformPlan §2.12.21：同平台全流程固定Project Settings、KeepHeight，DisplaySystem只换算构图，不再临时切换战斗显示；关卡宽屏仍单列T3验收，本轮不修改玩法。1920×1080窗口及3840×2160菜单全屏通过；来源/纹理字节不改，执行命令和完整保护结果见Validation。
+
+**1408×590是覆盖画布，不是高清结论。** 原中心仍来自940×590 JPEG388，未找到更高精度同内容原件。另在忽略目录`.godot/validation/art_a1c_map_hd_20261115/`试制非生成式EDSR x2恢复：输入为上述正式共享图，输出2816×1180；OpenCV DNN CPU4线程，推理231.43s，不使用扩散/GAN/文字生成或改画。模型来自[Saafke/EDSR_Tensorflow EDSR_x2.pb](https://raw.githubusercontent.com/Saafke/EDSR_Tensorflow/master/models/EDSR_x2.pb)，38,490,162字节，SHA256=`585623221baa070279a0d1e7e113a4c3faba0f318ca7fdd9a65d9afc0763d9b4`；上游commit查询HTTP403，故只按实际二进制散列冻结，不伪报版本。
+
+离线产物包含原图、普通Bicubic2倍基准、EDSR RGB及亮度/原色度诊断，`sample_restoration.py`/`model_source.json`/`restoration_measurements.json`记录过程。RGB候选比额外色度转换方案的回采样颜色误差更小，选作对照；核心回采样RGB MAE0.2794/255、SSIM约0.9974～0.9980、估计平移小于0.007原像素。这些指标只检验偏离，不能证明新增细节真实；1080p森林/岩石仍软，清晰度收益有限，**暂不采用、未替换正式图、不计地图高清**。原生9张同逻辑输出、裁片和全部候选留给本批审查，后续不推广此方法。
+
+## A1c地图外围扩图小样（2026-11-15，历史制作记录；外围已审）
+
+扩图接入前`Sprites/UI/frontend/journey_map.png`与旧`Art/game_pic/183.png`字节相同，SHA256=`e35f886d3f040a7dd6cab3237e1251d74c15ef4f54c5aaa2b746a43e073ab15c`。本轮查明官方上游为OtherMat_v9（恢复SHA256 `fa7681aa…7fd5e`）SelectPLace505在depth1以零平移放shape389；shape389边界18800×11800 TWIPS、bitmapMatrix scale20，直接引用940×590 JPEG388，是原生位图。提取JPEG SHA256=`25ee85ff173f6be01f70b7a48bb0194d35169f6435e643689c92ce8905219e35`，与源XML imageData字节相同；JPEG解码与扩图前PNG最大RGBA差[1,1,1,0]，中心继续冻结该PNG，不替换为重新提取的JPEG。
+
+**复用原ECPA，而非另建接口：** 用户此前已授权并成功两次，本轮明确重申。现场核对原cpa-gui provider `http://127.0.0.1:8317/v1`、现有进程及gpt-image-2模型，使用既有`imagegen/scripts/image_gen.py edit` CLI和本机已有凭据。凭据只注入子进程环境，未写工程/日志、未变更用户配置。入口与实际参数见Validation、离线`generation_route.json`。此前“缺内置工具需另配API”的判断漏查ECPA，现已纠正；已有授权继续适用。
+
+输入是1408×592透明外围画布，原图置(234,1)，中央940宽和1px上下注册垫行保护；左右234px生成。模型`gpt-image-2`、quality high，请求2816×1184，22.4s完成、退出0，**实际返回1934×813，未达到2倍**。这份原始生成结果只作外围来源，中央生成内容全部丢弃。归一化到1408×592并裁上下垫行后，只保留新外围；源中心940×590在(234,0)逐字节贴回。最终`journey_map_expanded_native.png`为1408×590原密度候选，554600原核心像素RGBA差0。没有通过插值、锐化或AI重画原中心来报高清。
+
+直接贴回中心的首版有色阶接缝；试用既有OpenCV融合仍未消除。最终在生成的两侧内做固定原边列颜色的平滑颜色过渡（cross-neighbor relaxation1600次），外边保持生成色，原中心最后完整贴回。过渡只修改新增外围，不新增岛屿、路线、入口/发光、文字、建筑或地标，不做镜像/重复原画填边。`compose_candidate.py`和`candidate_composition.json`保存准确过程；100%/200%接缝图和原生场景图供审查，不把边列RGB连续这一数值当作视觉审查替代。
+
+输出统一留在`.godot/validation/art_a1c_map_20261115/`：原生成图`output/imagegen/journey_map_ecpa_raw_01.png`；原密度候选`journey_map_expanded_native.png`；提示词`outpaint_prompt.txt`；12张Windows1920×1080和Android1920/2280/2340/2400/2520×1080原图/候选预览；`seams_100percent.png`、`seams_200percent.png`和`map_review_comparison.png`。六种比例共用同一母版按外围裁切，不重新排地图地点。Frame16个直属节点原数据已记录，原生14个Control的位置/尺寸/缩放保持；正式场景/资源引用不改。
+
+理论单张RGBA8无mipmap成本约3.17MiB（原图约2.12MiB，新增约1.05MiB），不是实际GPU/Android验收。当前只交付原密度外围扩图：未交付真正2倍高清母版，原中心和地图字图/地点清晰度仍待相应素材批处理。正式原图/.import/UID、共享布局配置和全局keep保持；本批停在样稿审查，不将候选加入665正式图像总数或勾成地图高清完成。
+
+
+## A2选角审定分层正式接入（2026-11-15）
+
+上一节加宽/独立字体/漏色修正样稿已获用户认可，本批接入原CharacterForm。源仍OtherMat_v9恢复SHA256 `fa7681aad99fb06f50228530b7f70f6334a1d7052a7bb6ef2ce3c3d81867fd5e`，所有人物/墨框均从原SVG以Godot栅格器3倍重导；无AI重画、无旧PNG插值。下方“未接入”内容为历史样稿记录，正式状态以本节为准。
+
+| 正式文件 | 原源与显示契约 |
+| --- | --- |
+| `character_{wukong,sanzang,bajie,wujing}_card.png`（4图，原路径/UID） | sprite511/521/515/518，shape509/520/514/517；1271×1830人物/剪影/问号层。420×590逻辑母版，原235×590核心不横向拉伸；原姓名区域透明，使用独立项目字体。 |
+| `character_card_ink.png` | shape510的悟空/沙僧原变换结果逐字节相同，711×1830一图共用；保留原框边角/厚度，中段NinePatch延展。 |
+| `character_sanzang_ink.png`、`character_bajie_ink.png` | 同shape510在两张卡中原平移不同，分别711×1830；保留差异，不强行共图。 |
+| `character_card_background.jpg` | 原bitmap508的940×590 JPEG原字节提取；未增加真实细节。Polygon2D使用各卡原shape506四点遮罩，只平移右边界，源像素UV不变，框外黑底。 |
+
+3张墨框和1张原生背景为本批新增正式图像，已入ArtProgress；四人物原`.import`字节/UID保持，新4图由Godot生成`.import`。原完整卡留Git和`.godot/validation/art_a2_character_install_20261115/before/`，正式场景去掉原AtlasTexture，不保留平行完整卡加载路线。工具`export_official_character_cards.py`默认`--mode layers --density 3`，需`--godot`；历史`--mode complete`必须显式隔离输出目录，防止覆盖正式人物层。来源/遮罩/姓名锚点输出到离线`layer_sources.json`。
+
+8份人物/墨框层对照与认可PNG的RGBA相同（共用墨框比较两次），JPEG字节相同；沿用样稿4,079,328保护像素RGBA差0证据。PNG RGBA8无mipmap理论成本：人物35.49MiB、共享/变体墨框14.89MiB、背景按RGBA8保守2.12MiB，共52.50MiB；不含字体/视口/驱动成本，实际格式/运行峰值以设备测量为准。未视为Android压缩、峰值或性能验收。正式导入均无mipmap、无size_limit、无有损重压缩。
+
+原生正式C#场景独立画布与真实流程截图分别记录Validation。keep尚未启用整屏适配，地图外围未制作；原生背景精度仍受限，四卡整幅高清目标仍部分完成。
+
+## A2选角加宽/独立项目字体样稿（2026-11-15，电脑16:9、手机20:9，未接入）
+
+本批按用户最新方法制作分层候选，正式四张PNG和场景仍保留下一节2倍接入状态；没有新增正式并行hd资源。源仍同版OtherMat_v9，恢复散列`fa7681aad99fb06f50228530b7f70f6334a1d7052a7bb6ef2ce3c3d81867fd5e`。复用FFDec26.3导出sprite511/521/515/518的SVG，沿用Godot原生SVG栅格链；源文件与中间文件位于`.godot/validation/art_a2_character_layout_20261115/`。
+
+- 角色/剪影/问号：原shape509/520/514/517；保持所有绘制路径、颜色、渐变和父矩阵，去除独立背景bitmap508及姓名bitmap507/519/513/516的绘制字段。原有姓名区域内可能共用路径的旧字形由区域裁切整体排除，角色核心在此前的官方遮罩内逐像素对照；原阴影保留。扩大源画布提供同元件原有外围武器，候选根据卡面裁切，未AI生成新武器。
+- 核心原viewBox为各卡`crop_x,0,237,610`；绘制时核心仍235×590。分层母版扩至420逻辑宽以容纳外围，3倍PNG为1271×1830；绘制路径不横向拉长。背景直接复用原生bitmap508（940×590 JPEG）的更多区域，不据更大运行画布宣称背景高清。
+- 墨框来自原shape510，栅格711×1830；NinePatch保留原边角与边线厚度，仅延展中段。角色和墨框分开处理，不把整张卡机械横向拉伸。
+- 背景遮罩来自原shape506，源四点为`(-117.5,-349),(-117.5,242.65),(116.85,242.65),(115.5,-349)`；经各卡原父矩阵与裁切原点换算到235×590参考。拓宽时只将右侧两点平移新增卡宽，左边/上下边保持，原生Polygon2D按原背景像素UV绘制，框外为黑底。首次分层样稿缺了这层约束，导致顶部/接缝漏红，用户审图指出后已修正；不修改bitmap508配色来遮盖。
+- 姓名按用户明确要求改用项目`TheGame/MainPack/Fonts/game_font.tres`原生Label（该资源仍引用原fz_cu_yuan_hud/fz_cu_yuan字体）；36逻辑字号、黑字白描边为候选。原bitmap字段矩阵换算成卡内归一化横向中心和原Y/高度，文字独立绘制且scale=1，不受图片宽高比调整影响。源PNG原件未抹字覆盖，旧字仍在离线原件/正式上一批状态中。
+
+电脑16:9与手机20:9分别设计、四卡紧贴，其他手机比例沿用20:9构图有限留边/裁外围。当前12张原生对照、姓名锚点、核心RGBA差0与参数见Validation；没有正式接入、正式宽屏或Android真机完成结论。既有导出器仅新增`--density 3`，1倍复现仍精确一致。旧逐比例扩卡、上下黑框和官方姓名位图下框候选均已被本方法替代。
+
+## A2四张选角卡原路径重导（2026-11-15，矢量部分已接入，位图部分受限）
+
+复用`export_official_character_cards.py`和同版OtherMat_v9，下载/恢复散列仍为OfficialReference所列`ef03008e…15c9` / `fa7681aa…7fd5e`。四张原密度重导与接入前PNG的RGBA全部一致。工具新增`--density 1/2`与隔离`--output-directory`，保留完整元件、源矩阵、裁切遮罩、颜色、层序和源位图。正式PNG直接替换原路径，原UID/.import不变，原版归档在`.godot/validation/art_a2_character_cards_20261115/before/`及Git；没有hd平行资源。
+
+| 正式PNG | 原元件 / 矢量主体 | 原生位图依赖 | 原尺寸 → 当前尺寸 |
+| --- | --- | --- | --- |
+| `character_wukong_card.png` | sprite511 / shape509，人物与装备 | 姓名bitmap507：162×65；背景bitmap508：940×590 | 334×610 → 668×1220 |
+| `character_sanzang_card.png` | sprite521 / shape520，人物与装备 | 姓名bitmap519：100×65；背景bitmap508 | 317×617 → 634×1234 |
+| `character_bajie_card.png` | sprite515 / shape514，剪影与问号 | 姓名bitmap513：139×65；背景bitmap508 | 357×617 → 714×1234 |
+| `character_wujing_card.png` | sprite518 / shape517，剪影与问号 | 姓名bitmap516：100×65；背景bitmap508 | 351×617 → 702×1234 |
+
+每卡均含shape506原遮罩、shape510笔刷覆盖层，共15个去重依赖：4个单帧sprite、6个shape、5个位图。姓名为DefineBitsLossless2透明位图，背景为DefineBitsJPEG2；不因外层为shape就判作纯矢量。历史“完整原始矢量卡”的描述在下方同步纠正。**当前仅矢量部分获得真实密度提升，位图仍使用原嵌入数据，不将整卡计为高清完成；同内容更高精度姓名/背景待解决。**
+
+FFDec26.3原生`-zoom 2`输出悟空668×1219、唐僧633×1234，源边界逐密度取整；只在下边/右边各补1px透明画布，内容不缩放、不偏移，其余两张原生尺寸即双倍。原场景只把AtlasTexture区域倍增；四栏仍235×590、原shader和交互脚本字节保持。1080p固定输出对照、原生灰度/悬停/双人重选等结果见Validation；本批停止交审。
+
+## A2英雄与背包原路径高清替换（2026-11-14，2026-11-15已获用户授权继续下一批）
 
 本批52张正式PNG按用户最新要求直接替换原路径，原`.import`及UID保持，不保留hd目录/后缀。旧PNG在Git历史及`.godot/validation/art_a2_heroes_20261114/original_pngs/`冻结；同目录`before/`保存接入前资源/动画/场景，`replacement_sources.json`列出52项原/新散列、来源和尺寸。后文A1a及旧200px物理格记录属于对应历史版本；当前逻辑格200、像素格400、六列，运行时密度2。
 
@@ -366,16 +610,16 @@ BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7ce
 
 `Audios/UI/menu_confirm.wav` 是迁入脚本生成的原创 0.12 秒双正弦衰减音，44100 Hz 单声道 PCM16；没有旧文件来源。Music 资源导入开启循环，由 GGF Music 组管理。
 
-官方选角卡片来自 OtherMat_v9 原始矢量，直接渲染而非截图或 AI 重绘：
+官方选角卡片来自OtherMat_v9的矢量与内嵌位图组合，直接渲染；人物、剪影、问号和笔刷为矢量，姓名与背景是位图，详见本页2026-11-15来源纠正记录：
 
-| 目标 PNG（Sprites/UI/frontend） | 官方矢量编号 | AtlasTexture 区域 |
+| 目标 PNG（Sprites/UI/frontend） | 官方元件编号 | 原1倍 → 当前2倍AtlasTexture区域 |
 | --- | --- | --- |
-| `character_wukong_card.png` | DefineSprite 511 | (9, 0, 237, 610) |
-| `character_sanzang_card.png` | DefineSprite 521 | (21, 0, 237, 610) |
-| `character_bajie_card.png` | DefineSprite 515 | (15, 0, 237, 610) |
-| `character_wujing_card.png` | DefineSprite 518 | (22, 0, 237, 610) |
+| `character_wukong_card.png` | DefineSprite 511 | (9, 0, 237, 610) → (18, 0, 474, 1220) |
+| `character_sanzang_card.png` | DefineSprite 521 | (21, 0, 237, 610) → (42, 0, 474, 1220) |
+| `character_bajie_card.png` | DefineSprite 515 | (15, 0, 237, 610) → (30, 0, 474, 1220) |
+| `character_wujing_card.png` | DefineSprite 518 | (22, 0, 237, 610) → (44, 0, 474, 1220) |
 
-复现：`python Tools/LegacyMigration/export_official_character_cards.py --java <java.exe> --ffdec <ffdec.jar> --swf <OtherMat_v9.swf>`。贴图自带姓名、笔刷、剪影和问号；AtlasTexture 只排除透明侧边。
+复现入口仍为`Tools/LegacyMigration/export_official_character_cards.py`，当前正式密度2、早期密度1；使用隔离输出制作基线，实际命令见Validation本批记录。贴图自带姓名、笔刷、剪影和问号；AtlasTexture只排除原透明侧边。
 
 ## 大猩猩、出口与血条
 
@@ -544,7 +788,7 @@ BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7ce
 | `inventory_action_gift.png` | 同包 sprite 367，第 1 帧 | 双人赠送可用 |
 | `inventory_action_sell.png` | 同包 sprite 381，第 1 帧 | 出售按钮 |
 
-恢复数字由 `Tools/LegacyMigration/gen_damage_numbers.gd` 拼接，与伤害数字、闪避共用 `Entitys/Effects/floating_text.tscn` 和 `FloatingTextNode`，表现规则见 OfficialReference。菜单由 `Tools/LegacyMigration/export_official_inventory_actions.py` 核对官方包散列后导出；来源为矢量元件，未截图或重绘。提示框按官方 `AttributeCon.as` 的字体、间距、颜色和装饰重建为原生 Godot 控件。
+恢复数字由 `Tools/LegacyMigration/gen_damage_numbers.gd` 拼接，与伤害数字、闪避共用 `Entitys/Effects/floating_text.tscn` 和 `FloatingTextNode`，表现规则见 OfficialReference。菜单由 `Tools/LegacyMigration/export_official_inventory_actions.py` 核对官方包散列后导出；2026-11-16复核确认仅369底板为纯矢量，五张操作按钮为sprite内位图组合，不能因SWF来源计矢量高清；均未截图或重绘。提示框按官方 `AttributeCon.as` 的字体、间距、颜色和装饰重建为原生 Godot 控件。
 
 数字排布参考旧 `Script/Hittext/DamageText.gd` 的 HBox 组合和造一 `my/ANumber.as` 的固定步长，再按用户要求改为比例字宽。图集仍为等宽十格存储；显示时仅去除各数字横向的全透明列，包含所有非透明描边，保留完整高度及纵向注册位置。后续美术应保持各数字同一基线、风格和格高，无需把“1”等窄字符拉宽；不得以图集格宽代替字符可见宽度。场景 `floating_text.tscn` 的 `m_DigitGap` 控制可见轮廓之间的间隙，默认 0px；`m_NarrowGlyphPadding` 默认 1/6，按当前字符与同样式最宽字符的宽度差给窄字补侧留白，适用于全部 0–9，而非特判 1/8。既有 PNG 未修改。
 

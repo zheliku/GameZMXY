@@ -75,14 +75,6 @@ public partial class InventoryCharacterPanel : Control, IController
     }
 
     /// <summary>
-    /// 战斗暂停时由窗口驱动真实时间预览。
-    /// </summary>
-    public void AdvancePreview()
-    {
-        _preview.Advance();
-    }
-
-    /// <summary>
     /// 从同一组状态刷新个人资料与预览，不拥有或修改状态。
     /// </summary>
     /// <param name="hero">当前存活的出战角色。</param>

@@ -4,7 +4,7 @@ using Godot;
 namespace GameLogic.UI.Widgets;
 
 /// <summary>
-/// 独立于战斗实体的官方背包预览，使用专用身体、武器图集与外置表现动画。
+/// 独立于战斗实体的背包预览，使用专用身体、武器图集与外置完整待机动画。
 /// </summary>
 public partial class HeroPreviewNode : Node2D
 {
@@ -41,12 +41,25 @@ public partial class HeroPreviewNode : Node2D
     }
 
     /// <summary>
-    /// 由窗口驱动一次真实时间采样，暂停战斗时预览仍可播放。
+    /// 初始化真实时间采样，独立运行预览场景也使用相同的播放路径。
     /// </summary>
-    public void Advance()
+    public override void _Ready()
+    {
+        _lastTick = Time.GetTicksUsec();
+    }
+
+    /// <summary>
+    /// 由预览自身推进原生播放器；战斗暂停时仍按真实时间播放。
+    /// </summary>
+    /// <param name="delta">引擎缩放后的秒数；本预览使用真实时间。</param>
+    public override void _Process(double delta)
     {
         ulong now = Time.GetTicksUsec();
-        _player.Advance((now - _lastTick) / 1_000_000d);
+        double elapsed = (now - _lastTick) / 1_000_000d;
         _lastTick = now;
+        if (IsVisibleInTree())
+        {
+            _player.Advance(elapsed);
+        }
     }
 }

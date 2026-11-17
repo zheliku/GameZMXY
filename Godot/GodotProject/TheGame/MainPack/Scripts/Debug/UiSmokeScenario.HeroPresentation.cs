@@ -53,15 +53,46 @@ public sealed partial class UiSmokeScenario
         Node2D preview = inventory.GetNode<Node2D>("Window/CharacterPanel/m_Preview");
         AnimationPlayer player = preview.GetNode<AnimationPlayer>("AnimationPlayer");
         Sprite2D previewBody = preview.GetNode<Sprite2D>("Body");
-        int previewFrames = hero.HeroId == 1 ? 62 : 1;
+        int previewFrames = hero.HeroId == 1 ? 100 : 91;
+        int previewPoses = hero.HeroId == 1 ? 13 : 10;
         Animation previewIdle = player.GetAnimation("idle");
         Check(previewIdle.TrackGetKeyCount(0) == previewFrames &&
             previewBody.Texture.ResourcePath.Contains("/preview/"),
-            "背包没有使用官方专用待机，仍混入战斗立棍或低头动作");
+            "背包没有使用当前完整待机预览图集与时间轴");
+        var naturalFrames = new HashSet<int>();
+        var naturalAuraFrames = new HashSet<int>();
+        Sprite2D aura = preview.GetNode<Sprite2D>("Aura");
+        ulong sampleDuration = (ulong)(previewIdle.Length * 1000) + 150;
+        ulong sampleStart = Time.GetTicksMsec();
+        while (Time.GetTicksMsec() - sampleStart < sampleDuration)
+        {
+            naturalFrames.Add(previewBody.Frame);
+            naturalAuraFrames.Add(aura.Frame);
+            await WaitFramesAsync(1);
+        }
+        Check(naturalFrames.Count == previewPoses && naturalAuraFrames.Count == 6,
+            $"预览时间前进但实际姿态未播放：身体{naturalFrames.Count}，金光{naturalAuraFrames.Count}");
+        GD.Print($"SMOKE-PREVIEW-VISIBLE-MOTION PASS: hero={hero.HeroId}, body={naturalFrames.Count}, aura={naturalAuraFrames.Count}, paused={GF.Base.IsGamePaused}.");
+        // GGF暂停被覆盖窗口的更新时，仍可见的预览继续按自身真实时间播放。
+        naturalFrames.Clear();
+        naturalAuraFrames.Clear();
+        bool oldGroupPause = inventory.UIGroup.Pause;
+        inventory.UIGroup.Pause = true;
+        sampleStart = Time.GetTicksMsec();
+        while (Time.GetTicksMsec() - sampleStart < sampleDuration)
+        {
+            naturalFrames.Add(previewBody.Frame);
+            naturalAuraFrames.Add(aura.Frame);
+            await WaitFramesAsync(1);
+        }
+        inventory.UIGroup.Pause = oldGroupPause;
+        Check(naturalFrames.Count == previewPoses && naturalAuraFrames.Count == 6,
+            "窗口更新暂停后背包预览静止");
+        GD.Print($"SMOKE-PREVIEW-COVERED-MOTION PASS: hero={hero.HeroId}, body={naturalFrames.Count}, aura={naturalAuraFrames.Count}.");
         double before = player.CurrentAnimationPosition;
         await WaitUntilAsync(() => player.CurrentAnimationPosition < before, "官方背包待机没有自然循环", 6000);
-        GD.Print($"SMOKE-PREVIEW-NATIVE PASS: hero={hero.HeroId}, official backpack {previewFrames} frames, no combat idle poses.");
-        // 预览由GGF OnUpdate驱动；停Node._Process不会冻结它，直接冻结原生播放器速度。
+        GD.Print($"SMOKE-PREVIEW-NATIVE PASS: hero={hero.HeroId}, complete idle {previewFrames} frames, {previewPoses} body poses, independent preview atlases.");
+        // 预览由自身真实时间驱动；截图时直接冻结原生播放器速度。
         player.SpeedScale = 0;
         player.Play("idle");
         foreach (double time in new[] { 0d, .5, 2.7, 3.0, 3.6 })

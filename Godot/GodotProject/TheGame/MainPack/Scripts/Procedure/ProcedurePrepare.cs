@@ -4,6 +4,7 @@ using GameFramework.Procedure;
 using GameLogic.Architecture;
 using GameLogic.Battle.Damage;
 using GameLogic.Config;
+using GameLogic.Display;
 using GameLogic.Drops;
 using GameLogic.Enemies.AI;
 using GameLogic.Input;
@@ -70,6 +71,7 @@ public sealed class ProcedurePrepare : ProcedureBase
             procedureOwner.RegisterUtility(new ExperienceCurveUtility(procedureOwner.GetModel<ConfigurationModel>().Tables.TbHeroLevelConfig.DataList));
             procedureOwner.RegisterModel(new SaveModel());
             procedureOwner.RegisterSystem(new ConfigurationSystem(architecture));
+            procedureOwner.RegisterSystem(new DisplaySystem(architecture));
             procedureOwner.RegisterSystem(new CombatSystem(architecture));
             procedureOwner.RegisterSystem(new InputSystem(architecture));
             procedureOwner.RegisterSystem(new EnemyAiSystem(architecture));

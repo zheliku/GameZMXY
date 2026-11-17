@@ -216,6 +216,9 @@ public sealed partial class UiSmokeScenario
             hero.GetNode<Sprite2D>("m_Body").Texture == earthFiendTexture && body.Texture == GD.Load<Texture2D>("res://TheGame/Sprites/Characters/Heroes/wukong/preview/wukong_preview_body_earth_fiend.png"),
             "地煞猿甲未同步替换战斗和预览的完整动作图集");
         CheckHeroAnimationLayers(hero);
+        initialFrame = body.Frame;
+        await WaitUntilAsync(() => body.Frame != initialFrame, "换装后背包预览停止播放");
+        GD.Print("SMOKE-PREVIEW-EQUIPPED-MOTION PASS: native inventory equip, paused body animation continues.");
         await CaptureCombatAsync("inventory_earth_fiend_armor");
         ClickBagEquipment(form, flow, EquipmentId.CommonPilgrimClothes);
         Check(weaponBackground.GetShaderParameter("occupied").AsBool() && armorBackground.GetShaderParameter("occupied").AsBool(),
@@ -411,6 +414,9 @@ public sealed partial class UiSmokeScenario
         Check(form.GetNode<Label>("Window/BagPanel/Footer/Soul/m_Soul").Text == closedValue, "关闭后背包仍订阅钱包");
         battleForm.GetNode<TextureButton>("LeftAnchor/MenuPanel/m_InventoryButton").EmitSignal(BaseButton.SignalName.Pressed);
         await WaitUntilAsync(() => form.Visible, "背包未复用原窗口");
+        initialFrame = body.Frame;
+        await WaitUntilAsync(() => body.Frame != initialFrame, "重开后背包预览停止播放");
+        GD.Print("SMOKE-PREVIEW-REOPENED-MOTION PASS: pooled inventory reopened, paused body animation continues.");
         Check(!weaponBackground.GetShaderParameter("occupied").AsBool() && !armorBackground.GetShaderParameter("occupied").AsBool(),
             "背包复用残留穿戴背景状态");
         Check(form.GetNode<Label>("Window/BagPanel/Footer/Soul/m_Soul").Text == originalSoul.ToString(), "重新打开未拉取当前钱包");
@@ -770,8 +776,8 @@ public sealed partial class UiSmokeScenario
                     int height = image.GetHeight() / body.Vframes;
                     Rect2I frame = new(body.Frame % body.Hframes * width, body.Frame / body.Hframes * height, width, height);
                     using Image crop = image.GetRegion(frame);
-                    // 紧凑装箱把共用透明格放在0；技能表现接管时仍保留原生空帧。
-                    bool effectOnly = hero is WukongEntity && body.Frame == 0 &&
+                    // 首格恢复原待机后，共用透明格在85；技能接管时保留原生空帧。
+                    bool effectOnly = hero is WukongEntity && body.Frame == 85 &&
                         name is "skills/blazing_flash" or "skills/fire_demon_slash";
                     Check(crop.IsInvisible() == effectOnly, $"动作 {name} 身体帧 {body.Frame} 透明性不符");
                 }

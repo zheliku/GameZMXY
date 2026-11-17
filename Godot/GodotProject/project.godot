@@ -32,6 +32,7 @@ window/size/viewport_height=590
 window/size/window_width_override=1920
 window/size/window_height_override=1080
 window/stretch/mode="canvas_items"
+window/stretch/aspect="keep_height"
 
 [dotnet]
 
@@ -49,6 +50,11 @@ folder_colors={
 "res://TheGame/GameScripts/GameProto/": "gray",
 "res://TheGame/MainPack/": "blue"
 }
+
+[game]
+
+ui/reference_size=Vector2i(1920, 1080)
+ui/reference_size.android=Vector2i(2400, 1080)
 
 [gui]
 

@@ -65,6 +65,7 @@ _hitBox = NodePath("m_HitBoxRoot/m_HitBox")
 _hitBoxRoot = NodePath("m_HitBoxRoot")
 
 [node name="m_Body" type="AnimatedSprite2D" parent="." unique_id=337748165]
+scale = Vector2(0.5, 0.5)
 sprite_frames = ExtResource("frames")
 animation = &"idle"
 

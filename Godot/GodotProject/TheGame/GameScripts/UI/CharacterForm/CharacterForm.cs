@@ -81,6 +81,10 @@ namespace GameLogic.UI
 		#endregion
 
 		[Export]
+		private Control _frame;
+		[Export]
+		private Control _roles;
+		[Export]
 		private TextureButton _wukong;
 		[Export]
 		private TextureButton _sanzang;

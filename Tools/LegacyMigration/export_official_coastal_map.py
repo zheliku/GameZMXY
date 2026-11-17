@@ -1,4 +1,4 @@
-"""Export the three sea map locations with their original registration and hit states."""
+"""Export registered coastal art; preserve native glow sampling at high density."""
 import argparse
 from copy import deepcopy
 import hashlib
@@ -55,6 +55,8 @@ def export(args):
     exports = []
     locations = []
     for index, (name, field, wrapper_id) in enumerate([('qianan', 's3_1', 460), ('donghai', 's3_2', 468), ('shazhiwoliu', 's3_3', 478)]):
+        if args.only and name not in args.only:
+            continue
         placed = next(item for item in sprites[505].find('subTags') if item.get('name') == field)
         position = placed.find('matrix')
         parent_scale = (float(position.get('scaleX', '1')), float(position.get('scaleY', '1')))
@@ -90,39 +92,145 @@ def export(args):
     tree.write(modified, encoding='utf-8', xml_declaration=True)
     swf = args.work / 'registered.swf'
     run('-xml2swf', str(modified), str(swf))
-    png = args.work / 'png'
-    run('-selectid', ','.join(map(str, exports)), '-ignorebackground', '-export', 'sprite', str(png), str(swf))
-    folders = {int(p.name.split('_')[1]): p for p in png.iterdir() if p.is_dir()}
+    rendered_by_density = {}
+    sampling = []
+    for density in sorted({1, args.density}):
+        render_source = swf
+        if density > 1:
+            dense_tree = deepcopy(tree)
+            # FFDec Glow delegates to the same drop-shadow primitive with zero distance.
+            # Match its native integer kernel and pixel-center phase at the new density.
+            # Only the temporary raster input is adapted; source art and keyframes stay intact.
+            for sprite in dense_tree.getroot().find('tags'):
+                if sprite.get('spriteId') not in ('458', '459', '465', '467'):
+                    continue
+                frame = 0
+                for placement in sprite.find('subTags'):
+                    if placement.get('type') == 'ShowFrameTag':
+                        frame += 1
+                    for node in placement.iter():
+                        if node.get('type') != 'GLOWFILTER':
+                            continue
+                        original = dict(node.attrib)
+                        rx = math.floor(float(node.get('blurX')) + 0.5)
+                        ry = math.floor(float(node.get('blurY')) + 0.5)
+                        assert rx == ry and node.get('passes') == '1'
+                        assert node.get('innerGlow') == 'false' and node.get('knockout') == 'true'
+                        # An even native kernel is centered half a native pixel away.
+                        # An even dense kernel is centered half an output pixel away.
+                        phase = (0.5 if rx % 2 == 0 else 0) - 0.5 / density
+                        angle = math.radians(45 if phase > 0 else 225)
+                        # SWF FIXED quantization must retain FFDec's integer-degree angle.
+                        angle = math.ceil(angle * 65536) / 65536
+                        node.set('type', 'DROPSHADOWFILTER')
+                        node.set('id', '0')
+                        node.set('blurX', str(rx))
+                        node.set('blurY', str(ry))
+                        node.set('angle', str(angle))
+                        node.set('distance', str(math.sqrt(2) * abs(phase)))
+                        node.set('innerShadow', node.attrib.pop('innerGlow'))
+                        node.find('glowColor').tag = 'dropShadowColor'
+                        sampling.append({'sprite': sprite.get('spriteId'), 'frame': frame,
+                            'source_glow': original, 'native_kernel_pixels': [rx, ry],
+                            'phase_logical_pixels': [phase, phase],
+                            'color_strength_passes_knockout_preserved': True})
+            dense_xml = args.work / f'registered_{density}x.xml'
+            dense_tree.write(dense_xml, encoding='utf-8', xml_declaration=True)
+            render_source = args.work / f'registered_{density}x.swf'
+            run('-xml2swf', str(dense_xml), str(render_source))
+        png = args.work / ('png' if density == 1 else f'png_{density}x')
+        # The work cap is proportional to radiusX*radiusY*width*height.
+        # Preserve the native per-logical-pixel budget; no global config is changed.
+        run('-config', f'boxBlurPixelsLimit={1000 * density ** 4}',
+            '-selectid', ','.join(map(str, exports)), '-zoom', str(density),
+            '-ignorebackground', '-export', 'sprite', str(png), str(render_source))
+        rendered_by_density[density] = {int(p.name.split('_')[1]): p for p in png.iterdir() if p.is_dir()}
     for location in locations:
         rendered = {}
+        native = {}
         bounds = []
         for state, data in location['states'].items():
-            frames = [Image.open(folders[data['id']] / f'{i + 1}.png').convert('RGBA') for i in range(data['frames'])]
-            # FFDec adds symmetric filter margins even around the invisible bounds.
-            # Normalize the registration before combining states with different filters.
-            frames = [image.crop(((image.width - 1000) // 2, (image.height - 600) // 2,
-                                   (image.width + 1000) // 2, (image.height + 600) // 2)) for image in frames]
-            rendered[state] = frames
-            bounds.extend(image.getbbox() for image in frames if image.getbbox())
+            for density in sorted({1, args.density}):
+                folder = rendered_by_density[density][data['id']]
+                frames = [Image.open(folder / f'{i + 1}.png').convert('RGBA') for i in range(data['frames'])]
+                # Keep the exact 1x registration; higher density changes only sampling.
+                width, height = 1000 * density, 600 * density
+                frames = [image.crop(((image.width - width) // 2, (image.height - height) // 2,
+                                      (image.width + width) // 2, (image.height + height) // 2)) for image in frames]
+                if density == 1:
+                    native[state] = frames
+                    bounds.extend(image.getbbox() for image in frames if image.getbbox())
+                if density == args.density:
+                    rendered[state] = frames
         box = (min(b[0] for b in bounds) - 12, min(b[1] for b in bounds) - 12,
                max(b[2] for b in bounds) + 12, max(b[3] for b in bounds) + 12)
-        size = (box[2] - box[0], box[3] - box[1])
+        logical_size = (box[2] - box[0], box[3] - box[1])
+        size = tuple(value * args.density for value in logical_size)
+        pixel_box = tuple(value * args.density for value in box)
         location['size'] = size
+        location['logical_size'] = logical_size
+        location['density'] = args.density
         location['offset'] = [box[0] - 500, box[1] - 300]
         name = location['name']
-        rendered['hit'][0].crop(box).save(args.work / f'{name}_hit.png')
-        Image.new('RGBA', size).save(args.output / f'map_{name}_normal.png')
-        rendered['hover'][0].crop(box).save(args.output / f'map_{name}_hover.png')
-        atlas = Image.new('RGBA', (size[0] * 5, size[1] * math.ceil(len(rendered['current']) / 5)))
-        for i, frame in enumerate(rendered['current']):
-            atlas.paste(frame.crop(box), ((i % 5) * size[0], (i // 5) * size[1]))
-        atlas.save(args.output / f'map_{name}_current.png')
-    (args.work / 'manifest.json').write_text(json.dumps({'source_sha256': digest, 'locations': locations}, indent=2), encoding='utf-8')
-    print('OFFICIAL COAST EXPORT PASS: 3 locations, registered states, parent scale, native filters and original matrices')
+        # Input geometry remains at native logical density, independent of artwork density.
+        native['hit'][0].crop(box).save(args.work / f'{name}_hit.png')
+        # The invisible normal and its input mask keep their native logical density.
+        Image.new('RGBA', logical_size).save(args.output / f'map_{name}_normal.png')
+        rendered['hover'][0].crop(pixel_box).save(args.output / f'map_{name}_hover.png')
+        current_frames = [frame.crop(pixel_box) for frame in rendered['current']]
+        crop = (0, 0, size[0], size[1])
+        if args.density == 2:
+            # One common transparent crop preserves every frame's original registration.
+            # Four output pixels protect bilinear sampling; mipmaps remain disabled.
+            visible = [frame.getbbox() for frame in current_frames]
+            if any(box is None for box in visible):
+                raise ValueError(f'Empty current frame: {name}')
+            crop = [min(box[0] for box in visible) - 4, min(box[1] for box in visible) - 4,
+                    max(box[2] for box in visible) + 4, max(box[3] for box in visible) + 4]
+            crop[2] += (crop[2] - crop[0]) % 2
+            crop[3] += (crop[3] - crop[1]) % 2
+            if crop[0] < 0 or crop[1] < 0 or crop[2] > size[0] or crop[3] > size[1]:
+                raise ValueError(f'Current crop exceeds registered canvas: {name}')
+        cells = [frame.crop(crop) for frame in current_frames]
+        cell_width, cell_height = cells[0].size
+        # Keep all 19 color frames. East Sea needs two native animation texture pages.
+        columns = 2 if args.density == 2 and name == 'donghai' else 5
+        rows = 5 if args.density == 2 and name == 'donghai' else math.ceil(len(cells) / columns)
+        capacity = columns * rows
+        pages = []
+        for first in range(0, len(cells), capacity):
+            atlas = Image.new('RGBA', (cell_width * columns, cell_height * rows))
+            for index, frame in enumerate(cells[first:first + capacity]):
+                atlas.paste(frame, (index % columns * cell_width, index // columns * cell_height))
+            suffix = '' if first == 0 else f'_{len(pages) + 1}'
+            filename = f'map_{name}_current{suffix}.png'
+            atlas.save(args.output / filename)
+            pages.append({'file': filename, 'first_source_frame': first,
+                          'frames': min(capacity, len(cells) - first), 'size': atlas.size,
+                          'sha256': hashlib.sha256((args.output / filename).read_bytes()).hexdigest()})
+        location['current'] = {
+            'columns': columns, 'rows': rows, 'cell_size': [cell_width, cell_height],
+            'crop': crop, 'offset': [(crop[0] + crop[2] - size[0]) / 2,
+                                    (crop[1] + crop[3] - size[1]) / 2],
+            'pages': pages,
+            'frames': [{'page': index // capacity, 'cell': index % capacity}
+                       for index in range(len(cells))]}
+    (args.work / 'manifest.json').write_text(json.dumps({'source_sha256': digest, 'density': args.density,
+                                                        'ffdec_box_blur_pixels_limit': 1000 * args.density ** 4,
+                                                        'glow_native_sampling': sampling,
+                                                        'fps': 24, 'locations': locations}, indent=2), encoding='utf-8')
+    print(f'OFFICIAL COAST EXPORT PASS: {len(locations)} locations, density {args.density}, registered states, parent scale, native filters and original matrices')
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     for option in ('source', 'java', 'ffdec', 'work', 'output'):
         parser.add_argument('--' + option, type=Path, required=True)
-    export(parser.parse_args())
+    parser.add_argument('--density', type=int, choices=(1, 2), default=1,
+                        help='Rasterize the source at this density; 1 preserves the original export contract')
+    parser.add_argument('--only', nargs='+', choices=('qianan', 'donghai', 'shazhiwoliu'),
+                        help='Export only the named original locations')
+    args = parser.parse_args()
+    if args.density == 2 and (not args.only or 'shazhiwoliu' in args.only):
+        parser.error('Density 2 is approved only for qianan/donghai; pass --only explicitly')
+    export(args)

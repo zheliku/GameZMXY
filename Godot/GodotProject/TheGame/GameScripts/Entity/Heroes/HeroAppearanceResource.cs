@@ -22,7 +22,7 @@ public partial class HeroAppearanceResource : Resource
     [Export] private HeroAppearanceResource _previewAppearance; // 官方背包的独立衣装图集，复用相同换装数据形状。
 
     /// <summary>
-    /// 官方背包使用自身的身体和武器图，不借用战斗待机姿势。
+    /// 背包使用独立身体和武器图集，不借用战斗实体。
     /// </summary>
     public HeroAppearanceResource PreviewAppearance => _previewAppearance;
 

@@ -155,7 +155,7 @@ _data = {
 
 [sub_resource type="StyleBoxEmpty" id="skills_empty"]
 
-[node name="MapForm" type="Control" unique_id=1567376624 node_paths=PackedStringArray("_settings", "_settingsAnimation", "_skills", "_skillsArtwork", "_huaguoshan", "_shuiliandong", "_taohuayuan", "_save", "_locationAnimation", "_bianfuku", "_qixingdong", "_jialuoluo", "_qianan", "_donghai", "_shazhiwoliu", "_niumogu")]
+[node name="MapForm" type="Control" unique_id=1567376624 node_paths=PackedStringArray("_settings", "_settingsAnimation", "_skills", "_skillsArtwork", "_skillsCaption", "_huaguoshan", "_shuiliandong", "_taohuayuan", "_save", "_locationAnimation", "_bianfuku", "_qixingdong", "_jialuoluo", "_qianan", "_donghai", "_shazhiwoliu", "_niumogu")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -164,14 +164,15 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("theme")
 script = ExtResource("script")
-_settings = NodePath("Frame/m_Settings")
-_settingsAnimation = NodePath("Frame/m_Settings/m_SettingsAnimation")
-_skills = NodePath("Frame/m_Skills")
-_skillsArtwork = NodePath("Frame/m_Skills/Artwork")
+_settings = NodePath("m_Settings")
+_settingsAnimation = NodePath("m_Settings/m_SettingsAnimation")
+_skills = NodePath("m_Skills")
+_skillsArtwork = NodePath("m_Skills/Artwork")
+_skillsCaption = NodePath("m_Skills/Caption")
 _huaguoshan = NodePath("Frame/m_Huaguoshan")
 _shuiliandong = NodePath("Frame/m_Shuiliandong")
 _taohuayuan = NodePath("Frame/m_Taohuayuan")
-_save = NodePath("Frame/m_Save")
+_save = NodePath("m_Save")
 _locationAnimation = NodePath("Frame/m_LocationAnimation")
 _bianfuku = NodePath("Frame/m_Bianfuku")
 _qixingdong = NodePath("Frame/m_Qixingdong")
@@ -198,7 +199,8 @@ mouse_filter = 2
 
 [node name="Background" type="TextureRect" parent="Frame" unique_id=1431881532]
 layout_mode = 0
-offset_right = 940.0
+offset_left = -234.0
+offset_right = 1174.0
 offset_bottom = 590.0
 mouse_filter = 2
 texture = ExtResource("bg")
@@ -478,6 +480,8 @@ position = Vector2(168.5, 156)
 texture = ExtResource("26_eqj77")
 hframes = 5
 vframes = 4
+scale = Vector2(0.5, 0.5)
+offset = Vector2(-12, -9)
 
 [node name="m_Donghai" type="TextureButton" parent="Frame" unique_id=638111445 node_paths=PackedStringArray("_hoverImage", "_guide")]
 layout_mode = 0
@@ -515,8 +519,10 @@ stretch_mode = 5
 visible = false
 position = Vector2(371, 132.5)
 texture = ExtResource("29_omjdr")
-hframes = 5
-vframes = 4
+hframes = 2
+vframes = 5
+scale = Vector2(0.5, 0.5)
+offset = Vector2(-14, -6)
 
 [node name="m_Shazhiwoliu" type="TextureButton" parent="Frame" unique_id=246093014 node_paths=PackedStringArray("_hoverImage", "_guide")]
 layout_mode = 0
@@ -597,8 +603,9 @@ texture = ExtResource("35_gcevj")
 hframes = 5
 vframes = 4
 
-[node name="m_Save" type="TextureButton" parent="Frame" unique_id=1994352566]
-layout_mode = 0
+[node name="m_Save" type="TextureButton" parent="." unique_id=1994352566]
+layout_mode = 1
+anchors_preset = 0
 offset_left = 5.5
 offset_top = 166.5
 offset_right = 143.5
@@ -609,9 +616,31 @@ texture_normal = ExtResource("save")
 texture_pressed = ExtResource("save")
 texture_hover = ExtResource("save_hover")
 
-[node name="m_Settings" type="TextureButton" parent="Frame" unique_id=1175108554]
-self_modulate = Color(0.9, 0.9, 0.9, 1)
+[node name="Caption" type="Label" parent="m_Save"]
 layout_mode = 0
+mouse_filter = 2
+offset_left = 18.5
+offset_top = 63.5
+offset_right = 118.5
+offset_bottom = 94.5
+theme_override_colors/font_color = Color(1, 0.8, 0.18, 1)
+theme_override_colors/font_shadow_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 0
+theme_override_constants/shadow_offset_y = 0
+theme_override_constants/outline_size = 6
+theme_override_constants/shadow_outline_size = 9
+theme_override_fonts/font = ExtResource("caption_font")
+theme_override_font_sizes/font_size = 20
+text = "保存游戏"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+
+[node name="m_Settings" type="TextureButton" parent="." unique_id=1175108554]
+self_modulate = Color(0.9, 0.9, 0.9, 1)
+layout_mode = 1
+anchors_preset = 0
 offset_left = 17.0
 offset_top = 323.0
 offset_right = 129.0
@@ -621,12 +650,13 @@ mouse_default_cursor_shape = 2
 texture_normal = ExtResource("return_title")
 texture_hover = ExtResource("return_title")
 
-[node name="Caption" type="Label" parent="Frame/m_Settings" unique_id=1598122156]
+[node name="Caption" type="Label" parent="m_Settings" unique_id=1598122156]
 layout_mode = 0
-offset_left = 8.5
-offset_top = 83.0
-offset_right = 108.5
-offset_bottom = 114.0
+mouse_filter = 2
+offset_left = 7.0
+offset_top = 80.0
+offset_right = 107.0
+offset_bottom = 111.0
 theme_override_colors/font_color = Color(1, 0.8, 0.18, 1)
 theme_override_colors/font_shadow_color = Color(1, 1, 1, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
@@ -640,7 +670,7 @@ text = "游戏设置"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="m_SettingsAnimation" type="AnimationPlayer" parent="Frame/m_Settings" unique_id=775138696]
+[node name="m_SettingsAnimation" type="AnimationPlayer" parent="m_Settings" unique_id=775138696]
 libraries/ = SubResource("settings_animations")
 
 [node name="m_LocationAnimation" type="AnimationPlayer" parent="Frame" unique_id=328441174]
@@ -655,8 +685,9 @@ libraries/shazhiwoliu = ExtResource("44_nkmx7")
 libraries/shuiliandong = ExtResource("30_s3lwo")
 libraries/taohuayuan = ExtResource("31_0mcer")
 
-[node name="m_Skills" type="Button" parent="Frame" unique_id=1850162997]
-layout_mode = 0
+[node name="m_Skills" type="Button" parent="." unique_id=1850162997]
+layout_mode = 1
+anchors_preset = 0
 offset_left = 26.0
 offset_top = 43.0
 offset_right = 122.0
@@ -669,10 +700,32 @@ theme_override_styles/hover = SubResource("skills_empty")
 theme_override_styles/focus = SubResource("skills_empty")
 flat = true
 
-[node name="Artwork" type="AnimatedSprite2D" parent="Frame/m_Skills" unique_id=1366728129]
+[node name="Artwork" type="AnimatedSprite2D" parent="m_Skills" unique_id=1366728129]
 position = Vector2(51.5, 42)
 sprite_frames = ExtResource("map_skills")
 animation = &"idle"
+
+[node name="Caption" type="Label" parent="m_Skills"]
+visible = false
+layout_mode = 0
+mouse_filter = 2
+offset_left = -2.0
+offset_top = 68.5
+offset_right = 98.0
+offset_bottom = 99.5
+theme_override_colors/font_color = Color(1, 0.8, 0.18, 1)
+theme_override_colors/font_shadow_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 0
+theme_override_constants/shadow_offset_y = 0
+theme_override_constants/outline_size = 6
+theme_override_constants/shadow_outline_size = 9
+theme_override_fonts/font = ExtResource("caption_font")
+theme_override_font_sizes/font_size = 20
+text = "学习技能"
+horizontal_alignment = 1
+vertical_alignment = 1
+
 
 [node name="m_LevelGuide" parent="Frame" unique_id=142705694 instance=ExtResource("level_guide")]
 visible = false

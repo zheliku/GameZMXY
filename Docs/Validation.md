@@ -1,6 +1,931 @@
 # 验证
 
+## 清理审查图片引用，目录删除被工具拒绝（2026-11-17）
+
+用户要求删除仅含7张审查图和1份说明的文档图片目录。已确认正式TheGame和Tools无该目录消费者，并清理五份相关文档的旧链接，原始过程图留既有.godot/validation。递归删除和仅明确8个文件的非递归删除两次均被执行工具自动审批拒绝（blocked by policy，未给出更具体原因）；命令未执行，目录仍有8文件，删除未完成。正式美术、场景和代码未改，不重复构建或运行游戏；只验证引用清理和git diff --check，不把删除记为通过。高清未完成项和批次节奏保持，不执行Git暂存、提交或回退。
+
+## 全屏模糊：实际导入密度与Swin2SR恢复试验（2026-11-17）
+
+用户反馈放大仍糊。本次在Godot中实际加载正式map_form、读取其已导入Texture2D，不仅搜索路径：journey_map为1408×590，保存normal/hover均138×93，令牌112×114；技能atlas1280×1120，hover第14帧region256×160，不是单帧1280高清图。PNG导入均lossless、size_limit=0、无mipmap；没有导入缩小或引用另一套高清图的问题。证据art_map_density_recheck_20261117/imported_resources.json，原生审计退出0、stderr空。底图只增加横向外围，原940×590中心未高清，1080p/4K分别放大约1.83/3.66倍；字体Label清楚不等于图形清楚。
+
+另试本地Swin2SR Classical x2（来源/冻结散列见LegacyAssetMap），DirectML、非量化FP32模型；不调用生成式绘图API，不使用提示词。复用已有restore_sample.py的透明区RGB延展和12次原图残差回投影，alpha统一仅双线性2倍，完整笔刷/空题签来源保持。离线输出地图2816×1180、保存两态276×186、令牌224×228；技能卷轴及地点图标本轮没有恢复，不能宣称地图全类完成。
+
+| 检查 | 结果和解释 |
+| --- | --- |
+| 可验证的降采样重建诊断 | 两个192×192原区域先降96再恢复，Swin2SR PSNR39.70/43.59dB、Bicubic36.72/40.37dB。只验证该降采样条件下的恢复能力，不证明原940×590中不存在的细节已找回。 |
+| 源约束回采样 | 复用OpenCV Lanczos4算子，RGB可见加权MAE为地图0.179、保存0.155/0.180、令牌0.255（0～255）。这是该算子内一致性，不是高分辨率原画逐像素保真证据。原始模型未约束的入口误差3.86～5.34，未直接使用。 |
+| 原生渲染 | 复用既有preview_sample.gd，1920/2400/2520×1080×当前/候选×普通/悬停末帧，共12张；检查原逻辑位置/尺寸/缩放保持，退出0，SWIN2SR SAMPLE PREVIEW PASS，stderr空。已看同尺寸细节及电脑/20:9候选全图；不是正式导航或Android真机验证。 |
+| 视觉结论与正式状态 | 书页/令牌边缘仅轻微改善，森林/石像/岩石依旧软，不能判定达到1080p主体验收。正式PNG/.import/UID/场景/代码/显示设置保持；不以输出2816×1180或低误差勾高清完成，不扩大到其他类别。 |
+
+地图/入口1080p同尺寸对照及详细过程/模型/来源/原图与候选在`.godot/validation/art_map_density_recheck_20261117/`；文档图片副本已解除引用、待按用户要求删除。此次未修改产品文件，不重复构建或全前端流程。图像完成量67/666保持；整库高清目标尚未完成。
+
+```powershell
+Godot/GodotProject/.godot/validation/art_map_density_recheck_20261117/.venv/Scripts/python.exe -u Godot/GodotProject/.godot/validation/art_map_density_recheck_20261117/trial.py --probe
+Godot/GodotProject/.godot/validation/art_map_density_recheck_20261117/.venv/Scripts/python.exe -u Godot/GodotProject/.godot/validation/art_map_density_recheck_20261117/trial.py
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_map_density_imported_20261117 --headless --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_map_density_recheck_20261117/audit_imported.gd
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_map_density_sample_20261117 --windowed --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_map_density_recheck_20261117/preview_sample.gd
+git diff --check
+```
+
+## 双端审查图入库与正式接入复核（2026-11-17）
+
+此前整理的电脑16:9、手机20:9/21:9、无字保存图和英雄实际动作联系图均为审查证据；文档图片副本已解除引用、待按用户最新要求删除，原生预览/动作图及日志留既有.godot/validation各批过程目录。电脑和20:9图为实际程序截图，21:9沿用前轮有效的原生场景预览。正式图片、三Label及完整preview已经在TheGame原路径；此次整理未改Godot产品文件、显示策略或关卡玩法。未执行Git暂存、提交或回退。
+
+| 检查 | 结果与边界 |
+| --- | --- |
+| 正式入口资源 | 三去字PNG与上一轮保真结论一致：alpha全等、新增透明像素0、原字形遮罩外RGBA全等；令牌保持原件，三字体Label与场景引用存在。当前保存normal/hover有6155个RGBA像素不同，hover仍被正式texture_hover引用，保留。复核见art_review_delivery_20261117/formal_asset_checks.json。 |
+| 电脑实际前端 | 1920×1080启动，进出菜单/地图/花果山、保存、设置、技能及声音全流程SMOKE PASS，退出0。包含4K全屏菜单视口检查；不表示原生4K美术。 |
+| 手机比例实际前端 | 2400×1080桌面模拟：地图五比例布局、保存、设置、主动/被动技能购买及重开检查通过；随后进入花果山失败、等待BattleForm超时，SMOKE FAIL，退出1。不能称手机完整流程通过。 |
+| 进关失败根因 | keep_height下实际视野约1311×590，LevelCameraNode.ViewSize按原视口/Zoom读取；LevelGatesNode.Initialize拒绝宽1139.9的首阶段。本轮相关脚本、场景、配置与开工基线相同，符合计划T3尚未校准门/刷怪的已知边界；本批未移动节点、删除校验或临时切分辨率。 |
+| 视觉复核 | 已查看1920×1080、2400×1080及2520×1080原尺寸图，入口背景完整、文字单独显示、左栏贴左，地图无两侧黑边。地图主体仍软，未将铺满或Label变清楚称为主体高清通过。20:9/21:9均非Android真机。 |
+| 引用与全库排查 | 本轮2298条资源路径/392个UID检查通过。前轮666图、1172文本、2535图集区域的审计对当前未变的产品文件仍有效，无裁切越界；13个同尺寸透明变化候选已核为悟空三槽置换，1170格RGBA全等。131组重复RGBA含时序帧/独立身份，未批删。不是整库人工视觉证明。 |
+| 地图真实高清 | journey_map仍1408×590，原中心/bitmap388只有940×590；本轮没有增加真实细节，不以插值改大或AI重画中心交付。ArtProgress继续未勾；整库高清及Android真机未完成。 |
+
+日志分别位于`.godot/validation/movement_presets/art_review_delivery_frontend_pc_20261117/`和`art_review_delivery_frontend_mobile20_20261117/`。两轮均包含烟测预期的存档故障注入/重复注册诊断，退出各3个ObjectDB；手机另有上述真实进关错误，不能与预期故障混为一谈。此前有效构建0错5既有警告与preview 2206项/自然播放证据继续适用，本轮未改产品代码，不重复构建。
+
+```powershell
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_review_delivery_frontend_pc_20261117 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=frontend
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_review_delivery_frontend_mobile20_20261117 --windowed --resolution 2400x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=frontend
+python Tools/ProjectMaintenance/validate_game_references.py
+git diff --check
+```
+
+## 地图入口背景完整、文字独立Label纠正（2026-11-17）
+
+用户纠正上一轮误恢复烘焙文字。最终要求为完整原图背景、不扣透明缺口、入口文字继续由原生字体Label显示。仅本项修改；此前两英雄完整preview和其他资源不动，保护用户最新暂存内容，不写Git索引。
+
+map_save_game、save_game_hover、map_skills复用此前原字形遮罩去字版本，改变2299/2216/31982像素的RGB；原alpha逐像素全等、新增透明像素0，原字形遮罩外主体RGBA全等，完整笔刷/书本/毛笔/卷轴保持。令牌PNG与HEAD原件字节相同。原保存/技能Caption重新接回，与设置Label同字体/20号字及全局中心X=74；无额外Ink覆盖，技能仅hover显示、普通及available不显示文字。保存hover保留实际引用和独立画面。
+
+构建退出0、0错5既有警告，导入退出0；Ge重新生成17绑定，资源数量1003不变，无新PNG/资源常量。三比例1920/2400/2520×1080共12张图通过并已查看实际画面；原生检查包括三Label、字体大小、居中、鼠标穿透及原墨底。完整前端专项重新覆盖真实保存hover、技能15帧展开/19帧提示和原生Label可见性、保存/设置及进出关。夹具stderr空；前端既有故障注入和退出占用单列，不称全stderr空。
+
+首轮构建因测试局部caption名称与外层变量冲突失败，已改用menuCaption，最终构建通过；未改业务迎合测试。证据与原文件/Git基线位于art_map_caption_background_fix_20261117：[去字后两张书本原图](../Godot/GodotProject/.godot/validation/art_map_caption_background_fix_20261117/save_images_text_free.png)、[三入口实际字体画面](../Godot/GodotProject/.godot/validation/art_map_caption_background_fix_20261117/map_1920_restored_hover_end.png)。下方“恢复HEAD完整PNG和删除Label”为被本次纠正的中间状态，不能作为最终接入结论。
+
+```powershell
+python Tools/ProjectMaintenance/regenerate_ui_form.py Godot/GodotProject/TheGame/UIs/map_form.tscn --namespace GameLogic.UI
+dotnet build Godot/GodotProject/GodotProject.csproj --no-restore -v minimal
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_map_caption_background_import_20261117 --headless --editor --import --rendering-method gl_compatibility --audio-driver Dummy
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_map_caption_background_native_20261117 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_map_caption_background_fix_20261117/render_map_labels.gd
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_map_caption_background_frontend_20261117 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=frontend
+```
+
+## 完整身体preview、入口原图恢复与全项目排查（2026-11-17）
+
+依据用户本轮要求和计划2.12.35，先实际补两英雄身体preview，再恢复入口原图、核查hover用途及全项目同类排查。用户最新身体动画选择覆盖第40章旧backpack_v2姿态约束；报告差异，未自行修改集中规范。未改Framework/addons/Luban、战斗图/动画、显示设置、玩法、碰撞或角色根尺度。
+
+| 检查 | 最终结果和适用范围 |
+| --- | --- |
+| preview原件接入 | 26PNG原路径及两库已改。复用已审Role_v7原源2倍格，无插值/AI重画；六列400源像素/200逻辑格，悟空100时刻、唐僧91时刻，24fps。身体13/10、武器11/8去重姿态，全部时刻保留。旧图/.import/UID与本轮来源散列离线保留。 |
+| 原点/像素 | 每英雄两层同一固定源像素平移：悟空(-2,-2)、唐僧(2,10)，全部动作一致。所有来源格经相同平移后与预览格RGBA严格相等，无非透明裁损；不按逐帧bbox居中。角色根/preview根不动，遮挡原样复制。 |
+| 原生绑定/动作 | 实际HeroPreviewNode和两角色外观资源，144装备组合、191完整源时刻共2206项通过；各层scale0.5、position/offset0、格400、六列、独立H/V帧数保持。此夹具非整局实战，真实播放另验。 |
+| 普通真实背包 | 无--smoketest，经普通主场景及现有按钮进入正式背包，未Seek/手动Advance。5.2秒实际画面：悟空13身体/6光晕、唐僧10/6；128/129张原尺寸裁片。动图使用实际采样间隔，不修改游戏动画速度；已查看完整动作联系图和1080p全图。未声称执行过编辑器F5按键。 |
+| 暂停/换装/回池 | 两英雄正式表现专项退出0，Engine暂停和GGF覆盖暂停身体/光晕均继续循环；60/120Hz原表现与攻击根位置通过。悟空真实背包换装后和回池重开继续播放专项通过；144绑定涵盖两英雄所有已登记装备组合。 |
+| 入口原图 | map_skills、map_save_game、map_return_title及save_hover与HEAD c47dbdd字节相同；原图题签/墨底/主体无扣空。保存hover实际被m_Save.texture_hover使用，与normal有5558像素差，保留。删重复保存/技能Caption及三Ink覆盖，令牌原生Label保留。 |
+| 冗余资源/生成 | 唯一新冗余map_menu_caption_ink.png及import完整备份后删除；现有Ge重新生成16场景绑定，Collection Res生成1003项，只删对应常量及生成时间。原41/其他既有变更不整库还原，不暂存、不提交，HEAD和用户当前索引保持。 |
+| 地图视觉/交互 | 三比例1920/2400/2520×1080共12张原生图，实际前端完整退出0；真实保存hover、令牌提亮/设置、技能15帧展开及19帧提示、主动/被动购买、保存/重入/花果山进入通过。已查看恢复后原尺寸地图、入口细部及真实map_form截图。 |
+| 全项目静态检查 | 实际666图、1172引用文本、2535 AtlasTexture区域，未见区域越界。13张同尺寸alpha变化候选均来自既有悟空0/1/85排列，1170格RGBA全等，无其他同尺寸扣空候选；不是任意构图/来源身份的完整视觉证明。 |
+| 重复/引用 | 131组RGBA重复共270文件，包含必须保留的时序帧和独立物品身份，不据此删除。13个无直接/常量消费者候选中插件相对@icon和应用UID已确认使用，余10原图候选及默认图标保留；仅字符串无引用不证明运行时无用。详细逐图清单在project_art_inventory.json。 |
+| 地图真实精度 | 再读OtherMat_v9 shape389→bitmap388内嵌JPEG，只有940×590；正式journey_map1408×590中央554600像素与原183.png全等。当前只扩外围，1080p真实高清仍未完成，不发布插值尺寸放大或AI重画原中心。 |
+| 构建/引用 | 最终构建0错5既有弃用警告；2298序列化路径/392UID通过。PNG导入成功，原生网格/地图夹具stderr空；格式和Git保护检查见同目录最终收据。不称Android真机已验。 |
+
+本批工作目录：`.godot/validation/art_preview_animated_idle_20261117/`和`art_map_asset_repair_20261117/`。查看：[实际身体动作](../Godot/GodotProject/.godot/validation/art_preview_animated_idle_20261117/actual_motion_contact.png)、[唐僧自然播放动图](../Godot/GodotProject/.godot/validation/art_preview_animated_idle_20261117/tangseng_animated_preview_motion.png)、[真实地图](../Godot/GodotProject/.godot/validation/art_map_asset_repair_20261117/actual_map_form_1920x1080.png)、[静态全库报告](../Godot/GodotProject/.godot/validation/art_map_asset_repair_20261117/project_art_audit.json)。清单当前67/666、55来源/保真受限（11部分）、544其他；配套43/182。此轮未增加真正高清数量，新增完整身体表现与画面恢复已落实，整库高清目标仍未完成。
+
+诊断分开记录：普通两英雄退出各3个ObjectDB；英雄烟测有原NodePool故意类型不匹配，悟空退出5个ObjectDB/1资源，唐僧6个ObjectDB；背包技能专项退出160个ObjectDB/10资源及RID/纹理占用。前端专项有原设计的保存/重复注册故障注入及退出5个ObjectDB/1资源。Collection Res headless关停有RID/TextServer及13865个ObjectDB；不把这些stderr称为空，不扩展为框架维护。本轮业务检查无SMOKE FAIL。
+
+主要命令（仓库根；格式/构建可在Godot/GodotProject内执行）：
+
+```powershell
+python Tools/LegacyMigration/export_official_inventory_preview.py --animated-idle --work Godot/GodotProject/.godot/validation/art_preview_animated_idle_20261117
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_preview_animated_grid_20261117 --headless --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_preview_animated_idle_20261117/verify_grid.gd
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_preview_animated_normal_tangseng_20261117 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --script res://.godot/validation/art_preview_animated_idle_20261117/observe_normal_game.gd -- --observe-tangseng
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_preview_animated_motion_wukong_20261117 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=ui --hero-presentation-only
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_preview_animated_motion_tangseng_20261117 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=ui --hero-presentation-only --tangseng-only
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_preview_animated_inventory_20261117 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=ui --inventory-skills-only
+python Tools/ProjectMaintenance/regenerate_ui_form.py Godot/GodotProject/TheGame/UIs/map_form.tscn --namespace GameLogic.UI
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_map_original_collection_20261117 --headless --editor --script res://EditorScripts/regenerate_collection.gd
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_map_original_native_20261117 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_map_asset_repair_20261117/render_restored_map.gd
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_map_original_frontend_20261117 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=frontend
+python Godot/GodotProject/.godot/validation/art_map_asset_repair_20261117/audit_project.py
+python Tools/ProjectMaintenance/validate_game_references.py
+dotnet build Godot/GodotProject/GodotProject.csproj --no-restore -v minimal
+git diff --check
+```
+
+## Git现状与普通启动preview像素复核（2026-11-17，用户停播未复现）
+
+用户补充为Godot F5从主菜单进入背包，并指明tangseng_preview_body_cassock.png只有一个人物。已核对游戏袈裟引用链确实使用此图：当前2400×400仅第0格非透明，高清前c25b2e6为1200×200且同样仅第0格；Body:frame轨道只有0，与HEAD无差异。该身体当前确实静态，播放器推进/光晕变帧不能证明身体动画已补齐。本轮没有删除这张图的身体动作，也未改PNG或轨道；未执行编辑器F5操作。
+
+用户反馈两英雄身体与脚下光晕均停住。本轮仅核查preview，未再改游戏代码/资源、回退或暂存；不把历史测试或唐僧单身体姿态当作反馈已解决。基线位于art_preview_git_audit_20261117/baseline.json，实时HEAD=c47dbdd、暂存区空，135项工作区状态包含121跟踪修改与14未跟踪文件。
+
+Git明确：26张preview PNG、两套preview AnimationLibrary与HEAD完全一致；播放相关差异只有HeroPreviewNode.cs（16增3删）、InventoryCharacterPanel.cs（删8行转发）、InventoryForm.Logic.cs（1增5删）、hero_preview.tscn（增autoplay）。高清前c25b2e6与当前同为悟空62时刻/4姿态、唐僧1姿态。a27f4b8之前唐僧曾用战斗91帧，属于更早的来源切换，不是本轮高清删帧。未凭用户反馈改回不同动作来源。
+
+补验普通主场景、无--smoketest，由原菜单按钮Pressed信号依次进入真实背包（复用现有前端测试激活方式）。没有向预览调用Seek/Advance，没有变更游戏时钟：背包Engine.time_scale=0，SceneTree.paused=false，preview继承处理且can_process=true。每角色3.1秒采样63张1920×1080输出中的原尺寸417×417裁片，悟空4身体/6光晕格、20种实际像素画面；唐僧1身体/6光晕格、14种画面。均退出0、原5/1和3/0退出占用分别记录；无故意池错误。此结论仅适用于本次工作区路径，尚未复现用户的整体停播，启动方式问题仍待回复。
+
+查看：[悟空普通流程动图](../Godot/GodotProject/.godot/validation/art_preview_git_audit_20261117/wukong_normal_game_motion.png)、[唐僧普通流程动图](../Godot/GodotProject/.godot/validation/art_preview_git_audit_20261117/tangseng_normal_game_motion.png)。对应JSON与原尺寸全图、裁片、Git事实在同目录。初轮隔离观察启动时机早于GF服务产生NullReference；普通路径夹具又先后误用未加UIForm_前缀的名称、原生点击未进入下一页、错误菜单先后顺序及过早触发选角回调，均未用于通过结论。最终按框架实际名称/顺序并等待原回调完成，记录在两个ready日志中；没有为夹具改产品。
+
+```powershell
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_preview_normal_wukong_ready_20261117 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --script res://.godot/validation/art_preview_git_audit_20261117/observe_normal_game.gd
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_preview_normal_tangseng_ready_20261117 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --script res://.godot/validation/art_preview_git_audit_20261117/observe_normal_game.gd -- --observe-tangseng
+```
+
+## 撤回跨类别接入与回退后验证（2026-11-17）
+
+依据用户最新回退指令及计划2.12.34：整类为一批，完成后停审，不自动进入下一类。本轮不制作新素材。Boss及其后连续接入的特效、UI、道具/数字、地形、天空/演出/静态UI外围恢复到Boss开始前；用户已确认保留普通怪物批次、锚点和英雄preview修复。回退范围已确认，普通怪物整批画面仍待审查。清单恢复至图像67/667、配套43/182；这表示制作接入/必要验证完成，不代替本次用户审查。
+
+| 检查 | 实际结果与边界 |
+| --- | --- |
+| 回退及备份 | 回退前400个改动文件、索引及二进制补丁存于art_batch_rollback_20261117。256个既有文件按精确原散列恢复、21个新增文件撤出运行路径；原候选/来源/测试目录保留。HEAD不变，只定向更新撤回路径的暂存条目。 |
+| 范围保护 | 3925个非回退文件逐字节保持；普通怪物/悟空图集及已有首格、播放修复保持。恢复后五份记录写明撤回；原地图浮层另作下述必要裁切联动，不新增图像。 |
+| 地图头像消费者 | 保留本批10个怪物主体及此前已审猴兵时，只同步原level_guide_tooltip.tscn的11个AtlasTexture.region。其余序列化内容严格一致；原atlas、字典ID、节点和28×28显示保持。11源裁片RGBA全等，三比例67项、9图通过；渲染与独立源图最大2/255采样差，非全像素渲染全等。 |
+| preview原件 | 唐僧/悟空各13PNG均2400×400、六列，与HEAD和原矢量重导manifest散列一致。本轮未改图；400源像素格通过density=2/视觉scale0.5保持200逻辑格。背包父缩放0.95，1080高下每格约348屏幕像素，源/屏幕约1.15；这只证明采样覆盖，不凭比例或DPI标签宣称画质验收。 |
+| 悟空实际背包 | 1920×1080正式流程退出0；暂停时4身体姿态/6光晕格自然播放，GGF覆盖暂停仍播放、原62时刻循环通过；60/120Hz双向攻击根位移0和二段跳通过。 |
+| 唐僧实际背包 | 1920×1080正式流程退出0；原单身体姿态/6光晕格，暂停和覆盖暂停播放、自然循环及原表现专项通过；没有人为增加姿态。 |
+| 构建/资源 | dotnet build退出0、0错5既有警告；Godot重新导入退出0、stderr空。2300序列化路径/392UID、git diff及暂存区空白检查通过。 |
+| 既有怪物证据 | 资源与原通过基线散列一致，复用1002源时刻、2059次原生帧/双向/原点/物理检查、55张1080p预览；本轮没有再跑全怪物实战，不将原证据写成新增测试。 |
+| 退出诊断 | 两英雄专项均含原CheckNodePoolReuse故意注入的类型不匹配ERROR；悟空退出5个ObjectDB/1资源、唐僧14个/3资源占用。没有SMOKE FAIL，不能称游戏stderr空或把本轮扩大成框架维修。 |
+
+地图夹具首轮误用不存在的Boss批次before路径而中止，已改用实际存有相同原文件的地图批次before；正式产品未为夹具改变。最终独立日志art_rollback_map_portraits_final_20261117退出0、stderr空；失败日志保留。完整回退备份、指纹、preview_audit、裁切清单与native_verification位于`.godot/validation/art_batch_rollback_20261117/`。
+
+实际命令（仓库根；构建在Godot/GodotProject）：
+
+```powershell
+dotnet build GodotProject.csproj --no-restore -v minimal
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_rollback_import_20261117 --headless --editor --import --rendering-method gl_compatibility --audio-driver Dummy
+python Tools/ProjectMaintenance/validate_game_references.py
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_rollback_preview_wukong_20261117 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=ui --hero-presentation-only
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_rollback_preview_tangseng_20261117 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=ui --hero-presentation-only --tangseng-only
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_rollback_map_portraits_final_20261117 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_batch_rollback_20261117/verify_retained_portraits.gd
+git diff --check
+git diff --cached --check
+```
+
+本轮回退不增加高清完成量。地图原中心、平台/多数位图高清、T3关卡宽屏与Android真机仍未完成；不更改平台固定分辨率、玩法核心、碰撞或角色尺度。完成回退验证后停止，等待本批审查。
+
+## 普通怪物类别接入与英雄图集规范修复（当前批次）
+
+执行依据为规范00/10/30/40/50和CrossPlatformPlan §2.12.33。用户最新授权“所有怪物一批、所有Boss一批”直接接入并留Git整体查阅；妖猴画面已通过。当前普通怪物整类已查源，不改Boss正式资源、显示配置/T3或玩法。工作目录`.godot/validation/art_ground_batch_install_20261116/`，英雄修复另在`art_atlas_contract_repair_20261117/`；before/保留本轮原文件，HEAD/索引冻结。
+
+直接查看：[普通怪物整批对照](../Godot/GodotProject/.godot/validation/art_ground_batch_install_20261116/monster_batch_overview.png)、[妖猴死亡/地面原版与正式版](../Godot/GodotProject/.godot/validation/art_ground_batch_install_20261116/demon_monkey/demon_monkey_1920_death_left.png)、[妖猴手机20:9](../Godot/GodotProject/.godot/validation/art_ground_batch_install_20261116/demon_monkey/demon_monkey_2400_attack_1_right.png)、[悟空首格修正](../Godot/GodotProject/.godot/validation/art_atlas_contract_repair_20261117/wukong_first_slot_repair.png)。总览为独立原生待机对照，不冒充实战/Android真机；每角色目录保留原尺寸动作图。
+
+| 检查 | 结果与适用范围 |
+| --- | --- |
+| 当前消费者 | 13普通怪物物种、目录内4个专属效果已核对；12图原路径接入（10主体+飞刀/预警），共1002源时刻。8完整矢量高清、4混合位图仅部分完成；蝙蝠/洞穴壮汉与鲨鱼斩击/旋风保留原图。旧15张单动作图非当前正式消费者，保留未勾。 |
+| 原源/密度 | 复用Monster_v1/Monster2_v4既有stick清理版、grounded/qixing/garuda/sea/bull注册清单；每帧父矩阵、共同逻辑画布和死亡逐帧修正保持。原1倍1002帧与正式原图可见RGBA/alpha一致。167等源最低线宽只在临时XML规范为原1倍有效线宽，FFDec原渲染；滤镜预算按密度四次方放大，原半径/颜色/强度不改。每项bitmap/filter/散列与alpha范围见density_manifest.json。 |
+| 装箱/原点 | 妖猴正式改回原规则网格整体2倍2048×690，78帧/20姿态；其余保留原槽位注册基准，高密度边缘只在原透明padding扩边，margin恢复原共同画布。只缩身体/Sprite视觉节点0.5，原offset值乘2；根、身体/受击/攻击形状及世界位置、所有事件/时刻/完成标记不改。12张.import/UID与原SpriteFrames子资源ID保持；1002源时刻的2倍可见RGBA散列经装箱解包保持，48正式资源重复作者接入字节相同。verify_static.py通过。 |
+| 原生正式 | 最终art_monster_batch_final_native_20261117退出0、MONSTER BATCH NATIVE PASS、stderr空；12图1002帧双向2004次+55代表动作共2059次检查，55张1920×1080。正式C#根使用真实SetFacing，原版贴图/库从before内存构造，当前版使用正式导入图；夹具仅复制库剥离方法回调和子脚本，不改正式资源。全局位置减不同根位置存在最高0.00006104px浮点抵消误差，限定<0.00015px；局部形状/变换仍精确相同。 |
+| 妖猴双端 | art_demon_monkey_grid_native_20261117退出0、156帧双向及30张1920/2400/2520×1080通过、stderr空；原图/正式图恢复到同一逻辑原点，死亡末态与其他动作未见接入引入的整体位移。PNG压紧图块中心不等于动画原点，最终已保留直观原网格。 |
+| GGF地面实际流程 | art_monster_batch_hierarchy_20261117退出0，SMOKE-ENEMY-HIERARCHY、SMOKE-ANIMATION-EVENTS、SMOKE PASS；五地面物种空中限制/落地攻击/收招/激怒/池复用通过，密度断言覆盖猴兵/妖猴/猩猩/飞刀妖；妖猴双向追击逐绘制帧无闪举棒。 |
+| GGF死亡 | art_monster_batch_death_20261117退出0、SMOKE-ENEMY-DEATH PASS；三物种×60/120Hz六组实际致死抛飞、空中循环、落地回收、单次收益通过。 |
+| GGF海域实际流程 | art_monster_batch_sea_20261117退出0，三海怪四招、60/120Hz、双向、弹体判定/淡出/暂停/复用通过。art_monster_batch_shark_20261117退出0，实际召唤鲨鱼八种阶段/攻击选择、两频率双向、预警返回、死亡/暂停/取消/回池通过；斩击/旋风已恢复原图后测试。 |
+| GGF东海/飞行 | art_monster_batch_east_sea_20261117退出0，灯笼鱼实际攻击/双向/两频率、背防/暂停/死亡/回池通过；art_monster_batch_garuda_20261117退出0，飞妖/鹏魔王既有五动作、两频率双向、淡出/蛋态/重生/死亡与池复用通过。没有修改对应Boss正式资源。 |
+| 英雄首格 | 旧透明格是技能隐藏时刻的实际消费者，不能直接填图。已仅置换0/1/85三格：原待机置0、透明格置85；13图90格共1170格RGBA逐项全等，两个动画库与场景只变等价帧索引。200逻辑像素/六列/86姿态、遮挡和所有时刻/方法/碰撞保持。canonical --frame-map清单同步；作者visible-first可重复执行，无累计重排。 |
+| 预览静止根因/修复 | 游戏背包原自然循环复现已通过；独立hero_preview是手动播放器且无窗口驱动，确有缺口。预览_Process直接按真实时间Advance，场景原生autoplay；删去InventoryForm→CharacterPanel两层转发，单一路径。art_preview_standalone_20261117退出0，Engine.time_scale0下四个实际身体姿态自然变化；art_preview_repaired_20261117退出0，正式背包暂停下body4/aura6均自然变化并循环，60/120Hz普攻根/二跳落地通过。唐僧源预览单姿态不被虚构成多姿态。 |
+| 构建/引用/格式 | 最终代码dotnet build退出0、0错5既有警告；五份相关C#空白格式verify退出0；2300序列化引用/392UID通过，git diff --check通过。正式导入退出0；不是Android真机/全关宽屏验收。 |
+| 清单/成本 | 67/667完整高清、56来源受限（16部分完成）、544其他待处理；配套43/182。12张运行图理论RGBA8合计257.32MiB，最大6240单边；完整纹理预算、峰值/FPS和Android实际最大纹理/加载仍未验。 |
+
+诊断如实保留：GGF各专项开头的NodePool“期望GroundItemNode，实际LootOrbNode”来自既有故障注入。预览退出5、地面层级10、死亡8、海域8、鲨鱼9、东海11/2资源、飞行9个ObjectDB及其余各1资源占用，属于已有退出诊断；原生逐帧/独立预览stderr空。初次普通怪物原生夹具错用AnimatedSprite2D不存在的get_rect，导致检查未完成；已改为实际帧纹理尺寸，并强制2059条覆盖断言，最终退出0。第二次不同根坐标相减的默认近似阈值过小，现记录最大舍入误差并使用0.00015逻辑px上限，未放宽任何局部几何/时序比较。失败进程仅终止本轮明确PID，未碰用户Godot窗口。
+
+导出诊断：本机内存紧张，Java默认堆首次启动失败；离线导出限定SerialGC/小初始堆，鲨鱼2倍先遇256MiB堆不足，改512MiB并复用已完整输出/检查缺帧后成功。原失败日志保留。鲨鱼原动画确有透明时刻，2倍仍保留透明，不填图；两张主要位图效果试导后恢复原版，避免只增体积无真实高清。早期妖猴156张截图夹具到180秒超时；最终复用逐帧断言，仅代表帧截图并正确退出0。无生产空判断/兜底/显示架构变更。
+
+可重跑命令（仓库根，dotnet命令在Godot/GodotProject执行）：
+
+```powershell
+python Godot/GodotProject/.godot/validation/art_ground_batch_install_20261116/prepare_batch.py
+# 对仍采用的各名称调用既有作者入口；斩击/旋风密度试导不接入。
+python -X utf8 Tools/LegacyMigration/prepare_grounded_enemy_art.py --approved-density-sample Godot/GodotProject/.godot/validation/art_ground_batch_install_20261116/gorilla/density_manifest.json --output Godot/GodotProject/.godot/validation/art_ground_batch_install_20261116/gorilla
+python -X utf8 Tools/LegacyMigration/install_official_hero_hd.py --work Godot/GodotProject/.godot/validation/art_a2_heroes_20261114 --visible-first
+python Godot/GodotProject/.godot/validation/art_ground_batch_install_20261116/verify_static.py
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_monster_batch_final_native_20261117 --windowed --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_ground_batch_install_20261116/preview_batch.gd
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_preview_standalone_20261117 --headless --audio-driver Dummy --script res://.godot/validation/art_atlas_contract_repair_20261117/preview_standalone.gd
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_preview_repaired_20261117 --windowed --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=ui --hero-presentation-only
+# 同一隔离入口分别使用 --enemy-hierarchy-only、--enemy-death-only、--sea-only、--shark-only、--east-sea-only、--garuda-only。
+dotnet build GodotProject.csproj --no-restore -v minimal
+python Tools/ProjectMaintenance/validate_game_references.py
+dotnet format whitespace GodotProject.csproj --no-restore --include TheGame/GameScripts/UI/InventoryForm/Components/HeroPreviewNode.cs TheGame/GameScripts/UI/InventoryForm/Components/InventoryCharacterPanel.cs TheGame/GameScripts/UI/InventoryForm/InventoryForm.Logic.cs TheGame/MainPack/Scripts/Debug/UiSmokeScenario.HeroPresentation.cs TheGame/MainPack/Scripts/Debug/UiSmokeScenario.CombatFeedback.cs --verify-no-changes
+```
+
+最终交付复核verify_delivery.py通过：4181文件基线中76个授权文件变化、无新增非忽略文件，HEAD/Git索引保持；另一个地图东海动画的数字/空白格式变动未由本批写入，保留外部工作。原12图导入/英雄预览PNG/受限四原图保持，清单667/67及182/43逐项计数吻合。记录见batch_verification.json。
+
+后续按类别继续Boss；本批受限位图、旧分动作图、地图/UI真实高清及Android真机未完成，不以本轮通过替代全库目标。
+
+## 妖猴完整动作2倍保真小样（历史；已审，正式接入见当前批次）
+
+按CrossPlatformPlan §2.12.32及规范00/30/40/50，沿FFDec/原ground_monsters注册和compact_registered_atlas，只在`.godot/validation/art_demon_monkey_sample_20261116/`制作。当前正式PNG/导入/帧资源/库/场景/代码不改，无新System或显示/关卡调整。
+
+直接看：[同逻辑1080p原图/插值/最终候选](../Godot/GodotProject/.godot/validation/art_demon_monkey_sample_20261116/demon_monkey_comparison_1080p.png)、[跑步/受击1080p](../Godot/GodotProject/.godot/validation/art_demon_monkey_sample_20261116/demon_monkey_run_hurt_1080p.png)、[全身200%](../Godot/GodotProject/.godot/validation/art_demon_monkey_sample_20261116/demon_monkey_fullbody_200percent.png)、[24fps双向动图](../Godot/GodotProject/.godot/validation/art_demon_monkey_sample_20261116/demon_monkey_motion_24fps.png)、[电脑1920×1080](../Godot/GodotProject/.godot/validation/art_demon_monkey_sample_20261116/demon_monkey_1920_attack_1_left.png)、[手机20:9](../Godot/GodotProject/.godot/validation/art_demon_monkey_sample_20261116/demon_monkey_2400_attack_1_right.png)、[手机21:9](../Godot/GodotProject/.godot/validation/art_demon_monkey_sample_20261116/demon_monkey_2520_death_left.png)。灰色背景为正式实体场景的独立原生预览，不是关卡实战或Android真机。
+
+| 检查 | 实际结果与限制 |
+| --- | --- |
+| 来源/完整性 | Monster_v1恢复散列与既有值相同；sprite57/60/67/73/80共五动作78帧24fps、20共享姿态，无位图/滤镜依赖。当前正式动作与源顺序相符；历史88帧/after_hurt不属于当前正式消费者，本批无删帧。 |
+| 原密度复现 | 原FFDec1倍按源父矩阵/逻辑floor注册到128×115、offset(-4,-13.5)，78帧与正式可见RGBA/alpha全等；无逐帧居中、无猴兵落地+8修正。 |
+| 描边根因/修正 | 初版直接zoom2的最小描边固定为输出1px，归一alpha比0.96005～0.97362、质心差最高0.61129逻辑px、回采样RGB MAE8.83～10.50，未采用。沿已有同版本BitmapExporter资料确认useMinimumStrokeWidth1Px行为。临时XML仅167条1TWIP线宽规范为当前1倍有效20TWIPS，规范前后1倍78帧完整RGBA全等；恢复167字段后XML树完全一致。原源与工具安装不改。 |
+| 最终2倍采样 | alpha总量/4比原图1.004414～1.007418；质心偏移最大0.05385逻辑px；Lanczos回采样、原alpha加权可见RGB MAE3.025～3.292/255。原路径/配色/深度和动画未编辑，仍有栅格采样差异，不能称2倍像素全等或用户已审。见fidelity_metrics.json。 |
+| 装箱 | 20姿态、78帧不变；候选1024×845约3.30MiB RGBA8，原正式1024×345约1.35MiB。256×230像素注册画布以region/margin恢复128×115逻辑尺寸；1倍/2倍共156次装箱解包RGBA全等，全部四肢/棒子无裁切。单边1024不等于Android性能通过。 |
+| 原生双向/比例 | art_demon_monkey_native_strokes_20261116退出0、DEMON MONKEY SAMPLE NATIVE PASS、stderr空。正式C#根调用真实SetFacing，内存SpriteFrames/复制库仅做密度与offset补偿；156帧双向、204次检查（含三比例重复转向/代表帧）中原点、局部及世界身体/受击/攻击形状和启闭相同，原动画帧号逐项相同；30张1920/2400/2520×1080输出。方法回调/子脚本只在夹具内剥离，正式轨道保持。 |
+| 审图动画 | 156原生帧串联，APNG每个fcTL为严格1/24秒，左右各78帧；同逻辑1080p、五动作全身200%与双端原尺寸图已查看，最终描边保持、眼睛/衣缘/棒子更清晰。串联动画不冒充真实状态切换或战斗。 |
+| 保护/清单 | baseline冻结4181文件；最终仅五份既有文档变化，正式源/代码/资源及HEAD/索引保持，无新增非忽略文件。667图像仍59勾、182配套仍19勾；本批查源/样稿验证勾选，正式接入/实战/用户审图未勾。见batch_verification.json。 |
+
+实际命令（仓库根）：
+
+```powershell
+python Godot/GodotProject/.godot/validation/art_demon_monkey_sample_20261116/prepare_sample.py
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_demon_monkey_native_strokes_20261116 --windowed --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_demon_monkey_sample_20261116/preview_sample.gd
+python Godot/GodotProject/.godot/validation/art_demon_monkey_sample_20261116/make_review.py
+python Godot/GodotProject/.godot/validation/art_demon_monkey_sample_20261116/verify_delivery.py
+```
+
+准备阶段两处路径/编码问题已修：旧manifest中文目录实际是历史乱码名，现按已知sprite ID定位；读取旧UTF8夹具时最初用了本机默认编码，写出前失败并导致一次Godot找不到脚本，改显式UTF8后最终原生进程退出0且stderr空。首轮清单验证仅匹配PNG/SVG，漏了其他两种图像项，现沿既有art-images/art-support标记完整计数，不放宽667/59与182/19断言。本批没有正式代码/资源改动，不复跑无关构建/GGF实战；上一批证据仍有效，妖猴未来正式接入后另验受击/追击/死亡/池复用。
+
+## 花果山猴兵已审2倍正式接入（2026-11-16）
+
+用户通过完整动作小样并要求按最小方案接入。按CrossPlatformPlan §2.12.31和规范00/10/30/40/50，复用prepare_grounded_enemy_art.py已审密度入口，仅原路径替换猴兵正式图集及必要采样/视觉密度资源；工作目录`.godot/validation/art_monkey_install_20261116/`，before/保留本轮原文件。英雄200逻辑格/六列契约、显示设置、关卡和玩法几何不改。
+
+直接看：[原图/正式2倍同尺寸](../Godot/GodotProject/.godot/validation/art_monkey_install_20261116/installed_review_1080p.png)、[电脑1920×1080](../Godot/GodotProject/.godot/validation/art_monkey_install_20261116/monkey_1920_attack_1_left.png)、[手机20:9右向](../Godot/GodotProject/.godot/validation/art_monkey_install_20261116/monkey_2400_attack_1_right.png)。这些为正式场景/正式导入图集的原生渲染，使用真实SetFacing；下列GGF专项另验证真实生命周期/攻击，不冒充Android真机。
+
+| 检查 | 实际结果与限制 |
+| --- | --- |
+| 接入/原图 | 正式PNG逐字节等于已审monkey_2x.png，512×1018；原PNG .import/UID保持。按正式SpriteFrames的region/margin解包69帧，与已审178×144注册帧逐帧RGBA全等。23个原姿态ID、69帧引用序列、duration/24fps/loop及SpriteFrames UID保持。旧5个单动作PNG/旧库保持。 |
+| 资源最小差异 | 原SpriteFrames仅23处region/margin数值改动；AnimationLibrary仅RESET+五动作共6处m_Body:offset值改为(-9,-2)，全部其余轨道、方法、标记、碰撞/判定和时间保持。场景仅m_Body scale0.5与offset(-9,-2)，其他节点/资源属性不变。资源文本保持原Godot LF。见installation_verification.json。 |
+| 真实转向 | 共用SetFacing原先对非Sprite2D身体硬写±1，会覆盖0.5。仅改为保留当前身体缩放幅度、改变X符号，Y保持；判定父容器继续原±1，英雄Sprite2D分支不变。五种地面怪物各6次交替/重复转向及真实回池重开检查通过，根Scale保持1；当前其他非Sprite2D身体没有显式非1基础缩放。没有新状态、管理器或显示系统。 |
+| 原生正式逐帧 | art_monkey_installed_native_20261116退出0、MONKEY INSTALLED NATIVE PASS、stderr空。正式C#根实体调用SetFacing，夹具仅剥离子节点脚本/方法回调，69帧×左右138次验证逻辑原点、画布尺度、局部及世界身体/受击/攻击形状、启闭相同；30图覆盖1920/2400/2520×1080、五动作、双向，另6次转向往返/比例。正式库方法没有删除。 |
+| 实际GGF层级/动作 | art_monkey_hierarchy_20261116退出0、SMOKE-ENEMY-HIERARCHY PASS、SMOKE-ANIMATION-EVENTS PASS与SMOKE PASS。五物种地面出招限制、攻击/收招、猴兵真实受击激怒/重索敌和同实例池复用通过；新增密度/offset断言覆盖重复转向、回池复位。原动画事件专项还验证攻击者音效、受击/死亡声音、中断RESET/恢复，妖猴双向连续追击不闪举棒。 |
+| 实际死亡 | art_monkey_death_20261116退出0、SMOKE-ENEMY-DEATH PASS与SMOKE PASS；猴兵/妖猴/大猩猩×60/120Hz六组实际致死攻击、抛飞/空中循环/落地回收，各只有1次死亡收益事件。没有改变死亡物理、受击时序或落地美术校正。 |
+| 构建/格式/引用 | dotnet build退出0、0错5既有警告；两C#文件dotnet format whitespace verify-no-changes退出0；2300序列化路径/392UID通过，Godot导入退出0，无本批资源/脚本解析错误。工具重复接入得到同一密度/offset/像素资源，未累计缩放，原--manifest作者路线保留。 |
+| 清单 | 正式高清新增1图为59/667，来源受限48（12部分完成）、其他待处理560；配套AnimationLibrary与official SpriteFrames新增2项完成为19/182。旧5张单动作图不勾；地图/图标位图、其他敌人、Android真机及全关T3未完成，不据专项成功勾全库。 |
+| 最终保护/复现 | 对照4181文件基线，仅12个授权文件变化、无正式新文件；原HEAD/Git索引保持，范围外内容及旧5图不变。作者入口再次接入后4个正式资源逐字节相同，无累计密度；667图像59勾选、182配套19勾选及6个本批审图链接核对通过，见batch_verification.json。 |
+
+诊断保留：两项GGF专项stderr首条均为CheckNodePoolReuse主动租用错误类型造成的“期望GroundItemNode，实际LootOrbNode”，源码明确断言拒绝并回收，属于预期故障注入。层级专项退出9个ObjectDB及1资源占用；死亡专项退出6个ObjectDB占用。原生逐帧夹具stderr空。首次静态比较因Vector2(-9.0,-2)与期望数值文本格式不同失败；规范化原LF和数值格式后，严格核对只有6值变化通过，未改变判定或跳过实测。该文本规范化与实机已测资源语义一致。
+
+实际命令（仓库根；dotnet build/format在Godot/GodotProject内执行）：
+
+```powershell
+python -X utf8 Tools/LegacyMigration/prepare_grounded_enemy_art.py --approved-density-sample Godot/GodotProject/.godot/validation/art_monkey_sample_20261116/sample_manifest.json --output Godot/GodotProject/.godot/validation/art_monkey_install_20261116
+dotnet build GodotProject.csproj --no-restore -v minimal
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_monkey_import_20261116 --headless --editor --quit
+python Tools/ProjectMaintenance/validate_game_references.py
+dotnet format whitespace GodotProject.csproj --no-restore --include TheGame/GameScripts/Entity/AbstractActorEntity.cs TheGame/MainPack/Scripts/Debug/UiSmokeScenario.CombatFeedback.cs --verify-no-changes
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_monkey_installed_native_20261116 --windowed --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_monkey_install_20261116/preview_installed.gd
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_monkey_hierarchy_20261116 --windowed --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=ui --enemy-hierarchy-only
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_monkey_death_20261116 --windowed --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=ui --enemy-death-only
+python -X utf8 Godot/GodotProject/.godot/validation/art_monkey_install_20261116/verify_delivery.py
+git diff --check
+git diff --cached --check
+```
+
+## 花果山猴兵原矢量2倍完整动作小样（2026-11-16，历史；已审接入见上节）
+
+按CrossPlatformPlan §2.12.30继续高清主线，复用原Monster_v1导出/grounded注册及compact_registered_atlas；只在`.godot/validation/art_monkey_sample_20261116/`试制，正式PNG/UID/SpriteFrames/动画库/场景/业务代码保持。
+
+直接看：[1080p原图/插值/候选](../Godot/GodotProject/.godot/validation/art_monkey_sample_20261116/monkey_comparison_1080p.png)、[全身200%](../Godot/GodotProject/.godot/validation/art_monkey_sample_20261116/monkey_fullbody_200percent.png)、[严格24fps双朝向动图](../Godot/GodotProject/.godot/validation/art_monkey_sample_20261116/monkey_motion_24fps.png)、[电脑1920×1080](../Godot/GodotProject/.godot/validation/art_monkey_sample_20261116/monkey_1920_attack_1.png)、[手机20:9](../Godot/GodotProject/.godot/validation/art_monkey_sample_20261116/monkey_2400_death.png)。动图串联五个动作再切朝向，保留原帧时长，跨动作衔接是审图序列，不称实战状态机运行。
+
+| 检查 | 实际结果与限制 |
+| --- | --- |
+| 源/依赖 | Monster_v1恢复SHA256 `5bd88da4211870f2ca2354b7cec8d1790747869641c11fe553910b10fe2a264a`；原stick-free XML/SWF散列和递归shape/sprite依赖记sample_manifest.json，位图0、滤镜0。沿已有grounded动作父矩阵/死亡逐帧校正，不把源重导抹掉已审落地修正。 |
+| 原密度/帧数 | FFDec zoom1重新渲染，69/69当前正式帧可见RGBA和alpha严格一致，源alpha零像素不比较不可见RGB。五动作run16/hurt13/attack24/death15/idle1，24fps；候选zoom2仍69源帧、23共享姿态，无删帧、合并时刻或改变轮廓内容。旧5张单动作图不算本批完成。 |
+| 注册/装箱 | 共同89×72逻辑画布、offset(-4.5,-1)，2倍178×144；沿现有逻辑floor注册和死亡落地0～8px逐帧修正。每帧alpha非零范围均在共同画布内，未裁四肢/武器。复用compact_registered_atlas，候选512×1018约1.99MiB，正式1024×190约0.742MiB；Android预算/压缩/真机尚未测。 |
+| 原生场景 | art_monkey_sample_native_20261116退出0、MONKEY NATIVE SAMPLE PASS、stderr空。原实体场景在独立SubViewport内只移除脚本/方法回调，保留原动画值轨/形状；候选仅m_Body scale0.5、offset/offset键乘2。69帧双朝向138次全部验证帧号、逻辑画布大小、原点和身体/受击/攻击形状/位置/启闭一致，另15图覆盖1920/2400/2520×1080五动作。未跑AI/真实攻击结算/池复用，不据此称正式战斗验证完成。 |
+| 画面/差异 | 已查看1080p/200%全身和电脑/手机原生图及动图首帧，眼睛/轮廓比原图和普通插值清楚。2倍alpha总量按密度归一后为原0.973876～0.978378，alpha质心差最大0.210272逻辑px；回采样可见RGB加权MAE4.377～5.467/255，包含边缘透明重采样误差，不称2倍与原图像素全等。候选尚待用户审图。 |
+| 动图/时序 | 138帧APNG从原生场景逐帧输出裁取，逐fcTL设置delay=1/24并重算CRC，69帧×左右朝向，详见animation_manifest.json；不是GIF近似帧率。原源帧序及24fps保持，原正式AnimationLibrary/方法/完成标记没有改动。 |
+| 同批UI查源 | ui_source_audit.json：Common同版六图复导与正式RGBA全等，369底板纯矢量、五操作按钮含Lossless2位图；hurtnum/bnum/pnum/miss的全部符号ID、位图类型与原尺寸确认，数字未称逐字RGBA校验。新增9来源受限，未写正式资源。头像382/386位图依赖仅是技能页源调查，未冒称已确认HUD头像身份。 |
+| 清单/范围 | 高清仍58/667，来源受限48（12部分完成）、561其他待处理；配套17/182。只勾查源/样稿/必要预览，猴兵正式高清接入与实战回归未勾。最小接入方案记录2.12.30，待用户审查后推进。 |
+| 最终工作区保护 | baseline保护4181个既有文件，仅5份既有文档变化；正式图片/代码/场景/帧资源/导入/工具保持，HEAD与Git索引不变、无正式新文件。667图像58勾选及182配套17勾选核对通过，10个本批审图链接有效；APNG138帧delay1/24及所有chunk CRC检查通过。见batch_verification.json。 |
+
+首轮native2导出进程退出0，随后读取本地编码日志按UTF8失败；产物已完成，后续复用，没有因日志读取错误重新发起导出。最初快速诊断裁片只显示上半身，最终审图另出完整全身1080p/200%和原生动图，不以裁片代替全动作检查。正式资源未变，无需复跑无关构建/玩法；Godot实际预览已验证装配/解析。
+
+实际入口（仓库根，输出仅在忽略目录；native2为同目录native2_export.log所记FFDec26.3 zoom2完整五sprite导出）：
+
+```powershell
+python -X utf8 Godot/GodotProject/.godot/validation/art_monkey_sample_20261116/prepare_sample.py
+python -X utf8 Godot/GodotProject/.godot/validation/art_monkey_sample_20261116/audit_ui_sources.py
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_monkey_sample_native_20261116 --windowed --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_monkey_sample_20261116/preview_monkey.gd
+python -X utf8 Godot/GodotProject/.godot/validation/art_monkey_sample_20261116/make_review.py
+python -X utf8 Godot/GodotProject/.godot/validation/art_monkey_sample_20261116/verify_sample.py
+git diff --check
+git diff --cached --check
+```
+
+## 三入口已审统一题签正式接入（2026-11-16）
+
+用户通过上一批统一题签并明确“按这版接入”。依CrossPlatformPlan §2.12.29及规范00/10/40/50，本轮只接入已审墨底与文字位置，未采用位图恢复候选、未改显示/玩法/框架。工作目录`.godot/validation/art_map_caption_install_20261116/`，before/保留本轮原PNG/导入/场景/测试/常量和文档。
+
+直接看：[已审/正式接入对照](../Godot/GodotProject/.godot/validation/art_map_caption_install_20261116/installed_review.png)、[电脑1920×1080](../Godot/GodotProject/.godot/validation/art_map_caption_install_20261116/map_1920_installed_hover_end.png)、[手机20:9](../Godot/GodotProject/.godot/validation/art_map_caption_install_20261116/map_2400_installed_hover_end.png)、[真实4K全屏](../Godot/GodotProject/.godot/validation/art_map_caption_install_20261116/map_actual_fullscreen.png)。真实流程截图可能含即时“保存成功”提示，原生对照图无此提示；4K按用户确认放大1080p标准，不代表原生4K高清。
+
+| 检查 | 实际结果与限制 |
+| --- | --- |
+| 原路径接入/保护 | 保存两态、令牌及技能4PNG与已审artwork输出逐字节相同，旧.import/UID字节保持；四图题签遮罩外RGBA全等。新增共用276×72墨底与已审PNG字节相同，原SpriteFrames字节保持。未采用EDSR或插值增强主体。见installation_verification.json。 |
+| 场景/职责 | 既有节点只有3个Caption的四边offset改变，新增3个Caption/Ink TextureRect和1个外部纹理引用；其他全部节点/动画/绑定属性保持。三个Label中心x74，Ink138×36、相对位置(-19,-2.5)、MouseFilter.Ignore和show_behind_parent保持。MapForm业务/生成绑定不改，技能沿原Caption生命周期显隐。设置实际沿原self_modulate0.9→1.08提亮，scale恒1，纠正前记录的历史缩放描述。 |
+| 正式原生显示/输入 | art_map_caption_installed_native_20261116退出0、UNIFORM CAPTION INSTALLED PASS、stderr空；20图覆盖1920/2280/2340/2400/2520×1080×普通/悬停首尾/可购。12张与已审1920/2400/2520对应图RGB最大差0，字体/共同墨底一致。三个真实原生鼠标从Caption中心按下/松开各触发原按钮一次，Label与Ink不截输入；1/15/19帧24fps、duration1保持。 |
+| 实际GGF流程 | art_map_caption_frontend_20261116退出0、SMOKE-MAP-BUTTONS PASS和SMOKE PASS。真实1920窗口/3840×2160全屏、6次尺寸往返、保存/设置题签真实鼠标悬停、技能题签首尾/移出/可购隐藏、主动被动购技、保存失败保留、返回后直接磁盘重读及回池复用通过。该map-buttons-only模式不进战斗，通用尾句“花果山”不代表该模式覆盖，不能据此验收T3。 |
+| 构建/生成/引用 | 原Collection Res退出0，1004项，只新增frontend_map_menu_caption_ink常量及生成时间；未手改生成文件。dotnet build退出0、0错5既有警告；FrontendSmokeScenario空白格式verify-no-changes退出0；2300路径/392UID引用通过。Godot导入退出0，无本批资源/脚本解析错误。 |
+| 清单 | 新增墨底使图像总数666→667，高清仍58；39受限（12部分完成）、570其他待处理。原生题签接入子任务勾选，4图及新墨底仍不勾整体高清。配套实际逐项计数17/182不变，修正旧汇总表：动画库8、SpriteFrames1、命中遮罩2，总17。地图/入口主体高清及Android真机仍未完成。 |
+| 最终保护核对 | 对照本轮4179文件基线，仅12个允许文件变化，新增共用墨底PNG及.import两文件；HEAD及Git索引保持，运行时业务代码未改。667图像含既有工程/插件图标与清单逐项对应，182配套/17勾选一致，7个本批审图链接可用。见batch_verification.json。首轮目录计数检查未纳入清单既有只读asset_bundle.svg，补全该已登记图标后通过，没有修改或删除该文件。 |
+
+诊断保留：Collection Res退出0，但headless编辑器关停输出Viewport/Texture/Font/ShapedText等RID及13881个ObjectDB占用，见art_map_caption_collection_20261116的stderr；未将其报成无诊断成功，也不越界修改插件。真实前端stderr有测试主动制造的存档作用域不匹配、拒绝离图两条预期失败，以及退出2个ObjectDB/1个资源占用；未出现本批缺图/UID/脚本解析错误。原生20图和输入夹具stderr为空。未运行Android真机或无关关卡回归。
+
+实际命令（仓库根；dotnet build在Godot/GodotProject内执行）：
+
+```powershell
+python -X utf8 Godot/GodotProject/.godot/validation/art_map_caption_install_20261116/install_approved.py
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_map_caption_import_20261116 --headless --editor --quit
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_map_caption_collection_20261116 --headless --editor --script res://EditorScripts/regenerate_collection.gd
+dotnet build GodotProject.csproj --no-restore -v minimal
+dotnet format whitespace Godot/GodotProject/GodotProject.csproj --no-restore --include Godot/GodotProject/TheGame/MainPack/Scripts/Debug/FrontendSmokeScenario.cs --verify-no-changes
+python Tools/ProjectMaintenance/validate_game_references.py
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_map_caption_installed_native_20261116 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_map_caption_install_20261116/verify_installed.gd
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_map_caption_frontend_20261116 --windowed --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=frontend --map-buttons-only
+python -X utf8 Godot/GodotProject/.godot/validation/art_map_caption_install_20261116/verify_delivery.py
+git diff --check
+git diff --cached --check
+```
+
+## 三入口题签位置与黑框宽度一致性小样（2026-11-16，历史小样；已审接入见上节）
+
+用户指出三个图标的文字位置及黑框宽度不一。实核原墨底保存/技能约137逻辑px、令牌112，上一轮只按Label中心核对不足；本轮按CrossPlatformPlan §2.12.28制作统一题签离线修正版。工作目录`.godot/validation/art_map_caption_uniform_20261116/`，正式资源尚未接入，不计高清完成。
+
+直接看：[带参考线前后对照](../Godot/GodotProject/.godot/validation/art_map_caption_uniform_20261116/caption_uniform_comparison_1080p.png)、[普通/悬停首尾/可购](../Godot/GodotProject/.godot/validation/art_map_caption_uniform_20261116/caption_uniform_states.png)、[电脑1920×1080](../Godot/GodotProject/.godot/validation/art_map_caption_uniform_20261116/map_1920_uniform_hover_end.png)、[手机20:9](../Godot/GodotProject/.godot/validation/art_map_caption_uniform_20261116/map_2400_uniform_hover_end.png)。参考线只存在对照图。
+
+| 检查 | 实际结果与边界 |
+| --- | --- |
+| 统一墨底 | 同一张276×72纹理，以138×36逻辑尺寸供三个Caption共用；来源为497/500/489的原alpha及令牌原近黑墨迹并集，无生成式补画。alpha>32的共同可见框为逻辑[0.5,2.5,137.5,34]，三个实例纹理及显示大小相同。像素增密只用于共同题签采样，不计高清。 |
+| Label与可见字形 | 仍用dfp_hai_bao_w12.ttc、20号字、原金色黑白描边、100×31框，中心x74，Ink相对Label为(-19,-2.5)，相对基线相同。独立原生透明背景渲染三Label：保存/设置/技能的金色bbox中心为(199.5,72)/(200,72)/(200,71.5)输出像素，密度2，中心差≤0.25逻辑px；不同字形的像素重心不应强行等同。见caption_font_metrics.json、visible_glyph_measurements.json。 |
+| 位置 | 保存和技能局部中心y79/84保持，令牌y93.5→95.5。共同墨底/文字中心x74取原按钮视觉区域；按钮、主体和地图背景位置/尺寸与正式场景一致，未移动玩法节点。原令牌整个图标hover缩放反馈保持，因此静态138宽不代表任意hover动画瞬间像素宽恒定。 |
+| 原图保护 | 保存两态/技能仅清除独立题签alpha覆盖像素，技能15个hover槽以外保持；令牌仅清题签y80～111近黑像素，RGB最大值<40。四图遮罩外RGBA全等，令牌彩色主体/下尖保留。见uniform_source_verification.json、逐图before与mask。 |
+| 原生预览/时序 | art_map_caption_uniform_20261116退出0、UNIFORM CAPTION SAMPLE PASS、stderr空；24图覆盖1920/2400/2520×1080×当前/修正版×普通/悬停首尾/可购。按钮/主体几何与原场景相同，技能墨底随原Caption仅在hover显示。art_map_caption_font_20261116退出0、stderr空，原SpriteFrames的1/15/19帧及24fps核对通过；原帧区/时长记录保留。未声称实机鼠标/GGF回池或Android真机已验证，本批仅原生场景样稿。 |
+| 画面/完成状态 | 已实际查看电脑/20:9全图、带参考线对照与四状态图；未把单纯节点断言当视觉结论。修正版仍待用户审图，正式PNG/.import/UID/场景/C#保持；高清58/666不变，地图/入口主体仍低精度。 |
+
+实际命令（仓库根）：
+
+```powershell
+python -X utf8 Godot/GodotProject/.godot/validation/art_map_caption_uniform_20261116/prepare_uniform.py
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_map_caption_uniform_20261116 --windowed --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_map_caption_uniform_20261116/preview_uniform.gd
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_map_caption_font_20261116 --windowed --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_map_caption_uniform_20261116/measure_captions.gd
+git diff --check
+git diff --cached --check
+```
+
+## 底图与入口图标原图约束恢复小样（2026-11-16，未接入）
+
+依CrossPlatformPlan §2.12.27，继续处理用户指出的图形精度，未改窗口、玩法、关卡或正式资源。工作目录`.godot/validation/art_bitmap_consistency_20261116/`；结果为有限恢复候选，尚不能认定地图/图标高清完成，58/666保持。
+
+直接看：[原生1080p图标对照](../Godot/GodotProject/.godot/validation/art_bitmap_consistency_20261116/native_icons_comparison_1080p.png)、[200%诊断](../Godot/GodotProject/.godot/validation/art_bitmap_consistency_20261116/icons_detail_200percent.png)、[地图同逻辑尺寸](../Godot/GodotProject/.godot/validation/art_bitmap_consistency_20261116/map_detail_1080p.png)、[电脑候选](../Godot/GodotProject/.godot/validation/art_bitmap_consistency_20261116/map_1920_candidate_hover_end.png)、[手机20:9候选](../Godot/GodotProject/.godot/validation/art_bitmap_consistency_20261116/map_2400_candidate_hover_end.png)。
+
+| 检查 | 实际结果与限制 |
+| --- | --- |
+| 同内容高精度源 | 4331张本地图像路径、3669张当前工程外图片，按更大尺寸及感知哈希筛选，无确认可用原件。官方244按钮的241/242/243矢量原生2倍导出实际是文字，不是红令牌，不能替代。见larger_bitmap_source_search.json、token_vector_source_probe.json。 |
+| 恢复路线 | 沿用冻结散列的EDSR x2非GAN模型，透明区RGB最近色延展，12次原图残差回投影；地图复用输入散列相同的既有推理。地图2816×1180、保存两态276×186、令牌224×228。alpha仅线性插值，无新增轮廓细节；技能卷轴未处理。 |
+| 回采样与限制 | 约束使用OpenCV Lanczos4浮点算子，可见RGB加权MAE为地图0.208、保存0.142/0.143、令牌0.161。独立Pillow Lanczos对alpha>24像素的MAE为0.235、1.899/2.380、2.108，不能混用不同口径宣称像素全等。图标alpha总量按密度归一后差约−0.0031%/−0.0019%/−0.0036%。回采样一致不证明高分辨率内容正确。 |
+| 原生预览 | art_bitmap_consistency_preview_fixed_20261116退出0、BITMAP SAMPLE PREVIEW PASS，stderr空。12张原生图覆盖1920/2400/2520×1080×当前/候选×普通/悬停末帧。原按钮/Label/背景逻辑几何保持；已查看最终电脑/20:9手机全图及1080p/200%对照。不是Android真机或正式GGF导航验收。 |
+| 首轮预览纠正 | art_bitmap_consistency_preview_20261116虽几何断言通过，但TextureButton按2倍纹理自然尺寸绘制，视觉错误放大。离线脚本补STRETCH_SCALE后重出全部12图，最终按实际图复核；首轮PASS不作为视觉范围证据。正式场景未改。 |
+| 画面结论 | 书本/令牌有轻微改善，地图森林/岩石仍软，不达到全库1080p目标，不将像素翻倍或低误差算高清。候选待本批审查，正式原图保留；未新增运行时架构/资源机制。 |
+| 工作区保护 | baseline核对4179个既有文件，本轮只有5份既有记录文档变化；正式PNG/导入/场景/代码/工具与HEAD/Git索引保持，无正式新文件。12张预览、9个文档审图链接及最终空stderr核对通过；两项diff --check通过。详见batch_verification.json。 |
+
+复现命令（仓库根）：
+
+```powershell
+python -X utf8 Godot/GodotProject/.godot/validation/art_bitmap_consistency_20261116/restore_sample.py
+python -X utf8 Godot/GodotProject/.godot/validation/art_bitmap_consistency_20261116/make_review.py
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_bitmap_consistency_preview_fixed_20261116 --windowed --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_bitmap_consistency_20261116/preview_sample.gd
+git diff --check
+git diff --cached --check
+```
+
+## A2地图入口题签对齐及正式接入（2026-11-16）
+
+用户认可上一节分层画面，指出令牌文字偏下；随后反馈全屏地图/图标仍模糊并追问分辨率。按CrossPlatformPlan §2.12.26，只完成本批已审文字接入和位置修正，明确保留真实图形高清未完成状态。工作目录`.godot/validation/art_a2_map_menu_install_20261116/`，before/保护原图、场景和代码；未更改显示/玩法/关卡或只读框架。
+
+直接看：[当前文字位置对照](../Godot/GodotProject/.godot/validation/art_a2_map_menu_install_20261116/installed_labels_comparison.png)、[参考线修正](../Godot/GodotProject/.godot/validation/art_a2_map_menu_install_20261116/caption_alignment_guides.png)、[1920×1080当前](../Godot/GodotProject/.godot/validation/art_a2_map_menu_install_20261116/map_1920_installed_hover_end.png)、[手机20:9当前](../Godot/GodotProject/.godot/validation/art_a2_map_menu_install_20261116/map_2400_installed_hover_end.png)。参考线只加在审图图片，游戏里没有。
+
+| 检查 | 实际结果与限制 |
+| --- | --- |
+| 位置/布局 | 令牌Caption(8.5,83)→(10.5,78)，上5/右2逻辑px；三个标题中心根坐标x77.5，Label大小100×31、原海报20号/金色黑白描边保持。保存/技能位置保持样稿，按钮/图片/Frame及10地点几何与开工场景一致。技能Caption排在Artwork之后绘制，避免原墨迹遮字。 |
+| 原图与文字分离 | 3个已审去字PNG原路径替换，逐个与before比较：全部alpha和源字形遮罩外RGBA严格相同。令牌PNG、map_skills_frames.tres、全部4份.import/UID原字节保持，未增加PNG尺寸。原文件留before及Git。 |
+| 现有架构接入 | 复用MapForm已有OnSkillsMouseEntered/Exited、ResetSkillsHint和Unbind，仅4处同步Caption.Visible；无新信号链/Manager/状态机。原Ge生成器补1个_skillsCaption绑定，新增2个原生Label，MouseFilter.Ignore；无新素材/字体文件/资源加载分支。 |
+| 双端原生图 | 修正版样稿40图通过；正式20图覆盖1920/2280/2340/2400/2520×1080×idle/hover首尾/available。每图核对3标题中心和原几何；与位置修正样稿输出差最大RGB1/255、全画布MAE最多0.000003166，属于渲染取整，不能称20图全部像素全等。 |
+| 实际前端 | art_map_menu_buttons_diagnostic_20261116退出0、SMOKE-MAP-BUTTONS PASS及SMOKE PASS。实际1920窗口/3840×2160全屏、6种布局往返、保存/设置鼠标悬停、技能15帧首尾/退出/可购隐藏、主动被动购买返回、保存失败保留、磁盘重读/窗口复用通过。此map-buttons-only模式不进战斗，通用SMOKE文本中花果山不代表该模式实际覆盖，不据此宣称T3进关已通过。 |
+| 构建/格式/引用 | Ge生成17绑定；dotnet build退出0、0错5既有警告；whitespace verify-no-changes对MapForm.Logic/FrontendSmokeScenario退出0；引用2298路径/392UID通过。编辑器导入退出0，无脚本/资源解析错误。 |
+| 真实精度复核 | actual_art_density.json：journey_map1408×590（原核心940×590）、保存两态138×93、令牌112×114、技能图集1280×1120（35格，卷轴59×33/58×37）。1080p/4K对原密度约放大1.83/3.66倍，图形仍糊属实；本批字体/光晕工作不等于图形高清完成。未改变940×590逻辑视口，未用插值/失败EDSR冒称高清。 |
+| 高精度源调查边界 | rg --files在P:/Godot-Project按fla/psd/xcf/ai/svg/ora/kra/clip搜索并排除框架/插件/缓存后，只找到6个工程图标/主题SVG，无本批地图/书本/卷轴/令牌原稿。结果留local_high_precision_source_search.json；这不是所有外部来源无解的证明，后续仍优先查更高精度同内容源。 |
+| Git/清单 | baseline保护4179文件/原索引；允许差异及最终核对见batch_verification.json。高清仍58/666，38受限（10部分完成）、570其他待处理；配套17/182。文字接入子任务勾选，三张去字图只记部分完成，图形高清仍未勾。 |
+
+失败/诊断如实保留：首个编辑命令在root header匹配断言处退出，3个PNG已复制；修正后从本轮before核对原场景再定向修改，没有重置Git或用户内容。测试首次局部变量caption与既有变量重名导致构建失败，改menuCaption后0错。首轮实际按钮测试在令牌提亮等待超时；只补充失败时的hover/位置/动画诊断后，原提亮断言最终通过，正式提亮逻辑未改。最终完整前端stderr仍含测试主动制造的存档归属失败、ProcedureMap拒绝离档日志，以及退出2个ObjectDB/1资源占用诊断，不据PASS隐去；原生20图stderr为空。首次要求所有渲染像素全等发现部分比例差1/255，已记录实际差异，没有修改图形/字体掩盖。
+
+实际命令（仓库根；构建和格式是在Godot/GodotProject目录执行相应相对路径）：
+
+```powershell
+python Tools/ProjectMaintenance/regenerate_ui_form.py Godot/GodotProject/TheGame/UIs/map_form.tscn --namespace GameLogic.UI
+dotnet build Godot/GodotProject/GodotProject.csproj --no-restore -v minimal
+dotnet format whitespace Godot/GodotProject/GodotProject.csproj --no-restore --include Godot/GodotProject/TheGame/GameScripts/UI/MapForm/MapForm.Logic.cs Godot/GodotProject/TheGame/MainPack/Scripts/Debug/FrontendSmokeScenario.cs --verify-no-changes
+python Tools/ProjectMaintenance/validate_game_references.py
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_map_menu_import_20261116 --headless --editor --quit
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_map_menu_installed_preview_20261116 --windowed --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_a2_map_menu_install_20261116/verify_installed.gd
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_map_menu_buttons_diagnostic_20261116 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 24000 -- --smoketest=frontend --map-buttons-only
+git diff --check
+git diff --cached --check
+```
+
+本批文字位置/原生渲染与交互接入完成；地图/图标真实高清、Android真机及T3仍未完成，不因输出分辨率或字体变清晰而勾这些图形。后续回到用户强调的源图精度问题。
+
+## A2地图入口统一字体Label小样（2026-11-16，待审）
+
+按CrossPlatformPlan §2.12.25及用户最新“保存书本删除烘焙文字，像令牌一样用Godot Label”的要求，本批查4图来源并制作文字分层小样。复用现有map_form、令牌字体和map/combo导出链，只在忽略目录`.godot/validation/art_a2_map_menu_20261116/`制作；正式美术、场景、代码、工具、显示/玩法与Git索引保持。
+
+直接看：[原图/分层文字1080p等尺寸裁片](../Godot/GodotProject/.godot/validation/art_a2_map_menu_20261116/labels_detail_1080p.png)、[电脑1920×1080](../Godot/GodotProject/.godot/validation/art_a2_map_menu_20261116/map_1920_split_hover_end.png)、[手机20:9](../Godot/GodotProject/.godot/validation/art_a2_map_menu_20261116/map_2400_split_hover_end.png)、[手机21:9](../Godot/GodotProject/.godot/validation/art_a2_map_menu_20261116/map_2520_split_hover_end.png)。[位图原图/插值/EDSR诊断](../Godot/GodotProject/.godot/validation/art_a2_map_menu_20261116/bitmap_probe_comparison.png)仅用于否决该恢复方法，不是当前文字分层候选。
+
+| 验证 | 实际结果与边界 |
+| --- | --- |
+| 来源/完整链 | source_audit.json沿同版OtherMat_v9真实依赖核对492/499/501。技能含479(59×33)、484(58×37)、489(137×28)位图和483morph mask/486边框；保存两态含498(104×84)、497/500(137×28)位图。令牌112×114与只读旧ButtonReturnMainMenu.png字节一致，未找到本批登记源中的更高精度图形，不能按shape包装算矢量。 |
+| 1/2倍重导 | 复用原export_official_map_combo_ui.py离线副本，不改其正式输出路径；native map_skills及保存hover与正式RGBA全等。保存normal尺寸相同却不全等，含书页/alpha差，因此最终文字样稿保护当前正式原图，不装官方重导替换书本。2倍只作来源诊断，不将位图插值称高清。 |
+| EDSR诊断 | 沿用已登记EDSR_x2.pb、SHA256不变，CPU4线程，保存normal/hover/令牌分别约3.96/5.36/4.96秒。RGB非GAN恢复、alpha仅Bicubic保留为独立诊断；保存normal/hover可见RGB回采样MAE4.6641/4.6904，预览收益不足，未采用、未写正式图。 |
+| 最终去字范围 | make_text_split.py读取当前正式PNG和原独立题签层；按497/500/489原彩色字形+1像素邻域遮罩去字为原黑墨，保留完整alpha和遮罩外RGBA。源书本/毛笔/卷轴/外围墨迹不变，令牌PNG原字节保持；首版整矩形填黑轮廓过硬已废弃，最终用字形遮罩，未生成式补画。去字是用户明确授权内容变化；不能称整张像素全等。 |
+| Label构图 | 从既有m_Settings/Caption直接复制样式：dfp_hai_bao_w12.ttc、20号字、金色、6px黑描边/9px白阴影外沿；保存中心(72,79)、技能按钮内(51.5,84)。都是原生Label，MouseFilter.Ignore；Label不随图片非等比缩放，未改3个按钮原位置/大小/锚点。 |
+| 时序/显示 | 技能原SpriteFrames保持1静止、15帧一次展开、19帧可购循环，24fps、全部duration1保持。技能Caption只在hover可见，idle/available不新增文字，展开末帧停住后继续显示；保存各态保持Caption。原SpriteFrames资源未被内存duplicate修改。 |
+| 原生预览/GUI | runner art_map_menu_labels_final_20261116退出0、stderr空，40图覆盖1920/2280/2340/2400/2520×1080×原图/分层×idle/hover首尾/available。runner art_map_menu_labels_gui_20261116退出0、stderr空，3个真实原生按钮均从Caption中心实际按下/松开各1次，悬停控件仍为原按钮；字体样式/原35帧时序通过。只是隔离原生场景/鼠标，不是GGF导航、APK真机或dp触控验收。 |
+| 正式边界/清单 | baseline冻结4179文件和原索引；本轮仅更新5份既有记录文档，无正式图片/字体/场景/脚本/工具新增或改动，保护结果见batch_verification.json。完成仍58/666、配套16/182；新增4项已查源受限，总38（含7部分完成）、570其他待处理；小样/审图/正式接入状态分开，未勾整图高清。 |
+
+实际入口（仓库根；所有输出留忽略目录）：
+
+```powershell
+python -X utf8 Godot/GodotProject/.godot/validation/art_a2_map_menu_20261116/make_text_split.py
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_map_menu_labels_final_20261116 --windowed --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_a2_map_menu_20261116/preview_labels.gd
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_map_menu_labels_gui_20261116 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_a2_map_menu_20261116/verify_label_gui.gd
+git diff --check
+git diff --cached --check
+```
+
+本批只试制/查源，没有正式代码变更，不重复无关构建/关卡/规则测试。按逐批审图节奏，先审独立字体的实际效果，再准备正式接入；书本/卷轴/令牌图形真实高清仍未完成。
+
+## A2已审浅岸/东海光晕原路径接入（2026-11-16）
+
+用户已通过下节2倍光晕修正版画面并要求继续本批接入准备。按CrossPlatformPlan §2.12.24、ProjectGuidelines 00/10/30/40/50，仅完成本批美术接入和必要验证。复用现有coastal导出器/作者脚本、Sprite2D、AnimationLibrary和GGF UI；无新增运行时管理器、平台加载分支或显示策略。工作目录`.godot/validation/art_a2_map_glow_install_20261116/`，原PNG/场景/库及工具开工副本留before/。
+
+直接看：[原图/当前双端对照](../Godot/GodotProject/.godot/validation/art_a2_map_glow_install_20261116/installed_review.png)、[1920×1080当前悬停](../Godot/GodotProject/.godot/validation/art_a2_map_glow_install_20261116/map_1920_installed_hover.png)、[1920×1080当前最强帧](../Godot/GodotProject/.godot/validation/art_a2_map_glow_install_20261116/map_1920_installed_current_max.png)、[2400×1080手机20:9](../Godot/GodotProject/.godot/validation/art_a2_map_glow_install_20261116/map_2400_installed_hover.png)、[2520×1080兼容预览](../Godot/GodotProject/.godot/validation/art_a2_map_glow_install_20261116/map_2520_installed_hover.png)。这些为原生场景/纹理输出，手机不是APK真机图；地图背景和位图文字仍非高清。两处同时发光只用于画面对照，未改正式交互。
+
+| 验证 | 实际结果与边界 |
+| --- | --- |
+| 已审源与原密度 | 同一OtherMat_v9 SHA256不变；正式导出器吸收已审滤镜采样方案。默认不带density/only的全三地点1倍9PNG与开工原图RGBA严格全等。密度2只允许显式选qianan/donghai，不将鲨之涡流小位图标为矢量高清。 |
+| 透明裁切/分页 | 浅岸完整674×624共同裁[19,20,631,586]，612×566格、5列×4行，最终3060×2264。东海完整1484×530裁[20,21,1436,497]，1416×476格；两页各2列×5行2832×2380，源0～9和10～18分别装入。所有帧加回共同透明外围，38/38与已审样本RGBA逐字节相同；没有旋转、每帧居中或按alpha去重。 |
+| 原生适配 | CurrentHint仅视觉scale0.5、offset浅岸(-12,-9)/东海(-14,-6)，原position保持。按钮/悬停Rect、pivot/源注册点、normal透明图、2个BitMap和全部旧.import/UID原字节保持。东海current第一张原路径/UID不变，新增current_2；场景只改变两Sprite的密度/offset及东海H/V网格。 |
+| 动画全帧/时刻 | 浅岸动画库原字节不变；东海保留RESET/hover和全部旧轨道，只映射current frame页内编号并新增texture离散值轨。19个原frame时刻/过渡/长度19/24秒均保持，texture键直接取原0、10帧时刻。原生AnimationPlayer对两处各2循环×19帧共76次实际frame/texture检查通过，包括第二页与回到第一页。 |
+| 导入像素/双端渲染 | 正式PNG仍是已审RGBA；原Lossless/no mipmap/fix_alpha_border参数保持，新页同参数。导入后alpha像素全等；Godot fix_alpha_border会处理低alpha像素RGB，未把导入RGB冒称原PNG全等。1920/2400/2520×1080各已审/接入×最弱/最强/切页/悬停共24张；同一Godot边缘处理下，hover画面全等，current最大RGB差2/255、全画布MAE最多0.001321/255，归于裁切后UV采样。未用回采样统计替代已审38帧源像素检查。 |
+| 注册/输入 | 现有validate_map_location_alignment对10地点通过，检查源注册、光晕留白和真实_has_point。独立GUI夹具保留MapLocationButton C#实际命中代码，仅在内存取消导航/图鉴身份依赖；301774原BitMap像素逐个与原逻辑hit图一致，两处真实鼠标进入、5相位悬停、按下/松开各1次和退出恢复通过。不是APK触屏或完整Procedure导航验收。 |
+| 完整流程实际失败 | art_map_glow_coast_frontend_final_20261116退出1。菜单/6比例/浅岸悬停与真实点击已执行，ProcedureLevel实际加载level_7，但既有LevelGatesNode拒绝首段[0,1013.75]，当前1920窗口约1048逻辑视野下不足一屏。不能记完整海域往返PASS；本轮门、刷怪、相机、碰撞与ProjectSettings均未改，此缺口仍归T3。没有改宽度校验、移动关卡节点或切回临时Keep。 |
+| 运行纹理成本 | current三页总RGBA8无mipmap约77.85095MiB，较未裁切2倍92.09412减少15.4659%；最大边3060。两hover另约4.60471MiB；源1倍更省但不满足本批已审清晰度。未测游戏峰值驻留/帧率或Android代表机，不能据单边小于4096宣称移动端性能通过。native_verification的纹理账本是双版本验证夹具，非游戏峰值。 |
+| 工具/生成/构建 | 作者脚本定向保留原文本/UID，运行前核对已安装页SHA256；重复应用场景/2库字节一致。新页经现有Collection Res生成器登记1003资源，只增加该常量及计数；未手改生成物/插件。dotnet build退出0、0错/5既有警告；whitespace verify-no-changes对FrontendSmokeScenario退出0；引用检查2298路径/392UID通过。 |
+| Git与清单 | baseline冻结4177既有文件及39项暂存记录；无暂存/提交/重置/回退。完整保护与允许差异见batch_verification.json。新增1 PNG+import，其余更改限4张原图、场景/东海动画、既有导出/作者/验证工具、烟测1行路径、生成常量和5记录文档。58/666完成，34受限（含7部分完成）、574其他待处理，配套16/182。 |
+
+**失败尝试的处理：** 首轮作者脚本的正则替换报错、随后错误匹配RESET同编号轨，均由写入后差异/解析检查发现；只从本轮before恢复本轮3份文本输出，最终从CurrentHint:frame路径之后定位keys，RESET/hover逐字节保持。旧全地图验证把牛魔谷也当居中图，但开工基线和本轮均是其官方偏心布局；只把验证改为已登记(-4.7,34)/176×125，不改画面。旧coast烟测漏Frame/产生空节点，已仅补该路径；修正后实际点击才到达上述T3故障。Collection/首次editor作者过程有既有RID/ObjectDB退出诊断；最终非editor作者、对齐、native和GUI夹具stderr为空。首次以原PNG直接要求导入RGB全等失败，改为分清源RGBA、原生alpha-border处理与最终渲染，报告真实差异，不关闭导入处理掩盖。
+
+实际复现入口（仓库根；原PNG在before，不改索引）：
+
+```powershell
+python -X utf8 Tools/LegacyMigration/export_official_coastal_map.py --source Godot/GodotProject/.godot/validation/art_a1b_20261114/other.swf --java "S:/Unity Editor/6000.3.24f1/Editor/Data/PlaybackEngines/AndroidPlayer/OpenJDK/bin/java.exe" --ffdec C:/Users/zheliku/AppData/Local/Temp/gamezmxy-ffdec/ffdec.jar --work Godot/GodotProject/.godot/validation/art_a2_map_glow_install_20261116/export2 --output Godot/GodotProject/.godot/validation/art_a2_map_glow_install_20261116/export2/assets --only qianan donghai --density 2
+# 已验证5张可见PNG原路径安装；normal/输入图保留。新PNG先由编辑器导入。
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_map_glow_apply_hashchecked_20261116 --headless --script res://EditorScripts/apply_official_coastal_map.gd -- res://.godot/validation/art_a2_map_glow_install_20261116/export2/manifest.json
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_map_glow_collection_20261116 --headless --editor --script res://EditorScripts/regenerate_collection.gd
+dotnet build Godot/GodotProject/GodotProject.csproj --no-restore -v minimal
+dotnet format whitespace Godot/GodotProject/GodotProject.csproj --no-restore --include Godot/GodotProject/TheGame/MainPack/Scripts/Debug/FrontendSmokeScenario.cs --verify-no-changes
+python Tools/ProjectMaintenance/validate_game_references.py
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_map_glow_alignment_verified_20261116 --windowed --rendering-method gl_compatibility --audio-driver Dummy --script res://EditorScripts/validate_map_location_alignment.gd
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_map_glow_native_20261116 --windowed --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_a2_map_glow_install_20261116/verify_native.gd
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_map_glow_gui_final_20261116 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_a2_map_glow_install_20261116/verify_gui.gd
+# 下项实际失败于T3门宽，不能作为本批完整流程PASS：
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_map_glow_coast_frontend_final_20261116 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 24000 -- --smoketest=frontend --map-coast-only
+git diff --check
+git diff --cached --check
+```
+
+本批美术资源与相关装配验证完成，画面已由用户批准；原背景/位图文字、T3完整进关和Android真机仍未完成。未重复无关战斗规则测试，本批收尾后不开始下一素材类别。
+
+## A2地图光晕保真续研（2026-11-16，历史小样，后获通过）
+
+用户选择“继续研究本批光晕保真”。按CrossPlatformPlan §2.12.23及ProjectGuidelines 00/40/50，只继续浅岸/东海这一批；源仍为已核验OtherMat_v9，复用原coastal注册和FFDec26.3 CLI。全部候选/脚本/证据留`.godot/validation/art_a2_map_glow_20261116/`，正式导出器、图片、场景、代码和显示设置保持，未进入下一素材类别。
+
+直接看：[原图/2倍同逻辑尺寸](../Godot/GodotProject/.godot/validation/art_a2_map_glow_20261116/glow_hover_comparison.png)、[最强动画帧](../Godot/GodotProject/.godot/validation/art_a2_map_glow_20261116/glow_current_comparison.png)、[19帧24fps动图对照](../Godot/GodotProject/.godot/validation/art_a2_map_glow_20261116/glow_pulse_comparison.png)、[全部38帧表](../Godot/GodotProject/.godot/validation/art_a2_map_glow_20261116/all_38_frames.png)、[双端缩略对照](../Godot/GodotProject/.godot/validation/art_a2_map_glow_20261116/map_glow_review.png)。原尺寸：[电脑原图](../Godot/GodotProject/.godot/validation/art_a2_map_glow_20261116/map_1920_original_hover.png)/[1920×1080候选](../Godot/GodotProject/.godot/validation/art_a2_map_glow_20261116/map_1920_source2_hover.png)、[手机原图](../Godot/GodotProject/.godot/validation/art_a2_map_glow_20261116/map_2400_original_hover.png)/[2400×1080候选](../Godot/GodotProject/.godot/validation/art_a2_map_glow_20261116/map_2400_source2_hover.png)、[21:9候选](../Godot/GodotProject/.godot/validation/art_a2_map_glow_20261116/map_2520_source2_hover.png)。同时显示两处光晕只为离线比较；动图是源帧表对照，非实时操作录屏。
+
+| 检查 | 实际结果与边界 |
+| --- | --- |
+| 根因 | 安装版javap与version26.3.0源码一致：Glow已乘zoom；Filtering.boxBlurSingleIterationTwoPass按radiusX×radiusY×width×height与boxBlurPixelsLimit×100000比较，超限循环缩小半径。默认1000；2倍时四项同增，预算按2⁴提高到16000才保持同一逻辑计算范围。先前再倍乘源半径的尝试不正确，旧失败证据保留。 |
+| 预算单独对照 | 不改源参数，仅提高预算，hover总量比恢复1.00175/1.00020；current弱帧仍有0.84141～1.11476总量比、最大15.85逻辑px透明度质心差。说明不能以强光晕恢复替代全帧保真；指标留budget_probe_metrics.json。 |
+| 采样修正版 | 原1倍先round(blur)得到整数核；奇偶核中心偏移不同。2倍保留该逻辑核宽并补偿中心相位±0.25逻辑px。临时XML40条Glow用FFDec同一dropShadow底层实现表达，不调源颜色/强度/passes/knockout，不改轮廓/矩阵/时间轴。最终复用原CLI，无安装包改动或正式新渲染器；完整源参数/每帧补偿留fidelity2/manifest.json。 |
+| 源语义/1倍 | 新source.xml与上轮源完整tag树一致；临时注册XML除40条已逐项核对的滤镜取样表达外整树一致。6张原密度normal/hover/current与正式RGBA严格相同；原PNG副本留originals/。 |
+| 全帧/注册 | 两处各19帧全部非空、不触裁边；每图仍5列×4行、19有效格，像素尺寸沿上轮2倍样本。原父矩阵、共同offset/逻辑画布、输入图像素、帧值0～18与i/24时刻保持。离线APNG的19个fcTL延时均1/24秒，循环19/24秒；不以GIF近似帧率冒充原24fps。 |
+| 光晕度量 | 回采样至相同逻辑尺寸：hover总量比浅岸1.002478、东海1.001204；current浅岸1.002113～1.052425、东海1.003269～1.023531。current质心差最大0.697/0.774逻辑px，全画布alpha MAE最大0.412/0.604（0～255）。指标不等于像素全等，弱帧最高约5.25%/2.36%总量差仍待视觉审查，不手动改亮度掩盖。sample_verification.json明确VISUAL REVIEW PENDING、true_hd_approved=false。 |
+| 双端原生图 | runner art_map_glow_fidelity_preview_20261116退出0、PREVIEW PASS；1920/2400/2520×1080各原图/修正版×最弱/最强/悬停共18图。沿原map_form隔离SubViewport，只在内存替换纹理并对current按2倍密度补偿；10地点原几何保持。没有正式写入、真实前端交互或Android真机验收。 |
+| 未完成部分 | 悬停文字仍为137×28位图，本批只恢复矢量光晕导出的清晰度/外观；地图背景、其他位图源和全库高清未完成。图集理论RGBA8仍32.09/60.01MiB、最大7420宽，Android驻留/最大纹理另验。 |
+| Git与清单 | 新baseline冻结4177文件及当前索引；最终保护结果见batch_verification.json。本轮只改5份记录文档，无正式素材/工具/脚本/场景新改动，不暂存/提交/重置/回退。55/665、36受限、574其他待处理保持，只勾本批研究/试制/验证子任务，四张图与审查仍未勾。 |
+
+主要复现命令（仓库根，输出均在忽略目录）：
+
+```powershell
+python -X utf8 Godot/GodotProject/.godot/validation/art_a2_map_glow_20261116/export_glow_fidelity_trial.py --source Godot/GodotProject/.godot/validation/art_a1b_20261114/other.swf --java "S:/Unity Editor/6000.3.24f1/Editor/Data/PlaybackEngines/AndroidPlayer/OpenJDK/bin/java.exe" --ffdec C:/Users/zheliku/AppData/Local/Temp/gamezmxy-ffdec/ffdec.jar --work Godot/GodotProject/.godot/validation/art_a2_map_glow_20261116/fidelity2 --output Godot/GodotProject/.godot/validation/art_a2_map_glow_20261116/fidelity2/assets --only qianan donghai --density 2
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_map_glow_fidelity_preview_20261116 --windowed --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_a2_map_glow_20261116/preview_locations.gd
+python -X utf8 Godot/GodotProject/.godot/validation/art_a2_map_glow_20261116/verify_glow_fidelity.py
+git diff --check
+git diff --cached --check
+```
+
+本轮没有正式代码变更，不重复执行无关构建/玩法/规则测试；本次通过的是来源、原密度重现、完整帧/注册/时序和原生预览检查，视觉保真仍交用户审图。按逐批审图节奏，本批小样交审后停止，不自动接入或进入下一类。
+
+## A2地图地点查源与原源2倍试验（2026-11-15，历史失败样本）
+
+按CrossPlatformPlan §2.12.22、ProjectGuidelines 00/40/50及用户“主任务是美术，不越俎代庖”的要求，只调查/试制地图地点。源追溯复用既有OtherMat_v9/FFDec26.3/coastal共同注册导出链；没有AI重画、位图增强、显示架构/玩法或关卡调整。所有样本在`.godot/validation/art_a2_map_locations_20261115/`；正式export_official_coastal_map.py的试验修改已恢复开工原字节，保留试验副本供复现，不把失败实现留在正式工具。
+
+直接查看：[原图/未通过候选双端对照](../Godot/GodotProject/.godot/validation/art_a2_map_locations_20261115/map_locations_review_failed.png)、[100%逻辑尺寸滤镜诊断](../Godot/GodotProject/.godot/validation/art_a2_map_locations_20261115/filter_diagnostic.png)、[全部38帧](../Godot/GodotProject/.godot/validation/art_a2_map_locations_20261115/all_38_source_frames.png)、[1920×1080原图](../Godot/GodotProject/.godot/validation/art_a2_map_locations_20261115/map_1920_original_hover.png)/[候选](../Godot/GodotProject/.godot/validation/art_a2_map_locations_20261115/map_1920_source2_hover.png)、[2400×1080原图](../Godot/GodotProject/.godot/validation/art_a2_map_locations_20261115/map_2400_original_hover.png)/[候选](../Godot/GodotProject/.godot/validation/art_a2_map_locations_20261115/map_2400_source2_hover.png)。图上的浅岸/东海同时显示是离线对照状态，不是新交互行为。
+
+| 检查/产物 | 实际结果与边界 |
+| --- | --- |
+| 输入身份/完整查源 | OtherMat_v9恢复SHA256=`fa7681aad99fb06f50228530b7f70f6334a1d7052a7bb6ef2ce3c3d81867fd5e`；本轮重新swf2xml与登记XML整棵tag树一致。audit_sources.py沿SelectPLace505实际字段及三状态遍历依赖，30图/10地点：23位图、2混合、2矢量current、3全透明normal。详细元件/尺寸见LegacyAssetMap及source_audit.json，不因sprite/shape外壳误判纯矢量。 |
+| 1倍精确重现 | 浅岸/东海normal/hover/current共6图，与正式图尺寸及解码RGBA全部相同。浅岸337×312/当前1685×1248，东海742×265/当前3710×1060；输入hit图和父矩阵/位置/共同offset冻结。 |
+| 2倍源重导 | 从同一SWF重新栅格，非插值旧PNG。浅岸hover674×624/current3370×2496，东海hover1484×530/current7420×2120。每图仍5列×4行，19有效帧；原父矩阵/位置/裁切逻辑及hit图像素保持。正常透明状态不作为高清图完成。 |
+| 全帧/时序 | 两处各19帧均非空且未触边，38/38无漏帧；正式动画库帧值0～18、各时刻i/24及长度原字节保持，source frames/原24fps未改。全部帧对照是缩略图，不替代同尺度画面验收。 |
+| 初次失败 | 直接FFDec `-zoom 2`导出光晕变细，不能将成功退出/较细线条当高清；原始诊断留density2/。随后仅离线按密度补偿滤镜blurX/blurY/distance，原颜色、strength、passes、knockout、矩阵/时间轴不改，产物density2_corrected/。补偿仍失败，不进入正式工具/资源。 |
+| 定量失败 | 补偿候选回采样至1倍：hover alpha总量浅岸0.5383、东海0.4041；current19帧alpha总量比范围分别0.6262～1.9654、0.4627～1.9179，alpha质心最大差分别19.74/12.45逻辑像素（透明度分布不对称变化，不能当注册矩阵移动）。说明差异远超抗锯齿，不能接受为原光晕高清。sample_verification.json状态明确FIDELITY FAILED，true_hd_approved=false。 |
+| 原生场景显示 | runner `art_map_locations_preview_20261115`退出0、PASS、stderr空。正式map_form剥离业务脚本、只在隔离SubViewport替换两处候选纹理；高密度CurrentHint视觉scale÷2，hover保持原逻辑Rect，10地点/Frame几何和动画文件保持。1920/2400/2520×1080各原图/候选×光晕最小/最大/悬停共18图；scene_previews.json记录。只证明预览完整与几何，不证明候选保真/正式交互或Android真机。 |
+| 密度成本 | 2倍current单图RGBA8无mipmap约32.09MiB/60.01MiB，最大宽7420；仅理论源纹理成本，无实际GPU驻留/Android最大纹理验收。即使成本可用也不能越过保真失败。 |
+| 正式与Git保护 | baseline保护4177个既有文件，HEAD保持c47dbdd，原39项暂存内容不改；本批不暂存/提交/重置/回退。最终正式差异只有5份记录文档，所有图片/.import/UID、脚本、场景/动画/命中、显示配置、框架/插件、原导出工具及其他既有文件逐字节保持。没有新正式资源。 |
+| 清单 | 制作/查源/验证子任务已勾，图像高清仍55/665。新增27项已查明来源或保真受限，总36受限（含原5项部分完成）、574其他待处理；3张全透明normal仍待配套命中验收，不凑完成量。原665图片/182配套分母不变。 |
+
+本批没有正式代码/场景/图像改动，不重复执行无关构建、全前端或规则测试；本次执行的是来源、原生导出、全帧/像素、场景输出和Git保护验证。上批代码测试证据保持，不能用它替代本批失败的视觉保真。初次验证脚本按全文件查tracks/3误取RESET键，改为从CurrentHint:frame路径之后取相应keys，最终38帧核对通过；此修正仅在忽略的验证脚本，不改变生产动画。
+
+主要复现入口（仓库根；正式导出器已恢复，2倍试验使用离线副本，不写正式资源）：
+
+```powershell
+python -X utf8 Godot/GodotProject/.godot/validation/art_a2_map_locations_20261115/audit_sources.py
+python -X utf8 Godot/GodotProject/.godot/validation/art_a2_map_locations_20261115/export_official_coastal_map_density_trial.py --source Godot/GodotProject/.godot/validation/art_a1b_20261114/other.swf --java "S:/Unity Editor/6000.3.24f1/Editor/Data/PlaybackEngines/AndroidPlayer/OpenJDK/bin/java.exe" --ffdec C:/Users/zheliku/AppData/Local/Temp/gamezmxy-ffdec/ffdec.jar --work Godot/GodotProject/.godot/validation/art_a2_map_locations_20261115/density2_corrected --output Godot/GodotProject/.godot/validation/art_a2_map_locations_20261115/density2_corrected/assets --only qianan donghai --density 2
+# 原1倍同一入口改--density 1、work为native、output为native/assets，实际已执行。
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_map_locations_preview_20261115 --windowed --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_a2_map_locations_20261115/preview_locations.gd
+python -X utf8 Godot/GodotProject/.godot/validation/art_a2_map_locations_20261115/verify_samples.py
+git diff --check
+git diff --cached --check
+```
+
+本批小样完成但高清未通过；交付明确失败结果并保留原图，不推广该滤镜方法、不把“导出PASS”误标“保真PASS”。按逐批审图节奏停止，下一素材批不自动开始。
+
+## 同平台固定显示，取消流程间切换（2026-11-15，当前）
+
+用户明确同平台从菜单到战斗只使用一套配置，不临时更换；随后再次限定当前主任务为CrossPlatformPlan §2.12美术素材，不扩到关卡/架构。只收尾已授权的取消切换：删除DisplaySystem的Window字段/构造注入、SetGameplayViewport方法、OnInit显示写入及ProcedureLevel全部调用；Prepare构造System不再注入Window。System仅初始化读取平台构图、提供MenuDesignSize。未改project.godot的940×590逻辑核心/1920×1080窗口、全部美术像素、门/刷怪/相机/碰撞/动画/场景或只读依赖。
+
+本轮目录`.godot/validation/display_fixed_20261115/`，baseline保护4177个既有文件和原Git索引。工程生产代码已没有ContentScaleAspect/ContentScaleSize赋值，也无SetGameplayViewport；测试只观测配置。主窗口仍按项目canvas_items+keep_height运行，同平台全流程一致。viewport_width/height不改成1920×1080，后者只作电脑窗口输出与美术验收尺寸。
+
+| 验证 | 结果与范围 |
+| --- | --- |
+| 构建/格式/引用 | build.log：退出0、0错误、5既有警告。SDK whitespace对4份受影响手写C# verify-no-changes退出0，CRLF保持。2295序列化路径/392UID通过，工作区及暂存区diff空白检查通过。 |
+| 实际前端 | runner `display_fixed_frontend_20261115 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=frontend`：退出0、完整SMOKE PASS。新增SMOKE-FIXED-DISPLAY PASS确认菜单与花果山共用ContentScaleSize(940,590)、KeepHeight、实际logical(1048,590)，切关不改配置；返回标题同样保持。选角/地图1920窗口与3840×2160全屏、既有6比例和前端交互继续通过。该结果不证明其他10关或Android真机通过。 |
+| 规则 | dotnet test Tests/ProfileTests、BattleTests、LevelTests，均`--no-restore -v quiet`：339/197/19通过、退出0；原NU1900源不可达警告保留。 |
+| 只读关卡诊断 | stage_width_audit.json直接读取11关阶段门位置，记录1048/1312/1377宽与原区域宽的比较，只作T3调查依据。未弱化LevelGatesNode校验、未移动任何节点。runner `display_fixed_level2_probe_20261115 --headless --resolution 1920x1080 --audio-driver Dummy --max-fps 120 --quit-after 1800 -- --smoketest=level2`退出0，短时只推进至第二阶段，没有完整SMOKE PASS；不以退出0声称该关或指定输出宽度验收通过。用户重申美术边界后不继续关卡实验。 |
+| Git/美术范围 | 相对本轮baseline只变4份显示/调用/烟测代码与5份记录，无新正式文件；HEAD/index保持，其他既有文件字节保持，图片/图集/.import、场景几何、动画、此前插件修复保持。高清仍55/665，不将取消切换记成美术完成。 |
+
+完整前端保留坏档/备份与重复EquipmentSystem注册回滚的既有故意注入，退出3个ObjectDB诊断；短时关卡探针退出6个ObjectDB诊断。未声称stderr空或全关宽屏完成。当前工作回到美术查源、保真重导、双端预览与逐批交审，T3数据调整另按原计划，不靠临时模式切换替代。
+
+下节“System切战斗Keep”为历史实现，已全部移除。
+
+## DisplaySystem集中显示职责（2026-11-15，历史流程切换方案）
+
+用户明确要求把构图换算和全局显示策略收进System，移除LevelViewController入/离树改Window及CharacterForm内直接读配置的实现。按ProjectGuidelines 00/10/40/50和CrossPlatformPlan §2.12.20，新增一个应用级DisplaySystem，复用AbstractSystem、Prepare装配与主FSM唯一Architecture；Godot主Window由Prepare注入，System借用而不释放。没有新增Node、Autoload、Model、接口、事件层或修改Framework/addons。
+
+证据目录`.godot/validation/display_system_20261115/`，开工baseline保护4175个既有文件及当时HEAD/暂存内容。开工project.godot实际逻辑视口为1920×1080，本轮恢复原940×590契约；窗口覆盖1920×1080保持，game/ui/reference_size/.android构图数据保持。所有图片/图集/动画/场景几何和此前插件修复原字节不改，高清完成仍55/665。
+
+| 检查 | 实际结果 |
+| --- | --- |
+| 职责集中 | DisplaySystem是生产代码唯一ContentScaleAspect写入点，也唯一读取构图设置键；初始化按主Window逻辑高度换算MenuDesignSize。CharacterForm只取共享System结果；LevelViewController的两个窗口回调删除；Prepare只注册一次，ProcedureLevel只声明战斗进入/普通或失败清理/框架关停。未维护第二份Window历史状态或设备布尔字段。 |
+| 生命周期 | GGF Fsm.Clear先调用当前流程OnLeave，再销毁状态/释放数据，因此关停仍可从主FSM取DisplaySystem；窗口本身由Godot拥有。普通/启动失败/运行失败走既有CleanupSession恢复菜单；关停分支关闭窗口退订后恢复。未依赖场景挂树/卸载时机，不访问已释放GF.UI来取窗口。战斗Keep仍是T3前的显示限制，世界宽屏未启用。 |
+| 构建/扫描 | dotnet build退出0、0错误、5个既有弃用警告，build_final.log。runner `display_system_scan_20261115 --headless --editor --build-solutions --quit --no-window`退出0、stderr空，新DisplaySystem.cs.uid由引擎生成；非Resource注册，不需要资源常量生成或第二个配置资源。 |
+| 完整实际前端 | runner `display_system_frontend_20261115`退出0、完整SMOKE PASS。新增断言确认Form与主FSM使用同一已初始化DisplaySystem，Windows构图1049×590。实际选角/地图1920×1080窗口与3840×2160全屏逻辑1048×590；6种选角构图/地图尺寸与连续回缩、姓名/四卡紧贴/遮罩、菜单按钮/技能购买/保存/双人重选/复用、进入战斗940×590和离关返回菜单全部通过。 |
+| 在途取消/战斗关停 | runner `display_system_cancel_20261115 --headless --audio-driver Dummy --max-fps 120 --quit-after 9000 -- --smoketest=level-cancel`退出0、SMOKE PASS：取消时1个pending show，晚到怪物回收且关卡停止；未初始化LevelViewController重复Cleanup通过。随后在ProcedureLevel活动状态执行框架关停，未出现DisplaySystem/FSM/Window异常。 |
+| 规则/引用 | ProfileTests339/339、BattleTests197/197、LevelTests19/19，均退出0，原NU1900源不可达警告保留；引用验证2295条序列化路径/392UID通过。 |
+| 格式/范围 | SDK whitespace只检查6份本批手写C#，初检发现新System一行自动属性不符格式，展开后verify-no-changes退出0；CRLF保持。HEAD和原暂存条目保持，无暂存/提交/重置/回退；仅本批6份已有代码/设置、5份记录与新增System/.uid变化，其他既有内容保持，git diff工作区/暂存区空白检查通过。 |
+
+完整前端保留既有坏档/备份与重复EquipmentSystem注册回滚的预期注入，退出3个ObjectDB诊断；取消专项退出6个ObjectDB诊断。均无新显示生命周期异常；不把PASS或退出0写成stderr空。Android仍为平台构图数据/隔离画布证据，真机、安全区、触摸和性能留T4/T5。
+
+本轮主要命令（仓库根，runner隔离APPDATA/存档）：
+
+```powershell
+dotnet build Godot/GodotProject --no-restore -v quiet
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py display_system_scan_20261115 --headless --editor --build-solutions --quit --no-window
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py display_system_frontend_20261115 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=frontend
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py display_system_cancel_20261115 --headless --audio-driver Dummy --max-fps 120 --quit-after 9000 -- --smoketest=level-cancel
+dotnet test Tests/ProfileTests --no-restore -v quiet
+dotnet test Tests/BattleTests --no-restore -v quiet
+dotnet test Tests/LevelTests --no-restore -v quiet
+python Tools/ProjectMaintenance/validate_game_references.py
+dotnet format whitespace Godot/GodotProject/GodotProject.csproj --no-restore --verify-no-changes --include Godot/GodotProject/TheGame/GameScripts/Systems/DisplaySystem.cs Godot/GodotProject/TheGame/MainPack/Scripts/Procedure/ProcedurePrepare.cs Godot/GodotProject/TheGame/MainPack/Scripts/Procedure/ProcedureLevel.cs Godot/GodotProject/TheGame/GameScripts/UI/CharacterForm/CharacterForm.Logic.cs Godot/GodotProject/TheGame/GameScripts/Entity/Level/LevelViewController.cs Godot/GodotProject/TheGame/MainPack/Scripts/Debug/FrontendSmokeScenario.cs
+git diff --check
+git diff --cached --check
+```
+
+下节Form直接读ProjectSettings和关卡节点窗口回调为历史实现，已由本节替代。素材高清限制及原生配置依据仍有效；引入System不计成新美术完成，不开始下一素材批。
+
+## 编辑器RefCounted报错与原生显示设置重审（2026-11-15，历史实现）
+
+用户明确要求修复打开Godot即出现的UiLayoutSettings.free错误，核实已接入素材与模糊原因，并按官方资料重审双端显示方案。依据项目第00/10/40/50章、Stop Ladder及当前用户指令完成；两处实际插件错误登记在第50章例外表，其他Framework/addons内容不改。第50章旧全局canvas_items+keep描述与当前显示改动存在冲突，本轮以用户当前重审要求为准，只登记插件例外，未擅自改其规范正文。
+
+本轮证据目录`.godot/validation/display_review_20261115/`（以下称本轮目录）；基线保护4178个既有文件、HEAD和原暂存条目。没有新美术批次，没有PNG重画/插值替换，没有动地图/英雄/选角图像字节。新鲜实际截图：[1920窗口/4K全屏四图对照](../Godot/GodotProject/.godot/validation/display_review_20261115/display_native_review.png)、[当前战斗](../Godot/GodotProject/.godot/validation/display_review_20261115/frontend_battle.png)。
+
+| 检查 | 当前结果及范围 |
+| --- | --- |
+| 报错根因 | 历史日志`art_map_install_scan_20261115/stderr.log`明确指向addons/ezpz_inspector/CustomInspectorPlugin.cs:116：为取类型script.New后对Resource调用Free。现直接从被检查对象GetType，不再构造/释放探针。ComponentInsoector退出对14个EditorInspectorPlugin也误用Free，改为Remove后Dispose，保留原注册/移除顺序与插件格式。 |
+| 原生方案/参考 | 实读Godot Multiple resolutions、Feature tags、ProjectSettings、Resources、RefCounted、anchors/containers，以及官方gui/multiple_resolutions和2d/platformer的project.godot。参考URL和取舍见CrossPlatformPlan §2.12.19；原文快照及SHA在本轮references/。GitHub目录API403、一个非官方仓库路径404未作证据；实际使用的一手文档/两份官方示例均HTTP200。 |
+| 实现简化 | 删除UiLayoutSettings.cs/.uid/.tres及CharacterForm资源引用，既有Collection Res重新生成1002项，仅移除该常量及生成时间。两个菜单Procedure不再持有Window、previousAspect或更改拉伸。project.godot统一canvas_items+keep_height，game/ui/reference_size为1920×1080，.android覆盖2400×1080；CharacterForm用GetSettingWithOverride读取，仍按590逻辑高换算1049/1312构图。Windows触屏不会被误当Android。 |
+| 玩法边界 | 唯一临时限制在既有LevelViewController原生入/离树：Keep940×590战斗视口→KeepHeight菜单。使用GetWindow，未借GF.UI或保存历史Window状态。全局KeepHeight不代表T3世界宽屏已完成；门/刷怪、相机Zoom、碰撞、动作及图像不改，T3校准后须删这两个回调。 |
+| 编辑器启动/实际检查 | runner案例`display_native_editor_20261115 --headless --editor --script res://.godot/validation/display_review_20261115/check_editor.gd`退出0；真实EditorInterface.inspect_object分别检查ArchiveSetting、PoolEntry两个C# Resource和正式CharacterForm，全部PASS。未再出现Can't free a RefCounted、Nonexistent function free或UiLayoutSettings调用错误。 |
+| 导入纹理/平台覆盖 | `display_native_features_20261115 --headless --script .../check_import_density.gd`退出0、PASS：实际Texture2D导入尺寸悟空身体/默认武器2400×6000、选角人物1271×1830；地图1408×590、选角背景940×590。canvas_items/KeepHeight、Windows1920×1080设置通过；引擎原生get_setting_with_override_and_custom_features([android])实际解析2400×1080，通过。此为原生特性查询测试，非Android真机。原密度背景/.import size_limit0，未被Godot额外降采样；它们仍非高清。 |
+| 完整前端 | `display_native_frontend_20261115`退出0、完整SMOKE PASS。1920×1080窗口/3840×2160全屏，选角和地图实测逻辑1048×590；6次地图目标画布/回缩、6种选角构图、四卡/姓名/遮罩、悬停/技能购买/保存/双人重选/复用通过。实际进战斗940×590及离关回菜单、返回标题策略断言通过。 |
+| 构建/生成 | dotnet build退出0、0错误、5个既有弃用警告，本轮build_final.log；runner `display_native_collection_20261115 --headless --editor --script res://EditorScripts/regenerate_collection.gd`退出0、Collection complete 1002。未手改生成常量，未手改框架生成器。 |
+| 规则/引用/格式 | ProfileTests339/339、BattleTests197/197、LevelTests19/19，均退出0，原NU1900数据源警告仍在。引用2295条序列化路径/391UID通过。SDK格式检查发现FrontendSmokeScenario中4个既有一行自动属性不符当前EditorConfig，已只对该手写文件做whitespace整理；5份受影响手写C#最终verify-no-changes退出0，其他文件/插件未批量格式化，CRLF保持。工作区/暂存区git diff --check通过。 |
+| 保护/进度 | HEAD和原暂存条目保持，已审地图/卡面/英雄/图集/.import字节不改；删除的3份是本次重审明确淘汰的旧UiLayoutSettings实现，暂存内容仍原样，未暂存/提交/重置/回退。清单仍55/665完整高清、9项受限（含5项部分完成），不是全库高清完成。 |
+
+启动错误与退出诊断区分：新的editor案例启动/检查阶段无上述Free错误，退出仍有既有headless编辑器RID/ObjectDB诊断（stdout：9 Viewport、34 DummyTexture、1 Scenario、23551 ShapedText、19 Font、1 FontVariation；stderr：9 Canvas、84 CanvasItem、13840 ObjectDB）。不以退出码0称stderr空，也不借本次用户报错扩大到编辑器资源清理。完整前端保留故意坏存档/备份及重复EquipmentSystem注册回滚注入；最终退出3个ObjectDB诊断，没有新的视口生命周期异常。
+
+清晰度结论：显示已实际应用，英雄/背包2倍和选角人物3倍沿用已审源重导；地图与选角底图仍原密度，因此全屏会软，4K比1080p再放大一倍。canvas_items在物理输出分辨率绘制，但无法恢复位图缺失细节。EDSR候选仍未通过、未接入；不为消除观感模糊而改用最近邻、锐化或AI重画。本轮只修报错和显示实现，不增加美术完成量。
+
+仓库根入口（runner使用案例专属APPDATA，不覆盖正式玩家档）：
+
+```powershell
+dotnet build Godot/GodotProject --no-restore -v quiet
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py display_native_collection_20261115 --headless --editor --script res://EditorScripts/regenerate_collection.gd
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py display_native_editor_20261115 --headless --editor --script res://.godot/validation/display_review_20261115/check_editor.gd
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py display_native_features_20261115 --headless --script res://.godot/validation/display_review_20261115/check_import_density.gd
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py display_native_frontend_20261115 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=frontend
+dotnet test Tests/ProfileTests --no-restore -v quiet
+dotnet test Tests/BattleTests --no-restore -v quiet
+dotnet test Tests/LevelTests --no-restore -v quiet
+python Tools/ProjectMaintenance/validate_game_references.py
+dotnet format whitespace Godot/GodotProject/GodotProject.csproj --no-restore --verify-no-changes --include Godot/GodotProject/TheGame/MainPack/Scripts/Debug/FrontendSmokeScenario.cs Godot/GodotProject/TheGame/MainPack/Scripts/Procedure/ProcedureCharacter.cs Godot/GodotProject/TheGame/MainPack/Scripts/Procedure/ProcedureMap.cs Godot/GodotProject/TheGame/GameScripts/UI/CharacterForm/CharacterForm.Logic.cs Godot/GodotProject/TheGame/GameScripts/Entity/Level/LevelViewController.cs
+git diff --check
+git diff --cached --check
+```
+
+后续当前状态以本节及CrossPlatformPlan §2.12.19为准；下方每菜单借用Window的方案为历史记录，已移除。
+
+## A1c正式接入与选角/地图实际铺满（2026-11-15，历史菜单期视口方案）
+
+用户已通过地图外围审查，要求共用一张背景、手机按钮靠左，并指出普通流程黑边及源图密度不足。本批复用原地图导入器/场景/绑定工具、共享UiLayoutSettings和现有两个Procedure，完成正式接入及菜单视口；不修改全局project.godot、战斗相机、碰撞或角色尺度。规范依据：ProjectGuidelines 00/10/40/50、CrossPlatformPlan §2.12.18及用户本轮菜单显示要求；未修改集中规范、框架、插件或旧工程。
+
+证据目录：`.godot/validation/art_a1c_map_install_20261115/`（以下称集成目录）；新恢复实验在`.godot/validation/art_a1c_map_hd_20261115/`。此前外围生成的输入/提示词/返回精度与来源记录保留在下节，本轮没有再次生成外围。
+
+正式运行截图：[选角1920×1080](../Godot/GodotProject/.godot/validation/art_a1c_map_install_20261115/character_actual_windowed.png)、[选角3840×2160全屏](../Godot/GodotProject/.godot/validation/art_a1c_map_install_20261115/character_actual_fullscreen.png)、[地图1920×1080](../Godot/GodotProject/.godot/validation/art_a1c_map_install_20261115/map_actual_windowed.png)、[地图3840×2160全屏](../Godot/GodotProject/.godot/validation/art_a1c_map_install_20261115/map_actual_fullscreen.png)、[四图总览](../Godot/GodotProject/.godot/validation/art_a1c_map_install_20261115/actual_menu_review.png)。这些由真实流程采集；[手机20:9](../Godot/GodotProject/.godot/validation/art_a1c_map_install_20261115/map_shared_2400.png)/[21:9](../Godot/GodotProject/.godot/validation/art_a1c_map_install_20261115/map_shared_2520.png)为正式C#地图的隔离画布检查，Android真机未验。
+
+| 检查/入口 | 实际结果 |
+| --- | --- |
+| `import_frontend_assets.py --approved-map` | 接入已审1408×590 PNG到原journey_map.png；文件SHA256=`40995cde090ae8dba497f43d4bbe626fd93b642228d212c0317e040345c85fba`。中央(234,0)940×590/554600像素RGBA严格等于旧183.png，原`.import`/UID保持。错误940×590输入被拒绝，正式图未变，日志`import_reject.log`。 |
+| 场景及生成 | Background逻辑(-234,0)、1408×590；Frame仍940×590，10地点、alpha命中及全部原动画未改。只将技能/保存/设置移到根左锚点，原局部位置、大小、动画不变；原绑定工具生成16字段，MapForm.cs最终字节与基线一致。5个烟测调用路径同步，旧Frame/m_Skills、m_Save、m_Settings路径搜索无剩余。 |
+| 菜单正式视口 | UiLayoutSettings.MenuAspect为KeepHeight，Character/Map流程进入保存并应用、退出恢复；借用Window引用，关停不重新索取已释放的UI服务。实际窗口1920×1080、独占全屏3840×2160，逻辑均1048×590，实际高590、宽与输出比例误差小于1逻辑像素。选角/地图均铺满；战斗恢复原940×590、返回标题恢复原策略的断言通过。4K是按用户认可放大1080p标准，不计原生4K高清。 |
+| 地图双端画布 | 正式C# MapForm在1920/2280/2340/2400/2520/回缩1920×1080共6次PASS；共用一张背景、三个菜单沿屏幕左侧，原10地点/Frame位置大小保持，背景忽略输入并覆盖全画布。1920/2400/2520截图和实际窗口/全屏5份输出整行/整列黑像素数均0；选角原墨框装饰仍保留，不将其当引擎留边。 |
+| 构建/扫描 | `dotnet build Godot/GodotProject --no-restore -v quiet`：退出0、0错误、5个既有弃用警告，集成目录`build_final.log`；runner `art_map_install_scan_20261115 --headless --editor --build-solutions --quit --no-window`退出0。扫描退出保留既有只读ComponentInsoector RefCounted/free诊断。 |
+| 完整实际前端 | runner案例`art_menu_final_frontend_20261115`，实际命令见下：退出0、完整SMOKE PASS；包括选角/双人重选、存档/回池复用、地图左菜单/技能购买/悬停、地图地点glow与像素命中、进入花果山及往返、视口恢复。日志位于`movement_presets/<案例>/stdout.log`、`stderr.log`。 |
+| 纯规则 | `dotnet test Tests/ProfileTests --no-restore -v quiet`：339/339；BattleTests同参数197/197；LevelTests同参数19/19，均退出0。各项目已有NuGet漏洞数据源不可达NU1900警告，测试实际通过。 |
+| 引用/格式 | `python Tools/ProjectMaintenance/validate_game_references.py`：2299条序列化路径/392个UID通过。SDK `dotnet format whitespace ... --no-restore --verify-no-changes --include`仅本批8份手写C#，退出0，`whitespace_final.log`；CRLF逐文件检查通过。导入器Python编译、工作区及暂存区`git diff --check`通过。 |
+| 保护/计数 | `verify_install.py`逐文件核对4178个既有文件；差异仅本批资源/场景/脚本/工具与6份记录，其他既有内容保留，无新增正式文件。HEAD保持c47dbdd；28项既有暂存内容按Git行尾规范化与基线匹配，收尾前后index条目相同。原始index文件散列因Git刷新元数据而不同，不据此覆盖索引；本轮未暂存、提交、重置或回退。正式图片665项/完整高清55项不变，9项受限（含5项部分完成）、601项其他待处理。 |
+
+中途失败及修正：第一次`art_map_install_frontend_20261115`通过地图布局后在技能hover等待失败，夹具增加真实鼠标先移出再移入；第二次`art_menu_actual_frontend_20261115`的实际窗口/全屏通过，但旧glow采样把逻辑坐标当物理像素，并暴露关停后重新取得GF.UI的空引用。前者按Viewport.GetStretchTransform换算，后者由流程借用进入时Window引用恢复；未改生产动画/玩法以绕过断言。最终完整前端通过，不将中途运行算为通过。
+
+最终stderr保留既有故意失败注入：坏存档/备份、档案身份不符的写入拒绝、重复EquipmentSystem注册回滚；退出为5个ObjectDB存活和1条资源占用诊断。最终没有前述ProcedureMap空引用，不能将整份stderr称为空，也未为消除既有退出信息修改只读依赖。
+
+本轮主要可重跑入口（仓库根，runner隔离APPDATA/玩家存档）：
+
+```powershell
+python -X utf8 Tools/LegacyMigration/import_frontend_assets.py --approved-map Godot/GodotProject/.godot/validation/art_a1c_map_20261115/journey_map_expanded_native.png
+python Tools/ProjectMaintenance/regenerate_ui_form.py Godot/GodotProject/TheGame/UIs/map_form.tscn --namespace GameLogic.UI
+dotnet build Godot/GodotProject --no-restore -v quiet
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_menu_final_frontend_20261115 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=frontend
+dotnet test Tests/ProfileTests --no-restore -v quiet
+dotnet test Tests/BattleTests --no-restore -v quiet
+dotnet test Tests/LevelTests --no-restore -v quiet
+python Tools/ProjectMaintenance/validate_game_references.py
+python -X utf8 Godot/GodotProject/.godot/validation/art_a1c_map_install_20261115/verify_install.py
+git diff --check
+git diff --cached --check
+```
+
+## 地图1080p密度恢复实验（2026-11-15，未通过高清、未接入）
+
+正式地图仍1408×590原密度，只解决覆盖；2倍像素母版应为2816×1180。现940×590中心缺少同内容高精度源，不能通过扩图外围、插值或改画证明原中心高清。另制EDSR x2非生成式恢复小样，未对正式PNG写入；模型来源/38,490,162字节及SHA256=`58562322…0763d9b4`见LegacyAssetMap、离线model_source.json。首次推理CPU4线程231.43s，之后报告重排复用现成结果，不重复推理或调用生成服务。
+
+对照：[1080p同逻辑裁片](../Godot/GodotProject/.godot/validation/art_a1c_map_hd_20261115/map_hd_core_comparison_1080p.png)、[1920×1080原密度](../Godot/GodotProject/.godot/validation/art_a1c_map_hd_20261115/map_1920_source_native.png)/[EDSR候选](../Godot/GodotProject/.godot/validation/art_a1c_map_hd_20261115/map_1920_edsr_rgb_2x.png)、[手机20:9候选](../Godot/GodotProject/.godot/validation/art_a1c_map_hd_20261115/map_2400_edsr_rgb_2x.png)。恢复图均2816×1180，显示逻辑仍1408×590、(-234,0)，不改变地图地点/尺度。
+
+| 方法 | 原中心回采样RGB MAE /255 | SSIM RGB | 结论 |
+| --- | ---: | --- | --- |
+| 普通Bicubic2倍 | 0.2010 | 0.9981～0.9989 | 仅插值基准，不计高清。 |
+| EDSR RGB2倍 | 0.2794 | 0.9974～0.9980 | 供审查候选；回采样P99差2/255、最大12/255，估计平移<0.007原像素；清晰度改善有限，暂不采用。 |
+| EDSR亮度+原图插值色度 | 0.4603 | 0.9950～0.9971 | 额外色度转换量化误差更大，仅诊断，不优于RGB候选。 |
+
+相似度/回采样误差仅用于识别偏离，不能证明复原出真实细节；实际裁片森林、山地、石像仍软，不将更大PNG或指标当高清完成。`preview_hd.gd`复用正式map_form原生节点、剥离业务脚本，仅替换离线背景纹理，原图/插值/EDSR在1920/2400/2520×1080共9张：runner `art_a1c_map_hd_preview_20261115`退出0、PASS、stderr空，`native_hd_previews.json`记录原逻辑几何。Android性能/安全区/触摸仍未验；2倍RGBA8理论12.68MiB，无mipmap，正式原密度约3.17MiB，不是GPU峰值实测。
+
+```powershell
+# 首次恢复已执行；复用既有模型/已安装OpenCV contrib，不新增正式依赖。
+python -X utf8 Godot/GodotProject/.godot/validation/art_a1c_map_hd_20261115/sample_restoration.py
+# 后续仅重排对照/测量时复用实际结果：
+python -X utf8 Godot/GodotProject/.godot/validation/art_a1c_map_hd_20261115/sample_restoration.py --reuse-inference
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_a1c_map_hd_preview_20261115 --windowed --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_a1c_map_hd_20261115/preview_hd.gd
+```
+
+本批已完成菜单显示接入，地图高清仍未通过；恢复样本留审，不推广、不开始下一素材批。下节为外围制作时的历史检查点，已审与正式状态以上节及CrossPlatformPlan §2.12.18为准。
+
+## A1c：本地ECPA地图原密度扩图小样（2026-11-15，历史制作检查点）
+
+按用户重申的既有授权，复用已成功的本地ECPA provider `http://127.0.0.1:8317/v1`、原`gpt-image-2`和官方`image_gen.py` CLI完成实际生成；此前仅因内置工具缺失就要求新API路线的判断已纠正。现有provider/凭据继续使用，不新增配置或请求用户提供Key；凭据仅通过子进程环境传给原CLI，未写入工程/日志。
+
+本批只处理地图外围，不进入下一素材批；所有产物在`Godot/GodotProject/.godot/validation/art_a1c_map_20261115/`。**原密度扩图小样已制作并完成下述离线检查，等待用户审图；真实地图高清、2倍母版、正式资源替换/整屏适配和Android真机均未完成。**
+
+直接审图：[双端原图/候选对照](../Godot/GodotProject/.godot/validation/art_a1c_map_20261115/map_review_comparison.png)、[电脑1920×1080/16:9](../Godot/GodotProject/.godot/validation/art_a1c_map_20261115/map_windows_1920_expanded.png)、[手机2400×1080/20:9](../Godot/GodotProject/.godot/validation/art_a1c_map_20261115/map_android_2400_expanded.png)、[手机19.5:9](../Godot/GodotProject/.godot/validation/art_a1c_map_20261115/map_android_2340_expanded.png)、[手机21:9](../Godot/GodotProject/.godot/validation/art_a1c_map_20261115/map_android_2520_expanded.png)、[100%接缝](../Godot/GodotProject/.godot/validation/art_a1c_map_20261115/seams_100percent.png)、[200%接缝](../Godot/GodotProject/.godot/validation/art_a1c_map_20261115/seams_200percent.png)、[原密度1408×590母版/候选](../Godot/GodotProject/.godot/validation/art_a1c_map_20261115/journey_map_expanded_native.png)。[实际提示词](../Godot/GodotProject/.godot/validation/art_a1c_map_20261115/outpaint_prompt.txt)与`generation_route.json`记录本地ECPA/CLI方式、模型、输入/提示词散列和请求参数。
+
+| 检查 | 实际结果与范围 |
+| --- | --- |
+| 当前原图 | 正式journey_map.png与旧Art/game_pic/183.png均940×590、字节相同，SHA256=`e35f886d3f040a7dd6cab3237e1251d74c15ef4f54c5aaa2b746a43e073ab15c`。 |
+| 官方上游 | OtherMat_v9恢复SHA通过；SelectPLace505→shape389→JPEG388的矩阵/18800×11800 TWIPS边界证明原生940×590，非矢量高清。FFDec提取JPEG与既有源XML imageData字节相同，SHA256=`25ee85ff173f6be01f70b7a48bb0194d35169f6435e643689c92ce8905219e35`；与当前PNG解码RGBA最大差[1,1,1,0]。未用重新提取的JPEG替换中心。 |
+| 准备/生成 | 先准备1408×590画布、中央(234,0)940×590原图、二值保护mask和6比例裁切计划；API输入增加上下各1px注册垫行到1408×592，中央940宽条保护、两侧各234px编辑。原ECPA服务/模型GET检查通过；编辑退出0，CLI日志生成22.4s、调用总时约25.21s。 |
+| 请求/实际精度 | model gpt-image-2、quality high，请求2816×1184，服务实际返回1934×813（约1.374倍原密度）。**未满足请求的2倍尺寸，不能计为2倍高清母版。** 按2.12.12允许的“原中心尚未高清通过时只验证原密度扩图”交1408×590候选，不伪报地图高清。 |
+| 合成与保护区 | 只提取生成外围，归一化/裁注册垫行；中心的生成像素全部弃用，原PNG逐字节贴回(234,0)。候选原554600像素RGBA最大差0，全图不透明；原Frame16个直属节点数据记录，正式map_form不改。 |
+| 接缝处理 | 首版直接贴回有色阶竖缝，既有OpenCV克隆试验未消除；最终仅对生成侧做固定边列颜色的平滑过渡（cross-neighbor1600次），外边仍保持生成色，原中心最后完整贴回。两处边列RGB阶差0为颜色约束结果，不能单独证明视觉；已查看100%/200%和1080p图，最终供用户审查。无镜像/原画机械拉伸填边，无新增地点、路线、入口、文字或地标。 |
+| 原生场景与比例 | `art_a1c_map_preview_20261115`退出0、stderr空，PASS：12 native-scene outputs /6 ratios /original UI geometry unchanged /background ignores input。1920电脑及1920/2280/2340/2400/2520手机各原图/候选一张。Frame940×590和14个Control原位置/尺寸/缩放保持；只在内存将Background置(-234,0)、大小1408×590。 |
+| 渲染核心 | 六种原图/候选在同一原生场景对照，原核心内部（边缘各留4输出像素）包含全部UI一起比较，RGB最大差1/255、alpha差0、超过1的像素0；来自原生纹理UV/采样量化，源候选核心RGBA仍严格差0。各候选无整行或整列黑边；所有比例共用同一母版，仅裁外围，不重排地点。 |
+| 预览性质 | 使用正式map_form原生节点/字体/贴图，在独立SubViewport中剥离业务脚本作离线画面验证，不是实际流程交互/真机测试。正式project.godot仍keep、普通流程左右留边仍在，未把本图误报为正式全屏已启用。 |
+| 成本/数量 | 原密度候选RGBA8理论约3.17MiB无mipmap，较原图约增1.05MiB；未测GPU/Android性能。候选仅在忽略目录，不加入正式665图像/182配套分母；完整完成仍55/12，地图高清未勾。 |
+| Git保护 | 逐文件核对本轮4178个已有文件，仅6份来源/计划/进度/验证文档变化；正式图片/.import/UID、脚本/场景/共享布局配置、project.godot及HEAD/index保持。未暂存、提交或回退用户内容。 |
+
+复用规范：ProjectGuidelines 00/10/40/50、CrossPlatformPlan §2.12.3/2.12.8/2.12.12；FFDec与原生预览沿既有入口，本地ECPA沿原授权调用链。没有新增运行管理器、平台层或并行正式美术加载路径。本批没有代码/正式资源改动，不重复跑无关构建和完整前端/规则测试；本次运行的是实际素材/原生场景验证，上一批完整前端证据保留如下。
+
+仓库根实际入口（图像调用仅执行一次，已有结果不重跑）：
+
+```powershell
+$mapWork = Join-Path (Get-Location) 'Godot/GodotProject/.godot/validation/art_a1c_map_20261115'
+& 'S:/Unity Editor/6000.3.24f1/Editor/Data/PlaybackEngines/AndroidPlayer/OpenJDK/bin/java.exe' "-Duser.home=$mapWork" -jar "$env:TEMP/gamezmxy-ffdec/ffdec.jar" -selectid 388 -export image "$mapWork/bitmaps" Godot/GodotProject/.godot/validation/art_a1b_20261114/other.swf
+python -X utf8 Godot/GodotProject/.godot/validation/art_a1c_map_20261115/prepare_map.py
+# 沿用此前已成功的调用方式：从当前本机ECPA provider读取base_url/现有凭据，只向子进程注入环境。
+# 实际子进程argv如下；不把凭据写入命令、文件或文档。
+uv run --no-project --with openai --with pillow --python C:/Users/zheliku/AppData/Roaming/uv/python/cpython-3.13-windows-x86_64-none/python.exe python C:/Users/zheliku/.codex/skills/.system/imagegen/scripts/image_gen.py edit --model gpt-image-2 --image Godot/GodotProject/.godot/validation/art_a1c_map_20261115/journey_map_ecpa_canvas.png --mask Godot/GodotProject/.godot/validation/art_a1c_map_20261115/journey_map_ecpa_mask.png --prompt-file Godot/GodotProject/.godot/validation/art_a1c_map_20261115/outpaint_prompt.txt --size 2816x1184 --quality high --out Godot/GodotProject/.godot/validation/art_a1c_map_20261115/output/imagegen/journey_map_ecpa_raw_01.png --no-augment
+python -X utf8 Godot/GodotProject/.godot/validation/art_a1c_map_20261115/compose_candidate.py
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_a1c_map_preview_20261115 --windowed --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_a1c_map_20261115/preview_map.gd
+python -X utf8 Godot/GodotProject/.godot/validation/art_a1c_map_20261115/verify_preparation.py
+python -X utf8 Godot/GodotProject/.godot/validation/art_a1c_map_20261115/verify_candidate.py
+git diff --check
+```
+
+`generation_route.json`、`candidate_composition.json`、`native_map_measurements.json`、`render_core_comparison.json`、`output_coverage_checks.json`和最终`candidate_verification.json`分别保存真实参数、精度限制、场景几何、渲染核心、覆盖与完整保护结果。ECPA和原生预览均退出0，无本批原生stderr错误；初次准备脚本对PackedScene节点未处理的解析错误已修正，后续准备/生成/原生预览/保护验证均通过。保留首版和融合试验作离线诊断，不作成品或正式加载分支。本批停止交审，未经审图不替换正式地图/不开始下一素材批。
+
+
+## 美术A2：选角分层正式接入与共享布局配置（2026-11-15，资源完成，正式整屏未启用）
+
+用户认可加宽卡面/独立字体/漏色修正版并要求继续，本批完成正式接入。随后用户指出真实测试窗口仍未铺满并要求统一布局配置：已明确区分资源接入、独立完整画布验证和普通keep流程；将电脑/手机基准及设备能力选择集中到现有MainPack资源目录的共享Resource，Form只保留本次画布尺寸。全局宽屏、地图扩图、Android真机仍未完成，不把本批PASS写成全库或正式全屏通过。
+
+规范依据：ProjectGuidelines第00/10/40/50章，CrossPlatformPlan §2.12.17；复用现有Godot/GGF Form、作者导出和生成入口。用户本轮明确要求分层卡面/独立Label，覆盖第40章旧“完整卡内已有姓名，不再叠加组件”的历史实现；本批未自行修改集中规范。共享布局配置承担UI美术基准/设备选择，无全局可变布局状态、事件或每帧轮询需求，不注册新的QF System/Manager，也不修改框架。
+
+证据目录：`Godot/GodotProject/.godot/validation/art_a2_character_install_20261115/`。开工`baseline.json`保护4166个已跟踪文件及HEAD/index，`before/`保留18份已有状态；最终`integration_verification.json`记录像素、比例、完整清单与Git保护结果。
+
+| 文件/范围 | 本批结果 |
+| --- | --- |
+| `Sprites/UI/frontend/character_wukong_card.png` | 原路径/UID改为sprite511的3倍原源人物层1271×1830。 |
+| `Sprites/UI/frontend/character_sanzang_card.png` | 原路径/UID改为sprite521的3倍原源人物层1271×1830。 |
+| `Sprites/UI/frontend/character_bajie_card.png` | 原路径/UID改为sprite515的3倍原源剪影/问号层1271×1830。 |
+| `Sprites/UI/frontend/character_wujing_card.png` | 原路径/UID改为sprite518的3倍原源剪影/问号层1271×1830。 |
+| `character_card_ink.png`及新`.import` | 新增711×1830墨框，悟空/沙僧原变换结果相同，只加载一图。 |
+| `character_sanzang_ink.png`及新`.import` | 新增711×1830唐僧原墨框，保留原注册差异。 |
+| `character_bajie_ink.png`及新`.import` | 新增711×1830八戒原墨框，保留原注册差异。 |
+| `character_card_background.jpg`及新`.import` | 新增原bitmap508的940×590 JPEG原字节；不宣称背景已高清。 |
+| `UIs/character_form.tscn` | 移除旧完整卡AtlasTexture，原4卡根节点/UID保持；黑底、原遮罩Polygon2D、人物、NinePatch及独立姓名各一套，图层共用原灰度材质。 |
+| `CharacterForm.Logic.cs` | 开窗读取共享画布，Resized在新实例连接一次；Fit/遮罩右边界更新和本地1P/2P定位，无玩法尺度改动。 |
+| `CharacterForm.cs` | 经规定生成器增加Frame/Roles两项节点绑定；非手改生成文件。 |
+| `MainPack/Resources/ui_layout_settings.tres` | 新增共用配置：电脑1920×1080、手机2400×1080、逻辑高590；不是固定设备分辨率。 |
+| `MainPack/Scripts/Resources/Settings/UiLayoutSettings.cs`及`.uid` | 新增原生Resource，集中触屏能力选择和画布换算；作者预览可显式选择两种构图。Form不再含_touchLayout/设备判断。 |
+| `FrontendSmokeScenario.cs` | 原悬停/双人/复用断言适配分层；新增正式C#窗口6目标连续resize、共用配置身份/基准、唯一姓名、遮罩UV/材质、NinePatch检查。 |
+| `character_card.gdshader` | 算法字节保持，只同步注释为分层材质用途。 |
+| `export_official_character_cards.py` | 在既有入口加入可复跑分层导出；默认layers/密度3，历史complete模式只允许显式隔离输出。 |
+| `ResourcesCollectionConstant.cs` | 经既有Collection Res入口生成1003资源；新4图和布局配置入表；同时收录此前已存在但漏登记的inventory_action_gift常量，未改该图片。 |
+| `ArtProgress / CrossPlatformPlan / LegacyAssetMap / WorkingNotes / Validation` | 同步认可/接入/限制、来源、统一配置、完整清单和本批证据。 |
+
+场景/脚本路径均相对`Godot/GodotProject/TheGame/`，其余按表中目录定位。原4份`.import`与UID逐字节保持，原图留Git/离线备份，无hd目录或第二套完整卡运行加载路线。
+
+| 验证 | 实际结果 |
+| --- | --- |
+| 原源与保真 | 恢复SWF散列匹配；正式8份人物/墨框对照与认可PNG的RGBA相同（共用框比较两次），JPEG字节一致；4,079,328原核心保护像素最大RGBA差0、姓名区域alpha空，姓名来自game_font.tres。沿用有效的原密度4/4精确重现证据，无插值或AI重画。 |
+| 原生构图与resize | 最终`art_cards_layout_settings_frontend_20261115`退出0、完整SMOKE PASS；6种目标在两次真实选角检查中各测，合计12条SMOKE-CHARACTER-LAYOUT PASS。两主设计1049×590/1312×590，四卡gap0，420×590人物母版、4个原生Label、原遮罩/UV/材质继承与原墨框尺寸均通过。手机选择在隔离正式C#实例用共享配置显式指定，不冒充Android真机。 |
+| 漏色 | 最终6张正式场景独立画布图扫描，原遮罩外顶部最大通道0，接缝强红像素0；内部选中卡仍为原色，不靠变灰隐藏漏色。 |
+| 交互和生命周期 | 完整前端原生鼠标悬停/灰度/光标、未开放角色禁用、1P/2P对齐、双人重复选择拒绝/重选/返回、存档/取消不落盘、同Form复用和回调清理通过；SMOKE-COOP-MENU、SMOKE-TANGSENG-CREATE、SMOKE-RETURN-SAVE等PASS。 |
+| 构建与规则 | 最终dotnet build：0错误、5个既有警告；Profile339/Battle197/Level19全部通过且0跳过。规则测试在本批第一次集成后执行，共享纯UI配置未改变这些规则，证据继续有效。NuGet漏洞元数据访问有NU1900警告，不影响测试运行。 |
+| 引用/生成/格式 | 最终REFERENCE PASS：2297 serialized paths /392 UIDs；UI绑定8项、Collection Res1003项；三份手写C#指定范围whitespace verify、Python编译及git diff --check通过。 |
+| 清单与Git | 图像665项与实际TheGame图像及两项工程/只读图标逐项对应，55项完成；配套182项/12完成；新增4图已登记，4卡整幅目标仍部分完成。HEAD/index未改、其余已跟踪文件与开工散列一致，Framework/addons/旧项目、project.godot、英雄/关卡/碰撞未改。 |
+| 成本 | 4人物35.49MiB、3墨框14.89MiB、背景按RGBA8保守2.12MiB，理论合计52.50MiB无mipmap；未测Android峰值、字体/视口和GPU成本，不视为移动性能完成。布局配置属于UI设置，不重复加入美术图像/182配套资源分母。 |
+
+**真实留边仍存在：** 当前普通流程保持940×590+keep，1920×1080的引擎左右各约100px；选角16:9构图Fit在可用区域内，还有上下各约56px。地图原构图及外围扩图尚未处理。独立完整画布中电脑每卡480px、手机20:9每卡600px、画布外留边0；手机兼容Fit因1049/1312逻辑取整，上下约108.25/27.16/13.58px，21:9左右约59.48px。正式全屏适配仍须与T3-0的门、相机、短关边界协同，不能只打开expand便宣称完成。
+
+实际截图（均为正式资源/正式C#场景）：[独立电脑16:9](../Godot/GodotProject/.godot/validation/art_a2_character_install_20261115/character_windows_1920.png)、[独立手机20:9](../Godot/GodotProject/.godot/validation/art_a2_character_install_20261115/character_android_2400.png)、[手机19:9兼容](../Godot/GodotProject/.godot/validation/art_a2_character_install_20261115/character_android_2280.png)、[手机21:9兼容](../Godot/GodotProject/.godot/validation/art_a2_character_install_20261115/character_android_2520.png)、[普通keep选角](../Godot/GodotProject/.godot/validation/art_a2_character_install_20261115/character_form.png)、[普通keep地图](../Godot/GodotProject/.godot/validation/art_a2_character_install_20261115/map_form.png)。
+
+仓库根执行入口：
+
+```powershell
+python -X utf8 Tools/LegacyMigration/export_official_character_cards.py --java 'S:/Unity Editor/6000.3.24f1/Editor/Data/PlaybackEngines/AndroidPlayer/OpenJDK/bin/java.exe' --ffdec "$env:TEMP/gamezmxy-ffdec/ffdec.jar" --swf Godot/GodotProject/.godot/validation/art_a1b_20261114/OtherMat_v9.swf --godot S:/Godot4/Godot4CSharp_console.exe --density 3 --report Godot/GodotProject/.godot/validation/art_a2_character_install_20261115/layer_sources.json
+python Tools/ProjectMaintenance/regenerate_ui_form.py Godot/GodotProject/TheGame/UIs/character_form.tscn --namespace GameLogic.UI
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_cards_layout_settings_scan_20261115 --headless --editor --build-solutions --quit --no-window
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_cards_layout_settings_collection_20261115 --headless --editor --script res://EditorScripts/regenerate_collection.gd
+dotnet build Godot/GodotProject --no-restore -v quiet
+dotnet test Tests/ProfileTests/ProfileTests.csproj --no-restore -v quiet
+dotnet test Tests/BattleTests/BattleTests.csproj --no-restore -v quiet
+dotnet test Tests/LevelTests/LevelTests.csproj --no-restore -v quiet
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_cards_layout_settings_frontend_20261115 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=frontend
+python -X utf8 Tools/ProjectMaintenance/validate_game_references.py
+python -X utf8 Godot/GodotProject/.godot/validation/art_a2_character_install_20261115/verify_install.py
+dotnet format whitespace Godot/GodotProject/GodotProject.csproj --include TheGame/GameScripts/UI/CharacterForm/CharacterForm.Logic.cs TheGame/MainPack/Scripts/Debug/FrontendSmokeScenario.cs TheGame/MainPack/Scripts/Resources/Settings/UiLayoutSettings.cs --no-restore --verify-no-changes
+python -m py_compile Tools/LegacyMigration/export_official_character_cards.py
+git diff --check
+```
+
+退出诊断单列：editor scan/Collection Res均退出0，仍有既有ComponentInsoector在_ExitTree对RefCounted调用free报错，Collection Res退出还有RID/TextServer/ObjectDB释放诊断，未修改只读插件。最终frontend stderr包含既有预期故障注入（过期档案写拒绝、坏档/备份、重复EquipmentSystem触发读档回滚），对应回滚PASS；退出3个ObjectDB实例泄漏警告。前一次未集中配置的回归还报5个ObjectDB/1资源占用，保留原日志，不将其写为零错误。上述与本批遮罩/字体/交互断言分别记录。
+
+本批正式资源和共享配置接入完成，停止推进下一类素材；背景真高清、地图A1c小样、正式整屏及Android真机均未完成。
+
 本页保留当前维护命令、最近覆盖各功能的有效记录及必要失败边界；逐轮尝试、被后续实现替代的结果和旧版“当前限制”已清理，历史可由Git追溯。下列带日期的结果是对应检查点的历史证据，不能自动视为对未来修改已重跑。当前功能与待办见[ProjectTour](ProjectTour.md)。
+
+## 选角加宽背景/独立字体样稿：电脑16:9、手机20:9（2026-11-15，停审未接入）
+
+**用户审图后的漏色修正：** 原样稿将bitmap508铺满矩形，却未保留shape506遮罩，墨框透明处露出了红底。已按各卡原父矩阵恢复四点遮罩，右边两点仅平移新增卡宽；原生Polygon2D保持原背景UV，框外黑底，角色/姓名/原墨框不动。修正前12图与脚本归档`before_leak_fix/`。本轮最终运行`art_cards_mask_correction_20261115`退出0、stderr空，`verify_frame_fix.py`覆盖6种候选的顶部及唐僧两侧接缝：顶部回到原黑框底色，强红色接缝像素0；24个卡内代表采样RGB差最大1/255，来自TextureRect/Polygon2D的UV浮点取样量化，未用整体压暗或去色掩盖问题。
+
+电脑样稿实测1920×1080（16:9），四卡各480px、画布外留边0；旧正式keep对照四卡各430px、左右各100px，卡宽增加约11.63%。人物核心按用户要求保持，因此扩展发生在卡内背景；原墨框和系统留边分别说明。已查看[手机修正版](../Godot/GodotProject/.godot/validation/art_a2_character_layout_20261115/cards_android_2400_mask_fixed.png)、[电脑修正版](../Godot/GodotProject/.godot/validation/art_a2_character_layout_20261115/cards_windows_1920_mask_fixed.png)、[电脑数值对照](../Godot/GodotProject/.godot/validation/art_a2_character_layout_20261115/desktop_width_comparison.png)。当前正式游戏仍未接入分层布局，不能据样稿宣称正式keep留边已消除。`frame_fix_verification.json`保存具体扫描列/行及修正前后计数，合入本批`verification.json`；交互入口也已同步为修正版，交审仍直接给PNG。
+
+```powershell
+python -X utf8 Godot/GodotProject/.godot/validation/art_a2_character_layout_20261115/prepare_wide_layers.py
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_cards_mask_correction_20261115 --windowed --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_a2_character_layout_20261115/wide_cards.gd
+python -X utf8 Godot/GodotProject/.godot/validation/art_a2_character_layout_20261115/verify_frame_fix.py
+python -X utf8 Godot/GodotProject/.godot/validation/art_a2_character_layout_20261115/verify_samples.py
+```
+
+用户最终要求两套美术主设计：电脑16:9、手机20:9；其他手机比例允许有限黑边/外围裁切。选角四卡紧贴，拓宽卡内背景、保留核心角色与墨框，图片姓名去掉并用项目字体独立Label锚定原相对位置。该规则替代下方所有日期相同的中间黑框/分散方案。依据集中规范10/40/50，复用原导出器、官方SVG和Godot原生控件；证据目录为`Godot/GodotProject/.godot/validation/art_a2_character_layout_20261115/`。本批正式游戏PNG、UI场景、C#和显示配置均保持开工状态。
+
+| 验证 | 结果与边界 |
+| --- | --- |
+| 原源重现 | 最终导出器密度1四图与历史原PNG RGBA完全一致；恢复OtherMat散列与OfficialReference一致。密度3为原源重栅格，不插值旧图。 |
+| 角色核心 | `core_fidelity.json`覆盖4,079,328个原遮罩内、姓名字段以上的保护像素（含透明像素），分层候选与原矢量/原遮罩参考在3倍密度下RGBA最大差0；遮罩抗锯齿边界及姓名区域不混入该计数。原路径/颜色/父矩阵保留，外围显示为同元件原有武器内容。 |
+| 去字与独立字体 | 候选角色层原姓名区域alpha为空；原生Label使用game_font.tres、36逻辑字号、scale=1。断言每卡姓名横向中心/卡宽与原姓名字段矩阵相同、原Y保持；不将文字放入图像缩放链。字体替换是用户本轮明确要求，并非声称保留旧位图字形。 |
+| 卡面与墨框 | 四卡连续，每卡宽为主画布1/4，间距0；核心绘制235×590不额外拉伸，420宽分层画布仅提供外围。原墨框NinePatch边角/边线保持、中段延展；背景使用原bitmap508，位图未增加真实细节。 |
+| 两主设计与兼容 | 最终原生运行退出0、stderr空，12张固定输出对照。电脑1920×1080/16:9与手机2400×1080/20:9候选无新增系统黑条；手机2280/2340×1080上下各27/13.5px，2520×1080左右各60px，16:9手机补验上下各108px。1080是参考高度，不锁设备分辨率。整数逻辑画布1049/1312的取整与精确输出在JSON记录，不冒充设备实际viewport。 |
+| 成本与限制 | 四角色宽母版RGBA8合计35.49MiB，四墨框若分别加载19.85MiB（理论无mipmap）；源层相同的墨框后续正式接入应复用，不在样稿阶段增加管理器。不是运行峰值或Android预算验收。主设计核心最大显示倍率约1.83，3倍原源候选有余量；背景仍为原生JPEG，不能登记整卡高清完成。 |
+| 资源与范围 | 2284序列化路径/391 UID引用检查通过；正式游戏字节与本批开工一致，旧2倍四PNG/场景仍维持，索引/HEAD保护。导出器仅增密度3，不保留已被新字体方案替代的正式姓名PNG提取参数。清单仍661图/182配套资源，52/12项勾选，4卡部分完成，样稿不增加完成计数。 |
+
+在仓库根执行的最终入口：
+
+```powershell
+python -X utf8 Tools/LegacyMigration/export_official_character_cards.py --java 'S:/Unity Editor/6000.3.24f1/Editor/Data/PlaybackEngines/AndroidPlayer/OpenJDK/bin/java.exe' --ffdec "$env:TEMP/gamezmxy-ffdec/ffdec.jar" --swf Godot/GodotProject/.godot/validation/art_a1b_20261114/OtherMat_v9.swf --density 1 --output-directory Godot/GodotProject/.godot/validation/art_a2_character_layout_20261115/density1_final
+python -X utf8 Godot/GodotProject/.godot/validation/art_a2_character_layout_20261115/prepare_wide_layers.py
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_cards_dual_design_final_20261115 --windowed --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_a2_character_layout_20261115/wide_cards.gd
+python -X utf8 Tools/ProjectMaintenance/validate_game_references.py
+python -X utf8 Godot/GodotProject/.godot/validation/art_a2_character_layout_20261115/verify_samples.py
+node Godot/GodotProject/.godot/validation/art_a2_character_layout_20261115/check_review.cjs
+git diff --check
+```
+
+已查看[电脑16:9](../Godot/GodotProject/.godot/validation/art_a2_character_layout_20261115/cards_windows_1920_wide_full.png)、[手机20:9](../Godot/GodotProject/.godot/validation/art_a2_character_layout_20261115/cards_android_2400_wide_full.png)及19:9兼容图；其余兼容参数见`wide_card_measurements.json`。源分层/原字图位置见`wide_layer_sources.json`，原始文件和Git散列基线保存在本批`before/`、`baseline.json`。首轮SVG序列化缺少xlink注册，Godot虽退出0但角色为空；已按实际画面失败修正并增加非空alpha断言，最终仅以上述新运行作成功证据。该次中间失败不隐去，也不误写成正式素材缺失。
+
+最终`verify_samples.py`通过：4166份既有跟踪文件中，本批只改变5份记录文档及原导出器，正式游戏文件字节保持；HEAD为c47dbdd、用户索引仍为空。661/182唯一路径和52/12勾选、清单本地链接通过，`verification.json`保存最终结果。交互对照`dual-design-review.html`嵌入12张原生截图，JS语法和`check_review.cjs`的12个组合通过（DOM替身，不冒称浏览器/真机触摸测试）。进度CSV四卡只追加新候选证据，不增加高清完成量。
+
+本批停止交审。尚未验证正式选角触摸/鼠标流程、Android安全区/文字dp/触达或性能；这些留审定后正式接入及T4/T5，不以本次静态原生渲染代替。正式宽屏/玩法视野未启用。
+
+## 双端界面布局讨论：连续四联画与有限黑框（2026-11-15，历史候选，已被新方法替代）
+
+用户审图要求手机体验纳入美术生产，并否定四卡等距拉开方案，明确四联画必须紧贴，允许适量留黑、Android显示裁切并保留上下黑框。依据集中规范40/50章，复用原UI场景、卡片shader、AtlasTexture、原生裁切Control及既有隔离runner，所有草稿位于`.godot/validation/ui_widescreen_design_20261115/`。未改变正式场景、源PNG、C#、显示配置或玩法。CrossPlatformPlan修正“所有UI整块940居中”的过强约束，清单新增双端验收任务但不增加图像完成量。
+
+- 黑边由当前keep和940×590比例产生：1080高内容宽约1720.68；1920/2340/2400/2520输出每侧约99.66/309.66/339.66/399.66px。与原画内菜单黑底分开记录。
+- `ui_responsive_design_20261115`退出0：两页面×四比例×当前/初稿共16张原生固定SubViewport图；标题源941×591按700/241分区，未遗漏源像素，菜单保持右侧24逻辑单位、72逻辑单位按钮高。**其中选角分散初稿已被用户否定，不能引用作采纳或通过的布局。** 标题分区也仍为未绘环境的草稿，未获正式接入批准。
+- 最新`ui_continuous_card_framed_design_20261115`退出0、`CONTINUOUS CARD DESIGN PASS`：四比例各1张连续四联画候选，断言原卡位置0/235/470/705、尺寸235×590，卡间距0，整体等比放大。原姓名bitmap507/519/513/516完整移入下黑框带，1P移至上框，返回不遮姓名；不是新字图或HD结果。
+- 最新手机候选每侧留黑约29/29/48/107px；顶部框38逻辑单位、底部姓名带62及余框18，人物区高472、源底界476，21:9源可见Y约123.87～476。已查看16:9/21:9结果，原生人物头脚与姓名保留；更精确的逐内容裁切保护及安全区仍待审图/接入阶段验证，不以矩形断言代替图像内容验收。
+- 最终最大显示倍率约2.45输出像素/源逻辑单位，当前2倍素材只作布局参考，不记该裁切方案1080p高清通过；可能需要3倍矢量候选，位图姓名/背景仍受来源限制。真机文字/dp/触达、系统安全区和性能均未测试。
+
+```powershell
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py ui_responsive_design_20261115 --windowed --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/ui_widescreen_design_20261115/responsive_preview.gd
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py ui_continuous_card_framed_design_20261115 --windowed --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/ui_widescreen_design_20261115/responsive_preview.gd -- --continuous-mobile
+```
+
+两个最终原生预览stderr为空。`responsive_observations.json`保存首轮16图，`continuous_card_observations.json`保存最新4图；`cards_2520_mobile_continuous.png`为21:9讨论候选。最终交互示意`continuous-layout.html`仅包含当前布局、标题分区和连续四联画候选，不包含被否定的分散选角图；可切换页面/比例/当前和候选。`node --check`语法通过，`node <证据>/check_interaction.cjs`对16个页面/比例/方案组合检查图片切换和说明通过；这是DOM替身验证，不声称浏览器完整交互或Android触摸已验。正式四张卡散列与上批一致，选角场景仍仅保留上批四region修改，标题场景/显示配置无新增差异，Git索引仍为空；清单仍661/182项、52/12勾选，`git diff --check`通过。正式资源维持上批审查状态，等待用户确认布局后再按批制作。
+
+## 美术 A2：四张选角卡（2026-11-15，矢量部分接入，位图部分受限）
+
+用户确认继续下一任务并要求维护清单。依据集中规范00/40/50章、Stop Ladder和CrossPlatformPlan 2.12，沿用OtherMat_v9、FFDec26.3、原选角导出器、原生AtlasTexture及GGF窗口。本批4张PNG已直接替换原路径，仅四个AtlasTexture区域加倍；四栏235×590、940×590逻辑核心、keep、原UID/.import、shader、C#、节点及玩法保持。没有新运行架构、hd平行资源、AI重画或正式宽屏。
+
+**完成边界：矢量人物/剪影/问号/笔刷已获得真实2倍重栅格；姓名和背景仍是原生位图细节，整卡未勾成高清完成。** 来源依赖与尺寸见LegacyAssetMap本批记录。证据目录为`Godot/GodotProject/.godot/validation/art_a2_character_cards_20261115/`；`before/`保存接入前PNG、导入元数据、场景和导出器，`density1/2`为原源重导，`other.xml`及`bitmaps/`证明混合来源，`verification.json`记录源/原/新散列、依赖、边界与清单结果。英雄/背包52图已获用户继续授权，清单当前52项完整完成、4项部分完成（来源受限合计7项）、602项待处理，配套验证12/182。
+
+| 验证 | 结果与实际边界 |
+| --- | --- |
+| 来源与保真 | 恢复SWF SHA256与OfficialReference一致；4/4原密度重导RGBA逐像素全等。四卡依赖共15个源元件：4单帧sprite、6shape、5位图；姓名/背景未替换、未改字形。2倍完整元件栅格保留原遮罩/矩阵/层序；alpha逻辑包围盒边界差最大0.5像素，为密度抗锯齿取样变化。 |
+| 取整/画布 | 原生2倍悟空668×1219、唐僧633×1234，只补下边/右边1px透明边，成为668×1220、634×1234；八戒714×1234、沙僧702×1234不补边。没有缩放或移动已栅格内容。 |
+| 原生装配与实际显示 | 编辑器导入退出0。隔离渲染退出0、`CARDS RENDER PASS`：940×590/1920×1080两种固定输出×原版/当前×灰度/悟空悬停/唐僧悬停，共12图；逐项断言四栏位置、尺寸、scale保持。实际启动窗口1920×1080；固定1080p图内核心为1720×1080并包含左右keep留边，未冒充宽屏已启用。 |
+| 真实前端 | 完整`--smoketest=frontend`退出0，最终`SMOKE PASS`、`SMOKE-COOP-MENU PASS`、`SMOKE-TANGSENG-CREATE PASS`。原有断言覆盖四栏尺寸/无重复姓名层、真实鼠标灰度/悬停、未开放两栏不接收点击、单人选角、双人重复选择/重选/返回/复用、保存与重新读取。 |
+| 资源引用与范围 | `REFERENCE PASS: 2284 serialized paths and 391 UIDs`。场景文本比较仅四份region由原像素区域变为2倍；四份.import与基线散列相同。没有C#或shader修改，不重复运行与本次资源变化无关的构建。 |
+| 清单与Git | 661/661图像、182/182配套资源逐项唯一，52/12项勾选与4项部分完成状态一致，本地文件链接可达。期间用户把开工81项暂存内容提交为c47dbdd，提交差异SHA256与原暂存基线完全相同（`69bddc12…91753`）；本轮未执行Git写操作，保留该提交与当前空索引。新增未暂存差异仅本批4PNG、场景、导出器及5份记录文档。 |
+| 纹理成本 | 四PNG合计原3.19MiB → 当前12.76MiB（RGBA8、无mipmap理论值）；最大单边1234。不是运行峰值、Android性能或原生4K验收，仍按用户确认的1080p目标。 |
+
+仓库根执行，Java/FFDec沿用本机既有安装：
+
+```powershell
+python -X utf8 Tools/LegacyMigration/export_official_character_cards.py --java 'S:/Unity Editor/6000.3.24f1/Editor/Data/PlaybackEngines/AndroidPlayer/OpenJDK/bin/java.exe' --ffdec "$env:TEMP/gamezmxy-ffdec/ffdec.jar" --swf Godot/GodotProject/.godot/validation/art_a1b_20261114/OtherMat_v9.swf --density 1 --output-directory Godot/GodotProject/.godot/validation/art_a2_character_cards_20261115/density1
+python -X utf8 Tools/LegacyMigration/export_official_character_cards.py --java 'S:/Unity Editor/6000.3.24f1/Editor/Data/PlaybackEngines/AndroidPlayer/OpenJDK/bin/java.exe' --ffdec "$env:TEMP/gamezmxy-ffdec/ffdec.jar" --swf Godot/GodotProject/.godot/validation/art_a1b_20261114/OtherMat_v9.swf --density 2 --output-directory Godot/GodotProject/.godot/validation/art_a2_character_cards_20261115/density2
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_cards_import_20261115 --headless --editor --quit
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_cards_render_20261115 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --script res://.godot/validation/art_a2_character_cards_20261115/render.gd
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_cards_frontend_20261115 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=frontend
+python -X utf8 Tools/ProjectMaintenance/validate_game_references.py
+python -X utf8 Godot/GodotProject/.godot/validation/art_a2_character_cards_20261115/verify_delivery.py
+git diff --check
+```
+
+已查看[1080p原版](../Godot/GodotProject/.godot/validation/art_a2_character_cards_20261115/cards_1920x1080_original_wukong.png) / [当前版](../Godot/GodotProject/.godot/validation/art_a2_character_cards_20261115/cards_1920x1080_current_wukong.png)，并交付[1:1裁片对照](../Godot/GodotProject/.godot/validation/art_a2_character_cards_20261115/cards_1080p_comparison.png)。真实前端选角/灰度/唐僧悬停/双人操作栏截图另存`actual_frontend/`；原烟测截图是viewport而非含留边的物理窗口截屏，不与固定1920×1080预览混淆。
+
+退出诊断独立保留：编辑器仍有既有`ComponentInsoector._ExitTree`对InspectorPlugin调用`free`的错误；真实前端仍输出旧作用域检查点、坏存档/备份及重复EquipmentSystem的预期故障注入，最终恢复通过；退出另有3个ObjectDB实例释放诊断。隔离卡片渲染stderr为空，没有新增缺图、UID、场景解析或素材加载错误。未修改只读插件/框架来消除这些既有诊断。**本批停止交审，姓名/背景位图及其他素材未完成。**
 
 ## 美术进度清单：全文件与勾选状态（2026-11-15）
 

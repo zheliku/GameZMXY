@@ -161,6 +161,24 @@ public sealed partial class UiSmokeScenario
                     new EnemySpawn(new Vector2(720, 100)));
                 AbstractEnemyEntity enemy = _monster;
                 SmokeInspection.FreezeAi(enemy);
+                var artwork = enemy.GetNode<AnimatedSprite2D>("m_Body");
+                Vector2 expectedArtScale = id is EntityId.HuaguoshanMonkey or EntityId.DemonMonkey or EntityId.Gorilla or EntityId.KnifeDemon
+                    ? new Vector2(.5f, .5f) : Vector2.One;
+                Vector2 expectedArtOffset = id switch
+                {
+                    EntityId.HuaguoshanMonkey => new Vector2(-9, -2),
+                    EntityId.DemonMonkey => new Vector2(-8, -27),
+                    EntityId.Gorilla => new Vector2(-23, -30),
+                    EntityId.KnifeDemon => new Vector2(-35, -7),
+                    _ => artwork.Offset
+                };
+                foreach (int direction in new[] { -1, 1, 1, -1, 1, -1 })
+                {
+                    enemy.SetFacing(direction);
+                    Check(new Vector2(Mathf.Abs(artwork.Scale.X), artwork.Scale.Y).IsEqualApprox(expectedArtScale) &&
+                        artwork.Offset.IsEqualApprox(expectedArtOffset) && enemy.Scale == Vector2.One,
+                        $"{id} 转向改变了素材密度、原点或实体根缩放");
+                }
                 var agent = (IEnemyAiAgent)enemy;
                 Check(enemy is AbstractGroundMonsterEntity && !agent.RequestAttack(0),
                     $"{id} 没有使用地面分支的空中出招限制");
@@ -194,6 +212,9 @@ public sealed partial class UiSmokeScenario
                 Check(ReferenceEquals(enemy, _monster), $"{id} 未复用实体");
                 SmokeInspection.FreezeAi(_monster);
                 await WaitFramesAsync(3);
+                artwork = _monster.GetNode<AnimatedSprite2D>("m_Body");
+                Check(new Vector2(Mathf.Abs(artwork.Scale.X), artwork.Scale.Y).IsEqualApprox(expectedArtScale) &&
+                    artwork.Offset.IsEqualApprox(expectedArtOffset), $"{id} 回池复用改变了素材密度或原点");
                 if (id == EntityId.HuaguoshanMonkey)
                 {
                     Check(!((IEnemyAiAgent)_monster).HasTarget, "猴子复用后遗留激怒和目标");

@@ -68,20 +68,20 @@ namespace GodotGameFramework.Editor
 			RemoveInspectorPlugin(m_ScriptGenerateInspector);
 			RemoveInspectorPlugin(m_NodePoolInspector);
 			RemoveInspectorPlugin(m_ArchiveSettingInspector);
-			m_ProcedureComponent.Free();
-			m_BaseComponent.Free();
-			m_SceneComponent.Free();
-			m_SettingComponent.Free();
-			m_EntityComponent.Free();
-			m_UIComponent.Free();
-			m_SoundComponent.Free();
-			m_LocalizationComponent.Free();
-			m_DownloadComponent.Free();
-			m_WebRequestComponent.Free();
-			m_ResourceComponent.Free();
-			m_ScriptGenerateInspector.Free();
-			m_NodePoolInspector.Free();
-			m_ArchiveSettingInspector.Free();
+			m_ProcedureComponent.Dispose();
+			m_BaseComponent.Dispose();
+			m_SceneComponent.Dispose();
+			m_SettingComponent.Dispose();
+			m_EntityComponent.Dispose();
+			m_UIComponent.Dispose();
+			m_SoundComponent.Dispose();
+			m_LocalizationComponent.Dispose();
+			m_DownloadComponent.Dispose();
+			m_WebRequestComponent.Dispose();
+			m_ResourceComponent.Dispose();
+			m_ScriptGenerateInspector.Dispose();
+			m_NodePoolInspector.Dispose();
+			m_ArchiveSettingInspector.Dispose();
 		}
 	}
 }

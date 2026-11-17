@@ -1,6 +1,6 @@
 shader_type canvas_item;
 
-// Keep the original composition and baked names; only change hover saturation.
+// Portrait, masked background and ink inherit one card material for hover saturation.
 uniform float grayscale : hint_range(0.0, 1.0) = 1.0;
 varying vec4 vertex_tint;
 void vertex() { vertex_tint = COLOR; }

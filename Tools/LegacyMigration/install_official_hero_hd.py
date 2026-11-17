@@ -13,6 +13,57 @@ from PIL import Image
 from import_official_wukong_attacks import remap_frame_tracks
 
 
+def visible_first(work, project):
+    """Move Wukong's intentional transparent slot to the end without changing a pose."""
+    directory = project / 'TheGame/Sprites/Characters/Heroes/wukong'
+    paths = [project / value.removeprefix('res://') for value in re.findall(
+        r'path="([^"]+\.png)"', (directory / 'wukong_appearance.tres').read_text(encoding='utf-8'))]
+    mapping = list(range(90))
+    mapping[0], mapping[1], mapping[85] = 85, 0, 1
+    first_box = (0, 0, 400, 400)
+    with Image.open(directory / 'wukong_body_bare.png') as image:
+        if image.crop(first_box).getchannel('A').getbbox():
+            print('WUKONG VISIBLE FIRST: already installed')
+            return
+    for path in paths:
+        with Image.open(path) as image:
+            atlas = image.convert('RGBA')
+        if atlas.size != (2400, 6000):
+            raise ValueError('Expected the current 86-pose Wukong density2 contract')
+        cells = {cell: atlas.crop((cell % 6 * 400, cell // 6 * 400,
+                 (cell % 6 + 1) * 400, (cell // 6 + 1) * 400)) for cell in (0, 1, 85)}
+        if cells[0].getchannel('A').getbbox():
+            raise ValueError('Expected the shared transparent slot before moving it')
+        for cell, image in cells.items():
+            target = mapping[cell]
+            atlas.paste(image, (target % 6 * 400, target // 6 * 400))
+        atlas.save(path)
+    for suffix in ('anim', 'skill'):
+        path = project / f'TheGame/Entitys/Animations/Heroes/Wukong/wukong_{suffix}_library.tres'
+        path.write_text(remap_frame_tracks(path.read_text(encoding='utf-8'), mapping), encoding='utf-8', newline='\n')
+    scene = project / 'TheGame/Entitys/Heroes/Wukong/wukong_entity.tscn'
+    text = scene.read_text(encoding='utf-8')
+    for field in ('m_Body', 'm_Weapon'):
+        pattern = r'(\[node name="'+field+r'"[^\n]*\]\n)(.*?)(?=\n\[|\Z)'
+        def remap_scene(match):
+            return match[1]+re.sub(r'^frame = (\d+)', lambda value: 'frame = '+str(mapping[int(value[1])]), match[2], flags=re.M)
+        text = re.sub(pattern, remap_scene, text, flags=re.S)
+    scene.write_text(text, encoding='utf-8', newline='\n')
+    # These are the existing source identities used by --frame-map reexports.
+    for path in (work / 'installed').glob('wukong_*.json'):
+        data = json.loads(path.read_text(encoding='utf-8'))
+        if 'poses' not in data:
+            continue
+        data['poses'] = {str(mapping[int(cell)]): pose for cell, pose in data['poses'].items()}
+        data['motion_cells'] = [mapping[int(cell)] for cell in data['motion_cells']]
+        data['source_cell_map'] = [mapping[int(cell)] for cell in data['source_cell_map']]
+        data['output'] = str(directory / path.with_suffix('.png').name)
+        path.write_text(json.dumps(data, indent=2), encoding='utf-8')
+    (work / 'visible_first_mapping.json').write_text(json.dumps({'old_to_new': mapping,
+        'transparent_cell': 85, 'first_cell': 'original idle pose', 'changed_cells': [0, 1, 85]}, indent=2), encoding='utf-8')
+    print('WUKONG VISIBLE FIRST PASS: 13 atlases, identical pixels; transparent skill slot85 and original timing retained')
+
+
 def install(work, project):
     """Apply only verified texture references, density, grids and equivalent cells."""
     mapping = json.loads((work / 'wukong_hd_manifest.json').read_text())['mapping']
@@ -86,5 +137,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--work', type=Path, required=True)
     parser.add_argument('--project', type=Path, default=Path(__file__).resolve().parents[2] / 'Godot/GodotProject')
+    parser.add_argument('--visible-first', action='store_true', help='Move the current shared transparent Wukong slot behind visible poses')
     args = parser.parse_args()
-    install(args.work.resolve(), args.project.resolve())
+    if args.visible_first:
+        visible_first(args.work.resolve(), args.project.resolve())
+    else:
+        install(args.work.resolve(), args.project.resolve())

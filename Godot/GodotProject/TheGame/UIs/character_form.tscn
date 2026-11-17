@@ -1,9 +1,13 @@
 [gd_scene format=3 uid="uid://clwo8jvrdb06h"]
 
-[ext_resource type="Texture2D" uid="uid://djvoe6wtgskpw" path="res://TheGame/Sprites/UI/frontend/character_bajie_card.png" id="bajie"]
-[ext_resource type="FontFile" uid="uid://d3bh5a3jtbsib" path="res://TheGame/MainPack/Fonts/fz_cu_yuan.ttf" id="player_font"]
 [ext_resource type="FontVariation" path="res://TheGame/MainPack/Fonts/game_font.tres" id="action_font"]
+[ext_resource type="Texture2D" uid="uid://d3edjmbilwbt2" path="res://TheGame/Sprites/UI/frontend/character_card_background.jpg" id="background"]
+[ext_resource type="Texture2D" uid="uid://djvoe6wtgskpw" path="res://TheGame/Sprites/UI/frontend/character_bajie_card.png" id="bajie"]
+[ext_resource type="Texture2D" uid="uid://cdmvm3u8pmoxp" path="res://TheGame/Sprites/UI/frontend/character_bajie_ink.png" id="bajie_ink"]
+[ext_resource type="Texture2D" uid="uid://bki7vg6f8vmt1" path="res://TheGame/Sprites/UI/frontend/character_card_ink.png" id="ink"]
+[ext_resource type="FontFile" uid="uid://d3bh5a3jtbsib" path="res://TheGame/MainPack/Fonts/fz_cu_yuan.ttf" id="player_font"]
 [ext_resource type="Texture2D" uid="uid://c5l6clioichum" path="res://TheGame/Sprites/UI/frontend/character_sanzang_card.png" id="sanzang"]
+[ext_resource type="Texture2D" uid="uid://ck6fcwxiwvv5i" path="res://TheGame/Sprites/UI/frontend/character_sanzang_ink.png" id="sanzang_ink"]
 [ext_resource type="Script" uid="uid://dyfaeohgy0ctc" path="res://TheGame/GameScripts/UI/CharacterForm/CharacterForm.cs" id="script"]
 [ext_resource type="Shader" uid="uid://b02b44nix1lpe" path="res://TheGame/Sprites/UI/frontend/character_card.gdshader" id="shader"]
 [ext_resource type="Theme" path="res://TheGame/MainPack/Themes/legacy_menu_theme.tres" id="theme"]
@@ -15,40 +19,28 @@ resource_local_to_scene = true
 shader = ExtResource("shader")
 shader_parameter/grayscale = 1.0
 
-[sub_resource type="AtlasTexture" id="wukong_card"]
-atlas = ExtResource("wukong")
-region = Rect2(9, 0, 237, 610)
-filter_clip = true
+[sub_resource type="Gradient" id="black_gradient"]
+colors = PackedColorArray(0, 0, 0, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="black_texture"]
+gradient = SubResource("black_gradient")
+width = 1
+height = 1
 
 [sub_resource type="ShaderMaterial" id="sanzang_material"]
 resource_local_to_scene = true
 shader = ExtResource("shader")
 shader_parameter/grayscale = 1.0
 
-[sub_resource type="AtlasTexture" id="sanzang_card"]
-atlas = ExtResource("sanzang")
-region = Rect2(21, 0, 237, 610)
-filter_clip = true
-
 [sub_resource type="ShaderMaterial" id="bajie_material"]
 resource_local_to_scene = true
 shader = ExtResource("shader")
 shader_parameter/grayscale = 1.0
 
-[sub_resource type="AtlasTexture" id="bajie_card"]
-atlas = ExtResource("bajie")
-region = Rect2(15, 0, 237, 610)
-filter_clip = true
-
 [sub_resource type="ShaderMaterial" id="wujing_material"]
 resource_local_to_scene = true
 shader = ExtResource("shader")
 shader_parameter/grayscale = 1.0
-
-[sub_resource type="AtlasTexture" id="wujing_card"]
-atlas = ExtResource("wujing")
-region = Rect2(22, 0, 237, 610)
-filter_clip = true
 
 [sub_resource type="StyleBoxFlat" id="action_normal"]
 bg_color = Color(0.035, 0.035, 0.035, 0.98)
@@ -59,8 +51,8 @@ border_width_bottom = 2
 border_color = Color(0.55, 0.55, 0.55, 1)
 corner_radius_top_left = 5
 corner_radius_top_right = 5
-corner_radius_bottom_left = 5
 corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
 
 [sub_resource type="StyleBoxFlat" id="action_hover"]
 bg_color = Color(0.09, 0.07, 0.035, 1)
@@ -71,10 +63,10 @@ border_width_bottom = 2
 border_color = Color(1, 0.65, 0.18, 1)
 corner_radius_top_left = 5
 corner_radius_top_right = 5
-corner_radius_bottom_left = 5
 corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
 
-[node name="CharacterForm" type="Control" unique_id=1389231940 node_paths=PackedStringArray("_wukong", "_sanzang", "_playerOne", "_playerTwo", "_reselect", "_back")]
+[node name="CharacterForm" type="Control" unique_id=1389231940 node_paths=PackedStringArray("_frame", "_roles", "_wukong", "_sanzang", "_playerOne", "_playerTwo", "_reselect", "_back")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -83,6 +75,8 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("theme")
 script = ExtResource("script")
+_frame = NodePath("Frame")
+_roles = NodePath("Frame/Roles")
 _wukong = NodePath("Frame/Roles/m_Wukong")
 _sanzang = NodePath("Frame/Roles/m_Sanzang")
 _playerOne = NodePath("Frame/m_PlayerOne")
@@ -92,79 +86,287 @@ _back = NodePath("Frame/Actions/m_Back")
 
 [node name="Background" type="ColorRect" parent="." unique_id=381968765]
 layout_mode = 1
-offset_right = 0.0
-offset_bottom = 0.0
-mouse_filter = 2
-color = Color(0.024, 0.004, 0.004, 1)
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 0.0
-offset_top = 0.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
 
-[node name="Frame" type="Control" parent="."]
+[node name="Frame" type="Control" parent="." unique_id=896295503]
+anchors_preset = 0
+offset_right = 1049.0
+offset_bottom = 590.0
+mouse_filter = 2
+
+[node name="Roles" type="Control" parent="Frame" unique_id=1070469315]
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -470.0
-offset_top = -295.0
-offset_right = 470.0
-offset_bottom = 295.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="Roles" type="Control" parent="Frame" unique_id=1070469315]
-anchors_preset = 0
-offset_right = 940.0
-offset_bottom = 590.0
-mouse_filter = 2
-
 [node name="m_Wukong" type="TextureButton" parent="Frame/Roles" unique_id=2124743283]
 material = SubResource("wukong_material")
-layout_mode = 0
-offset_right = 235.0
-offset_bottom = 590.0
+clip_contents = true
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 0.25
+anchor_bottom = 1.0
 focus_mode = 0
 mouse_default_cursor_shape = 2
-texture_normal = SubResource("wukong_card")
+texture_normal = SubResource("black_texture")
 ignore_texture_size = true
 stretch_mode = 0
+
+[node name="MaskedBackground" type="Polygon2D" parent="Frame/Roles/m_Wukong" unique_id=227436749]
+use_parent_material = true
+texture = ExtResource("background")
+polygon = PackedVector2Array(1.7352321, 12.912295, 1.7352321, 585.16394, 261.3576, 585.16394, 260.01898, 12.912295)
+uv = PackedVector2Array(1.7352321, 12.912295, 1.7352321, 585.16394, 261.3576, 585.16394, 260.01898, 12.912295)
+metadata/right_insets = Vector2(0.8924051, 2.2310126)
+
+[node name="Portrait" type="TextureRect" parent="Frame/Roles/m_Wukong" unique_id=1106731317]
+use_parent_material = true
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -210.0
+offset_right = 210.0
+offset_bottom = 590.0
+grow_horizontal = 2
+mouse_filter = 2
+texture = ExtResource("wukong")
+expand_mode = 1
+
+[node name="Ink" type="NinePatchRect" parent="Frame/Roles/m_Wukong" unique_id=1765158793]
+use_parent_material = true
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 3.025532
+anchor_bottom = 3.1016948
+scale = Vector2(0.3305204, 0.32240438)
+texture = ExtResource("ink")
+patch_margin_left = 90
+patch_margin_top = 120
+patch_margin_right = 90
+patch_margin_bottom = 120
+
+[node name="Caption" type="Label" parent="Frame/Roles/m_Wukong" unique_id=1162138149]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.04092827
+anchor_right = 1.0409282
+offset_left = 12.0
+offset_top = 483.41312
+offset_right = -12.0
+offset_bottom = 546.282
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(1, 1, 1, 1)
+theme_override_constants/outline_size = 8
+theme_override_fonts/font = ExtResource("action_font")
+theme_override_font_sizes/font_size = 36
+text = "孙悟空"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="m_Sanzang" type="TextureButton" parent="Frame/Roles" unique_id=176568400]
 material = SubResource("sanzang_material")
-layout_mode = 0
-offset_left = 235.0
-offset_right = 470.0
-offset_bottom = 590.0
+clip_contents = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.25
+anchor_right = 0.5
+anchor_bottom = 1.0
 focus_mode = 0
 mouse_default_cursor_shape = 2
-texture_normal = SubResource("sanzang_card")
+texture_normal = SubResource("black_texture")
 ignore_texture_size = true
 stretch_mode = 0
 
+[node name="MaskedBackground" type="Polygon2D" parent="Frame/Roles/m_Sanzang" unique_id=1997225626]
+use_parent_material = true
+texture = ExtResource("background")
+polygon = PackedVector2Array(1.5864979, 12.912295, 1.5864979, 585.16394, 261.20886, 585.16394, 259.87024, 12.912295)
+uv = PackedVector2Array(1.5864979, 12.912295, 1.5864979, 585.16394, 261.20886, 585.16394, 259.87024, 12.912295)
+metadata/right_insets = Vector2(1.0411392, 2.379747)
+
+[node name="Portrait" type="TextureRect" parent="Frame/Roles/m_Sanzang" unique_id=514749657]
+use_parent_material = true
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -210.0
+offset_right = 210.0
+offset_bottom = 590.0
+grow_horizontal = 2
+mouse_filter = 2
+texture = ExtResource("sanzang")
+expand_mode = 1
+
+[node name="Ink" type="NinePatchRect" parent="Frame/Roles/m_Sanzang" unique_id=451348287]
+use_parent_material = true
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 3.025532
+anchor_bottom = 3.1016948
+scale = Vector2(0.3305204, 0.32240438)
+texture = ExtResource("sanzang_ink")
+patch_margin_left = 90
+patch_margin_top = 120
+patch_margin_right = 90
+patch_margin_bottom = 120
+
+[node name="Caption" type="Label" parent="Frame/Roles/m_Sanzang" unique_id=1138364674]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.0025316456
+anchor_right = 1.0025316
+offset_left = 12.0
+offset_top = 483.17133
+offset_right = -12.0
+offset_bottom = 546.04016
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(1, 1, 1, 1)
+theme_override_constants/outline_size = 8
+theme_override_fonts/font = ExtResource("action_font")
+theme_override_font_sizes/font_size = 36
+text = "唐僧"
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="m_Bajie" type="TextureRect" parent="Frame/Roles" unique_id=1504500255]
 material = SubResource("bajie_material")
-layout_mode = 0
-offset_left = 470.0
-offset_right = 705.0
-offset_bottom = 590.0
+clip_contents = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_right = 0.75
+anchor_bottom = 1.0
 mouse_filter = 2
-texture = SubResource("bajie_card")
+texture = SubResource("black_texture")
 expand_mode = 1
+
+[node name="MaskedBackground" type="Polygon2D" parent="Frame/Roles/m_Bajie" unique_id=879370902]
+use_parent_material = true
+texture = ExtResource("background")
+polygon = PackedVector2Array(1.3386075, 12.912295, 1.3386075, 585.16394, 260.96097, 585.16394, 259.62238, 12.912295)
+uv = PackedVector2Array(1.3386075, 12.912295, 1.3386075, 585.16394, 260.96097, 585.16394, 259.62238, 12.912295)
+metadata/right_insets = Vector2(1.2890295, 2.6276371)
+
+[node name="Portrait" type="TextureRect" parent="Frame/Roles/m_Bajie" unique_id=2029772495]
+use_parent_material = true
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -210.0
+offset_right = 210.0
+offset_bottom = 590.0
+grow_horizontal = 2
+mouse_filter = 2
+texture = ExtResource("bajie")
+expand_mode = 1
+
+[node name="Ink" type="NinePatchRect" parent="Frame/Roles/m_Bajie" unique_id=52090616]
+use_parent_material = true
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 3.025532
+anchor_bottom = 3.1016948
+scale = Vector2(0.3305204, 0.32240438)
+texture = ExtResource("bajie_ink")
+patch_margin_left = 90
+patch_margin_top = 120
+patch_margin_right = 90
+patch_margin_bottom = 120
+
+[node name="Caption" type="Label" parent="Frame/Roles/m_Bajie" unique_id=524922986]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.0021097045
+anchor_right = 1.0021096
+offset_left = 12.0
+offset_top = 486.16968
+offset_right = -12.0
+offset_bottom = 549.0385
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(1, 1, 1, 1)
+theme_override_constants/outline_size = 8
+theme_override_fonts/font = ExtResource("action_font")
+theme_override_font_sizes/font_size = 36
+text = "猪八戒"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="m_Wujing" type="TextureRect" parent="Frame/Roles" unique_id=59011332]
 material = SubResource("wujing_material")
-layout_mode = 0
-offset_left = 705.0
-offset_right = 940.0
-offset_bottom = 590.0
+clip_contents = true
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.75
+anchor_right = 1.0
+anchor_bottom = 1.0
 mouse_filter = 2
-texture = SubResource("wujing_card")
+texture = SubResource("black_texture")
 expand_mode = 1
+
+[node name="MaskedBackground" type="Polygon2D" parent="Frame/Roles/m_Wujing" unique_id=338698533]
+use_parent_material = true
+texture = ExtResource("background")
+polygon = PackedVector2Array(1.7352321, 12.912295, 1.7352321, 585.16394, 261.3576, 585.16394, 260.01898, 12.912295)
+uv = PackedVector2Array(1.7352321, 12.912295, 1.7352321, 585.16394, 261.3576, 585.16394, 260.01898, 12.912295)
+metadata/right_insets = Vector2(0.8924051, 2.2310126)
+
+[node name="Portrait" type="TextureRect" parent="Frame/Roles/m_Wujing" unique_id=929794694]
+use_parent_material = true
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -210.0
+offset_right = 210.0
+offset_bottom = 590.0
+grow_horizontal = 2
+mouse_filter = 2
+texture = ExtResource("wujing")
+expand_mode = 1
+
+[node name="Ink" type="NinePatchRect" parent="Frame/Roles/m_Wujing" unique_id=653753307]
+use_parent_material = true
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 3.025532
+anchor_bottom = 3.1016948
+scale = Vector2(0.3305204, 0.32240438)
+texture = ExtResource("ink")
+patch_margin_left = 90
+patch_margin_top = 120
+patch_margin_right = 90
+patch_margin_bottom = 120
+
+[node name="Caption" type="Label" parent="Frame/Roles/m_Wujing" unique_id=1843057045]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.0069620255
+anchor_right = 1.0069621
+offset_left = 12.0
+offset_top = 485.05737
+offset_right = -12.0
+offset_bottom = 547.9262
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(1, 1, 1, 1)
+theme_override_constants/outline_size = 8
+theme_override_fonts/font = ExtResource("action_font")
+theme_override_font_sizes/font_size = 36
+text = "沙僧"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="m_PlayerOne" type="Label" parent="Frame" unique_id=717879826]
 visible = false
@@ -196,12 +398,16 @@ theme_override_font_sizes/font_size = 52
 text = "2P"
 horizontal_alignment = 1
 
-[node name="Actions" type="HBoxContainer" parent="Frame"]
-layout_mode = 0
-offset_left = 366.0
+[node name="Actions" type="HBoxContainer" parent="Frame" unique_id=599386810]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -104.0
 offset_top = 556.0
-offset_right = 574.0
+offset_right = 104.0
 offset_bottom = 586.0
+grow_horizontal = 2
 mouse_filter = 2
 theme_override_constants/separation = 20
 alignment = 1
@@ -215,8 +421,8 @@ mouse_default_cursor_shape = 2
 theme_override_fonts/font = ExtResource("action_font")
 theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("action_normal")
-theme_override_styles/hover = SubResource("action_hover")
 theme_override_styles/pressed = SubResource("action_hover")
+theme_override_styles/hover = SubResource("action_hover")
 text = "重选"
 
 [node name="m_Back" type="Button" parent="Frame/Actions" unique_id=717879829]
@@ -227,6 +433,6 @@ mouse_default_cursor_shape = 2
 theme_override_fonts/font = ExtResource("action_font")
 theme_override_font_sizes/font_size = 18
 theme_override_styles/normal = SubResource("action_normal")
-theme_override_styles/hover = SubResource("action_hover")
 theme_override_styles/pressed = SubResource("action_hover")
+theme_override_styles/hover = SubResource("action_hover")
 text = "返回"

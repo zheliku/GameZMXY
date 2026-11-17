@@ -4,6 +4,7 @@ using GameConfig.Sound;
 using GameFramework.UI;
 using GameLogic.Architecture;
 using GameLogic.Audio;
+using GameLogic.Display;
 using Godot;
 using GodotGameFramework;
 using GodotGameFramework.Localization;
@@ -21,6 +22,7 @@ public partial class CharacterForm : IController
     private const int TangsengHeroId = 2; // HeroConfig中唐僧身份，首次快照随选角确定。
 
     private int _playerCount; // 本次需要确认的人数。
+    private Vector2 _designSize; // 本次开窗使用的画布，不维护另一份设备状态。
     private readonly List<int> _chosenHeroIds = new(); // 已按席位确认的英雄。
 
     /// <summary>全部席位选定；参数为窗口编号与按席位排列的英雄编号。</summary>
@@ -49,6 +51,7 @@ public partial class CharacterForm : IController
         UIStringKeys.ForEach(key => key.SetLocalizationValue());
         if (isNewInstance)
         {
+            Resized += LayoutCards;
             _wukong.Pressed += OnWukongClicked;
             _wukong.MouseEntered += OnWukongMouseEntered;
             _wukong.MouseExited += ResetRoleHover;
@@ -76,6 +79,8 @@ public partial class CharacterForm : IController
         _playerCount = data.PlayerCount;
         _chosenHeroIds.Clear();
         _reselect.Visible = _playerCount == 2;
+        _designSize = this.GetSystem<DisplaySystem>().MenuDesignSize;
+        LayoutCards();
         RefreshCards();
         Visible = true;
     }
@@ -253,8 +258,7 @@ public partial class CharacterForm : IController
         RefreshCards();
         ((ShaderMaterial)card.Material).SetShaderParameter("grayscale", 0f);
         Label label = _chosenHeroIds.Count == 0 ? _playerOne : _playerTwo;
-        label.GlobalPosition = new Vector2(card.GetGlobalRect().GetCenter().X - label.Size.X / 2,
-            label.GlobalPosition.Y);
+        label.Position = new Vector2(card.GetRect().GetCenter().X - label.Size.X / 2, label.Position.Y);
         label.Visible = true;
     }
 
@@ -270,8 +274,7 @@ public partial class CharacterForm : IController
         {
             TextureButton card = _chosenHeroIds[i] == WukongHeroId ? _wukong : _sanzang;
             Label label = i == 0 ? _playerOne : _playerTwo;
-            label.GlobalPosition = new Vector2(card.GetGlobalRect().GetCenter().X - label.Size.X / 2,
-                label.GlobalPosition.Y);
+            label.Position = new Vector2(card.GetRect().GetCenter().X - label.Size.X / 2, label.Position.Y);
             label.Visible = true;
         }
     }
@@ -279,6 +282,29 @@ public partial class CharacterForm : IController
     /// <summary>鼠标离开时恢复已确认席位，不清除选择。</summary>
     private void ResetRoleHover()
     {
+        RefreshCards();
+    }
+
+    /// <summary>
+    /// 在当前可用画布内等比容纳两套审定构图；不改变窗口拉伸或玩法视野。
+    /// </summary>
+    private void LayoutCards()
+    {
+        float scale = Mathf.Min(Size.X / _designSize.X, Size.Y / _designSize.Y);
+        _frame.Size = _designSize;
+        _frame.Scale = new Vector2(scale, scale);
+        _frame.Position = (Size - _designSize * scale) / 2;
+        foreach (Control card in _roles.GetChildren())
+        {
+            Polygon2D background = card.GetNode<Polygon2D>("MaskedBackground");
+            Vector2 insets = background.GetMeta("right_insets").AsVector2();
+            Vector2[] points = background.Polygon;
+            points[2].X = card.Size.X - insets.X;
+            points[3].X = card.Size.X - insets.Y;
+            background.Polygon = points;
+            background.UV = points;
+        }
+
         RefreshCards();
     }
 

@@ -87,7 +87,7 @@ tracks/6/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [Vector2(-4.5, -1)]
+"values": [Vector2(-9, -2)]
 }
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_v8ayv"]
@@ -125,7 +125,7 @@ tracks/1/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [Vector2(-4.5, -1)]
+"values": [Vector2(-9, -2)]
 }
 tracks/2/type = "value"
 tracks/2/imported = false
@@ -222,7 +222,7 @@ tracks/1/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [Vector2(-4.5, -1)]
+"values": [Vector2(-9, -2)]
 }
 tracks/2/type = "value"
 tracks/2/imported = false
@@ -315,7 +315,7 @@ tracks/1/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [Vector2(-4.5, -1)]
+"values": [Vector2(-9, -2)]
 }
 tracks/2/type = "value"
 tracks/2/imported = false
@@ -404,7 +404,7 @@ tracks/1/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [Vector2(-4.5, -1)]
+"values": [Vector2(-9, -2)]
 }
 tracks/2/type = "value"
 tracks/2/imported = false
@@ -493,7 +493,7 @@ tracks/1/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 1,
-"values": [Vector2(-4.5, -1)]
+"values": [Vector2(-9, -2)]
 }
 tracks/2/type = "value"
 tracks/2/imported = false

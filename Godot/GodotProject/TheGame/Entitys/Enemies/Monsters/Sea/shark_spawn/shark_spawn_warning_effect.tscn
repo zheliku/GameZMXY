@@ -17,6 +17,7 @@ _hitBox = NodePath("Origin/Visual/HitBox")
 [node name="Visual" type="Node2D" parent="Origin" unique_id=1211607256]
 
 [node name="Sprite" type="AnimatedSprite2D" parent="Origin/Visual" unique_id=1231054491]
+scale = Vector2(0.5, 0.5)
 sprite_frames = ExtResource("frames")
 animation = &"play"
 

@@ -1,5 +1,7 @@
 # 造梦西游一：官方依据与项目差异
 
+**2026-11-17用户指定的预览差异：** 官方backpack_v2本身仍是悟空62时刻短展示、唐僧单身体姿态；项目按用户本次要求改用Role_v7完整wait作为独立背包动画（悟空100、唐僧91时刻，24fps），身体/武器仍独立换装。下文backpack_v2记载用于追溯原版，不表示当前项目仍采用静态唐僧预览；当前来源和像素映射见LegacyAssetMap、计划2.12.35。
+
 核对对象为第一代“七魔王篇”的 4399 公开版本，画布 940×590、动画 24 fps。不能混用造梦二、三的攻略或本地旧工程数值。以下秒数已从该版本时间轴换算，运行时不按游戏帧数计时。
 
 敌人运行时空间参数由场景Perception原生形状持有；索敌宽度、高度仍可在源码审计报告的`sight_range/attack_range`追溯。它们不再是Enemy表字段，AI交战距离也不从伤害盒并集推导。共同计数、巡逻和冷却归EnemyAiSystem，具体首领的选招分支留在各自状态；当前架构入口见[ProjectTour](ProjectTour.md#敌人-ai-阅读入口)，重导顺序见[LegacyAssetMap](LegacyAssetMap.md#敌人注册与判定修复的重导顺序)。
@@ -19,6 +21,10 @@
 | [OtherMat_v9.swf](https://sbai.4399.com/4399swf/upload_swf/ftp5/hanbao/20110624/3/OtherMat_v9.swf) | SelectRole 完整选角卡片 | `ef03008e68d64f613a2f7b3abfeec4cba3d4bd579c67e0f4703d8f15d3e115c9`（下载文件）；`fa7681aad99fb06f50228530b7f70f6334a1d7052a7bb6ef2ce3c3d81867fd5e`（恢复后） |
 
 加载器对 Role、Monster_v1、OtherMat 等包恢复为 `bytes[100:110] + bytes[0:100] + bytes[110:]`；`Monster2_v4`、`Monster3_v3` 直接加载，不换头。主程序另从外层 CWS/DefineBinaryData 读取。JPEXS FFDec 26.3 导出脚本和 XML，坐标 TWIPS ÷ 20。素材编号及复现脚本见 [LegacyAssetMap](LegacyAssetMap.md)。
+
+## 地图底图原生精度核实（2026-11-15）
+
+同版OtherMat_v9的SelectPLace505以depth1、零平移放置shape389；shape389的18800×11800 TWIPS边界和bitmapMatrix scale20引用DefineBitsJPEG2 bitmap388，原生仅940×590。FFDec导出的JPEG原字节与既有官方源XML一致，SHA256=`25ee85ff173f6be01f70b7a48bb0194d35169f6435e643689c92ce8905219e35`。扩图前journey_map.png与旧183.png相同，和该JPEG解码RGB最大差1/255；已审1408×590正式扩图的中央940×590仍逐像素保持该PNG。原源身份明确，但没有更高分辨率同内容来源，不能因其在shape内就计作矢量高清。接入及高清限制见LegacyAssetMap、Validation。
 
 ## 单人与双人内容完整性核对（2026-11-07）
 

@@ -166,7 +166,7 @@ public sealed partial class UiSmokeScenario
     /// <returns>地图技能交互完成任务。</returns>
     private async Task CheckCoopMapSkillsAsync(MapForm map, ProcedureOwner flow)
     {
-        PushMouseClick(map.GetNode<Button>("Frame/m_Skills"));
+        PushMouseClick(map.GetNode<Button>("m_Skills"));
         await WaitUntilAsync(() => GF.UI.GetAllLoadedUIForms().OfType<SkillForm>().Any(window => window.Visible),
             "双人地图技能入口未打开");
         SkillForm form = GF.UI.GetAllLoadedUIForms().OfType<SkillForm>().Single(window => window.Visible);

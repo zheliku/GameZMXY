@@ -212,6 +212,7 @@ public partial class MapForm : IController
     {
         if (IsInstanceValid(_skillsArtwork))
         {
+            _skillsCaption.Visible = false;
             _skillsArtwork.Stop();
         }
         if (!_isBound)
@@ -422,6 +423,7 @@ public partial class MapForm : IController
     private void ResetSkillsHint()
     {
         ProfileModel profile = this.GetModel<ProfileModel>();
+        _skillsCaption.Visible = false;
         _skillsArtwork.Stop();
         _skillsArtwork.Play(profile.HeroIds.Any(id => profile.GetSoul(id).Value >= 160) ? "available" : "idle");
     }
@@ -448,6 +450,7 @@ public partial class MapForm : IController
     /// </summary>
     private void OnSkillsMouseEntered()
     {
+        _skillsCaption.Visible = true;
         _skillsArtwork.Stop();
         _skillsArtwork.Play("hover");
     }
@@ -457,6 +460,7 @@ public partial class MapForm : IController
     /// </summary>
     private void OnSkillsMouseExited()
     {
+        _skillsCaption.Visible = false;
         _skillsArtwork.Stop();
         _skillsArtwork.Play("idle");
     }
