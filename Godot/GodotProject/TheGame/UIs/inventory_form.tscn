@@ -742,15 +742,16 @@ expand_mode = 1
 layout_mode = 0
 offset_left = 39.0
 offset_top = 3.0
-offset_right = 272.0
-offset_bottom = 19.0
+offset_right = 505.0
+offset_bottom = 35.0
+scale = Vector2(0.5, 0.5)
 mouse_filter = 2
 step = 0.0
 nine_patch_stretch = true
-stretch_margin_left = 10
-stretch_margin_top = 2
-stretch_margin_right = 10
-stretch_margin_bottom = 2
+stretch_margin_left = 20
+stretch_margin_top = 4
+stretch_margin_right = 20
+stretch_margin_bottom = 4
 texture_progress = ExtResource("exp_fill")
 
 [node name="m_ExperienceText" type="Label" parent="Window/CharacterPanel/Experience" unique_id=952829141]

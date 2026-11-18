@@ -1458,7 +1458,8 @@ public sealed partial class UiSmokeScenario
             Check(!hero.TryActivateMusou(), "无双期间可以重复开启");
             Check(GF.Base.IsGamePaused && activation.Visible, "开启无双没有短暂停顿和屏幕提示");
             AnimatedSprite2D clip = activation.GetNode<AnimatedSprite2D>("Frame/Animation");
-            Check(clip.Frame > 0 && clip.SpriteFrames.GetFrameTexture(clip.Animation, clip.Frame).GetSize() == new Vector2(940, 590),
+            Check(clip.Frame > 0 &&
+                clip.SpriteFrames.GetFrameTexture(clip.Animation, clip.Frame).GetSize() * clip.Scale == new Vector2(940, 590),
                 "暂停时原版开启动画未推进，或帧画布不匹配940×590");
             // 按原生动画帧采样中段；PNG 编码和磁盘写入延后，避免挤占一秒演出的后半段观察窗口。
             await WaitUntilAsync(() => clip.Frame >= 8 || !activation.Visible, "无双大立绘没有进入中段", 2000);

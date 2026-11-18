@@ -1,5 +1,35 @@
 # 验证
 
+## UI整类与无双共享图层（2026-11-18，本批交审）
+
+当前正式12图原矢量2倍替换、48个无双时刻分层，新增1张共享图/导入文件和1份SpriteFrames；共用原生时钟，无生产C#、玩法、显示设置或原PNG导入/UID改动。逐项清单165/673、配套76/183。原版与证据保留在`.godot/validation/art_ui_resume_20261118/`。已审的地图去字与布局保留，地图及技能等低精度位图仍受源精度限制。
+
+| 检查 | 实际结果 |
+| --- | --- |
+| 来源/画布 | 七张按钮/底板原密度可见RGBA全等；经验、状态、头像采样差见LegacyAssetMap。无双48时刻原密度重合最大RGBA通道差2/255，40个有角色时刻的2倍透明度质心偏移最大0.039逻辑px。共享19姿态、双英雄24+24时刻、原PNG路径及帧序保持。成品含外围约84.32MiB理论RGBA8（原101.55MiB），最大纹理单边3938；不等于Android真机预算通过。 |
+| 原生渲染 | 1920/2400/2520×1080各1986项、46张图，共5958项/138图、36次有效按钮点击。经验条六档、头像双向、按钮三态、人物与光束逐帧同步。首帧中央扣除4像素边缘后最大显示差1/255；三比例两侧均由原色值暗幕覆盖并续同源光束。六次最终退出0，stderr空。第一次夹具切换角色未复位播放状态，修正夹具后通过。 |
+| 实际程序 | 1920×1080用`--inventory-skills-only`及两英雄`--musou-hurt-only`三次均退出0/SMOKE PASS。从真实前端进关，验证背包操作/暂停/技能、无双人物身份、灯光同步、24帧逻辑画布、暂停恢复与60/120Hz原受击行为。各有故意池类型故障注入；退出ObjectDB为162/13/3，资源11/3/0，背包专项另有纹理、字体和RID关停诊断。 |
+| 导入/生成/格式 | Godot导入和既有Collection Res工具退出0，生成1011项；编辑器退出仍报告既有类型的资源释放诊断。`dotnet build`零错误、5个既有弃用警告；C#空白核对仅剩`UiSmokeScenario.cs:78`既有单行属性格式提示。引用2315路径/392UID、`git diff --check`通过。 |
+
+视觉检查：[电脑UI原寸对照](../Godot/GodotProject/.godot/validation/art_ui_resume_20261118/comparison_1920_ui.png)、[悟空1080p实跑](../Godot/GodotProject/.godot/validation/art_ui_resume_20261118/live_wukong_musou_1920.png)、[唐僧20:9原生无双](../Godot/GodotProject/.godot/validation/art_ui_resume_20261118/native_2400_musou_tangseng_17_installed.png)。手机比例由桌面原生视口模拟；无双中央940×590构图保持，已补齐两侧光束和暗幕覆盖。
+
+主要复现命令（`$batch`为`.godot/validation/art_ui_resume_20261118`，`$runner`为项目`.godot/validation/movement_presets/run_godot.py`；在仓库根运行时补`Godot/GodotProject/`前缀）：
+
+```powershell
+python "$batch/prepare_layers.py"
+python "$batch/prepare_wide_light.py"
+python "$batch/install.py"
+python "$batch/prepare_fixtures.py"
+# 先在 Godot 导入，再运行项目既有生成器 res://EditorScripts/regenerate_collection.gd。
+dotnet build Godot/GodotProject/GodotProject.csproj --no-restore -v minimal
+python $runner ui_resume_native_skill_1920 --windowed --resolution 940x590 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --script res://.godot/validation/art_ui_resume_20261118/preview_skill_musou.gd -- 1920
+# 同样运行 preview_hud_inventory.gd；两份夹具均用 1920、2400、2520 三宽度。
+python $runner ui_resume_real_inventory_1080 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=ui --inventory-skills-only
+# 改用 --musou-hurt-only 测悟空，追加 --tangseng-only 测唐僧。
+python Tools/ProjectMaintenance/validate_game_references.py
+git diff --check
+```
+
 ## 独立特效整类、掉落球滤镜采样与正式接入（2026-11-17，本批交审）
 
 用户认可Boss批次后授权下一批，仅处理Effects分类189图。当前4191文件为基线，原有Boss暂存索引保留。84套原图/场景/库与旧候选before全等后复用查源成果；正式替换84PNG、4份SpriteFrames及相关原有视觉节点，两悟空库仅换视觉offset/scale。火魔斩前奏一行朝向赋值保留0.5密度，原RESET夹具同步期望0.5；没有新增Manager/System、运行加载层、产品图片或修改碰撞/玩法。原PNG.import/UID及所有英雄身体/武器/preview、怪物与Boss素材保持。

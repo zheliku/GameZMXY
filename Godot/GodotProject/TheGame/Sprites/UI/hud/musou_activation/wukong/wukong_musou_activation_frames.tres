@@ -25,28 +25,172 @@
 [ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_23.png" id="f23"]
 [ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_24.png" id="f24"]
 
+[sub_resource type="AtlasTexture" id="registered_f1"]
+atlas = ExtResource("f1")
+region = Rect2(0, 0, 1, 1)
+margin = Rect2(0, 0, 1879, 1179)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="registered_f2"]
+atlas = ExtResource("f2")
+region = Rect2(0, 0, 1, 1)
+margin = Rect2(0, 0, 1879, 1179)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="registered_f3"]
+atlas = ExtResource("f3")
+region = Rect2(0, 0, 1, 1)
+margin = Rect2(0, 0, 1879, 1179)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="registered_f4"]
+atlas = ExtResource("f4")
+region = Rect2(0, 0, 1, 1)
+margin = Rect2(0, 0, 1879, 1179)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="registered_f5"]
+atlas = ExtResource("f5")
+region = Rect2(0, 0, 34, 65)
+margin = Rect2(0, 598, 1846, 1115)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="registered_f6"]
+atlas = ExtResource("f6")
+region = Rect2(0, 0, 134, 117)
+margin = Rect2(0, 599, 1746, 1063)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="registered_f7"]
+atlas = ExtResource("f7")
+region = Rect2(0, 0, 235, 384)
+margin = Rect2(0, 386, 1645, 796)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="registered_f8"]
+atlas = ExtResource("f8")
+region = Rect2(0, 0, 335, 606)
+margin = Rect2(0, 341, 1545, 574)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="registered_f9"]
+atlas = ExtResource("f9")
+region = Rect2(0, 0, 435, 629)
+margin = Rect2(0, 341, 1445, 551)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="registered_f10"]
+atlas = ExtResource("f10")
+region = Rect2(0, 0, 536, 633)
+margin = Rect2(0, 342, 1344, 547)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="registered_f11"]
+atlas = ExtResource("f11")
+region = Rect2(0, 0, 608, 633)
+margin = Rect2(28, 342, 1272, 547)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="registered_f12"]
+atlas = ExtResource("f12")
+region = Rect2(0, 0, 608, 633)
+margin = Rect2(28, 342, 1272, 547)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="registered_f13"]
+atlas = ExtResource("f13")
+region = Rect2(0, 0, 608, 633)
+margin = Rect2(28, 342, 1272, 547)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="registered_f14"]
+atlas = ExtResource("f14")
+region = Rect2(0, 0, 608, 633)
+margin = Rect2(28, 342, 1272, 547)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="registered_f15"]
+atlas = ExtResource("f15")
+region = Rect2(0, 0, 608, 633)
+margin = Rect2(28, 342, 1272, 547)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="registered_f16"]
+atlas = ExtResource("f16")
+region = Rect2(0, 0, 608, 633)
+margin = Rect2(28, 342, 1272, 547)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="registered_f17"]
+atlas = ExtResource("f17")
+region = Rect2(0, 0, 608, 633)
+margin = Rect2(28, 342, 1272, 547)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="registered_f18"]
+atlas = ExtResource("f18")
+region = Rect2(0, 0, 608, 633)
+margin = Rect2(28, 342, 1272, 547)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="registered_f19"]
+atlas = ExtResource("f19")
+region = Rect2(0, 0, 608, 633)
+margin = Rect2(28, 342, 1272, 547)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="registered_f20"]
+atlas = ExtResource("f20")
+region = Rect2(0, 0, 608, 633)
+margin = Rect2(28, 342, 1272, 547)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="registered_f21"]
+atlas = ExtResource("f21")
+region = Rect2(0, 0, 608, 633)
+margin = Rect2(28, 342, 1272, 547)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="registered_f22"]
+atlas = ExtResource("f22")
+region = Rect2(0, 0, 608, 633)
+margin = Rect2(28, 342, 1272, 547)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="registered_f23"]
+atlas = ExtResource("f23")
+region = Rect2(0, 0, 608, 633)
+margin = Rect2(28, 342, 1272, 547)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="registered_f24"]
+atlas = ExtResource("f24")
+region = Rect2(0, 0, 608, 633)
+margin = Rect2(28, 342, 1272, 547)
+filter_clip = true
+
 [resource]
-animations = [{"frames": [{"duration": 1.0, "texture": ExtResource("f1")},
-{"duration": 1.0, "texture": ExtResource("f2")},
-{"duration": 1.0, "texture": ExtResource("f3")},
-{"duration": 1.0, "texture": ExtResource("f4")},
-{"duration": 1.0, "texture": ExtResource("f5")},
-{"duration": 1.0, "texture": ExtResource("f6")},
-{"duration": 1.0, "texture": ExtResource("f7")},
-{"duration": 1.0, "texture": ExtResource("f8")},
-{"duration": 1.0, "texture": ExtResource("f9")},
-{"duration": 1.0, "texture": ExtResource("f10")},
-{"duration": 1.0, "texture": ExtResource("f11")},
-{"duration": 1.0, "texture": ExtResource("f12")},
-{"duration": 1.0, "texture": ExtResource("f13")},
-{"duration": 1.0, "texture": ExtResource("f14")},
-{"duration": 1.0, "texture": ExtResource("f15")},
-{"duration": 1.0, "texture": ExtResource("f16")},
-{"duration": 1.0, "texture": ExtResource("f17")},
-{"duration": 1.0, "texture": ExtResource("f18")},
-{"duration": 1.0, "texture": ExtResource("f19")},
-{"duration": 1.0, "texture": ExtResource("f20")},
-{"duration": 1.0, "texture": ExtResource("f21")},
-{"duration": 1.0, "texture": ExtResource("f22")},
-{"duration": 1.0, "texture": ExtResource("f23")},
-{"duration": 1.0, "texture": ExtResource("f24")}], "loop": false, "name": &"musou_activation", "speed": 24.0}]
+animations = [{"frames": [{"duration": 1.0, "texture": SubResource("registered_f1")},
+{"duration": 1.0, "texture": SubResource("registered_f2")},
+{"duration": 1.0, "texture": SubResource("registered_f3")},
+{"duration": 1.0, "texture": SubResource("registered_f4")},
+{"duration": 1.0, "texture": SubResource("registered_f5")},
+{"duration": 1.0, "texture": SubResource("registered_f6")},
+{"duration": 1.0, "texture": SubResource("registered_f7")},
+{"duration": 1.0, "texture": SubResource("registered_f8")},
+{"duration": 1.0, "texture": SubResource("registered_f9")},
+{"duration": 1.0, "texture": SubResource("registered_f10")},
+{"duration": 1.0, "texture": SubResource("registered_f11")},
+{"duration": 1.0, "texture": SubResource("registered_f12")},
+{"duration": 1.0, "texture": SubResource("registered_f13")},
+{"duration": 1.0, "texture": SubResource("registered_f14")},
+{"duration": 1.0, "texture": SubResource("registered_f15")},
+{"duration": 1.0, "texture": SubResource("registered_f16")},
+{"duration": 1.0, "texture": SubResource("registered_f17")},
+{"duration": 1.0, "texture": SubResource("registered_f18")},
+{"duration": 1.0, "texture": SubResource("registered_f19")},
+{"duration": 1.0, "texture": SubResource("registered_f20")},
+{"duration": 1.0, "texture": SubResource("registered_f21")},
+{"duration": 1.0, "texture": SubResource("registered_f22")},
+{"duration": 1.0, "texture": SubResource("registered_f23")},
+{"duration": 1.0, "texture": SubResource("registered_f24")}], "loop": false, "name": &"musou_activation", "speed": 24.0}]

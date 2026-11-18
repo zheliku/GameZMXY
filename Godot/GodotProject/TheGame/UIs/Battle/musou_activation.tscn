@@ -5,6 +5,7 @@
 [ext_resource type="Script" uid="uid://bymxyt55xb04o" path="res://TheGame/GameScripts/UI/BattleForm/Components/MusouActivationNode.cs" id="script"]
 
 [ext_resource type="AnimationLibrary" path="res://TheGame/Sprites/UI/hud/musou_activation/shared/musou_activation_library.tres" id="library"]
+[ext_resource type="SpriteFrames" path="res://TheGame/Sprites/UI/hud/musou_activation/shared/musou_activation_light_frames.tres" id="light"]
 
 [node name="MusouActivation" type="Control" unique_id=109249331 node_paths=PackedStringArray("_animation", "_player")]
 visible = false
@@ -22,6 +23,14 @@ _heroFrames = Dictionary[int, SpriteFrames]({
 2: ExtResource("tangseng_frames")
 })
 
+[node name="Dim" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+color = Color(0, 0, 0, 0.8117647)
+
 [node name="Frame" type="Control" parent="."]
 layout_mode = 1
 anchors_preset = 8
@@ -37,8 +46,16 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
+[node name="Light" type="AnimatedSprite2D" parent="Frame"]
+position = Vector2(470, 295)
+sprite_frames = ExtResource("light")
+animation = &"musou_activation"
+frame = 23
+frame_progress = 1.0
+
 [node name="Animation" type="AnimatedSprite2D" parent="Frame" unique_id=1962252916]
 position = Vector2(470, 295)
+scale = Vector2(0.5, 0.5)
 sprite_frames = ExtResource("frames")
 animation = &"musou_activation"
 frame = 23

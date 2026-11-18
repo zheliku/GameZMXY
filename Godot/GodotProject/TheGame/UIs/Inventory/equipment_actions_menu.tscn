@@ -23,6 +23,7 @@ _sell = NodePath("Panel/Sell")
 _gift = NodePath("Panel/Gift")
 
 [node name="Panel" type="TextureRect" parent="."]
+expand_mode = 1
 offset_right = 87.0
 offset_bottom = 115.0
 texture = ExtResource("background")

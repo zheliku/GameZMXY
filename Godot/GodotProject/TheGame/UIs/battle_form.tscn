@@ -179,10 +179,12 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="Head" type="Sprite2D" parent="LeftAnchor/StatusPanel" unique_id=2077905002]
+scale = Vector2(0.5, 0.5)
 position = Vector2(-63, -8)
 texture = ExtResource("6_head")
 
 [node name="StatusLabel" type="Sprite2D" parent="LeftAnchor/StatusPanel" unique_id=1928995609]
+scale = Vector2(0.5, 0.5)
 position = Vector2(-19, -5)
 texture = ExtResource("3_label")
 
@@ -494,12 +496,12 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="Head" type="Sprite2D" parent="RightAnchor/StatusPanelP2" unique_id=2146763600]
-scale = Vector2(-1, 1)
+scale = Vector2(-0.5, 0.5)
 position = Vector2(-63, -8)
 texture = ExtResource("6_head")
 
 [node name="StatusLabel" type="Sprite2D" parent="RightAnchor/StatusPanelP2" unique_id=2146763601]
-scale = Vector2(-1, 1)
+scale = Vector2(-0.5, 0.5)
 position = Vector2(-19, -5)
 texture = ExtResource("3_label")
 

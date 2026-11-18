@@ -2,9 +2,9 @@
 
 更新时间：2026-11-17。本页持续维护逐项进度。**电脑美术主设计16:9，以1920×1080验收；手机主设计20:9，以2400×1080作预览参考，实际按设备像素输出。** 其他手机比例有限留边/裁切兼容；4K屏允许继续放大1080p标准，940×590玩法核心保持。
 
-**图像源文件：153 / 672 已完成制作、接入及对应必要验证（约22.8%，按文件数统计）。本批独立特效189项中83图完整高清、1图部分提升、104图保留原位图、1图来源未确认；实际替换84图，无新增图片。519项未完整完成：191项来源/保真限制（含27项部分完成）、328项待处理。配套72/182。Boss上一批已审；本批特效待审，地图真实高清和Android真机仍未完成。**
+**图像源文件：165 / 673 已完成制作、接入及必要验证。本批原矢量高清12图；双英雄无双48时刻人物部分提升，光束/字样仍用原密度。全库349项来源/保真受限（含75项部分提升）、159项其他待处理；配套76/183。上一批特效已审，本批UI待审。**
 
-另列182份配套美术资源：字体、着色器、动画库、SpriteFrames、外观登记、主题与样式、地图透明命中遮罩，其中72份已完成密度联动、时序核对或必要显示验证。这182份不加入672张图像的分母，也不重复计算图片完成量。
+另列183份配套美术资源，其中76份已完成密度联动、时序核对或必要显示验证，不计入图片完成量。
 
 勾选含义：`[x]`表示该项对应的制作/接入/必要验证已完成；`[ ]`表示尚未完成。**完成实验、生成样稿或找到源文件，不等于素材高清通过；“等待用户审图”单独保留。** 原生SVG、字体和样式按1080p实际显示核对，需要时可保留原件，不强行栅格化或放大。
 
@@ -24,9 +24,14 @@
 
 ## 目前做了什么
 
+- [x] UI整类230项逐项复核候选、正式引用和源精度；12张矢量原路径2倍接入，新增1张共享光束图集，当前UI清单231项。
+- [x] 悟空/唐僧无双原各24帧人物源重导；共享原密度光束和原暗幕延伸两侧，保持原遮挡、原点、24fps和暂停恢复。
+- [x] 1920/2400/2520×1080合计5958项原生检查、138张图；实际1080p背包技能、悟空及唐僧无双专项通过。
+- [ ] 本批UI画面审查；地图/技能底图和无双字图等位图高清、Android真机继续未完成。
+
 - [x] 独立特效189项查源；84图/333源时刻原路径接入，83纯矢量图完整高清、1混合图部分；104位图与1未确认源保持原图。
 - [x] 修正掉落球等高密度滤镜核/相位，保持原光晕和共同原点；最大新纹理2739，理论RGBA8约36.79MiB；原生三比例1998项/60图及五个实际专项通过。
-- [ ] 本批特效画面审查；混合位图、原位图/未确认源、Android真机及预算仍未完成。
+- [x] 上一批特效画面获认可；混合位图、原位图/未确认源及Android真机仍未完成。
 
 - [x] 本批Boss整类30项查源，12套原路径2倍密度接入（11套2058时刻＋唐僧被抓130时刻）；原点/动画/碰撞保持，新增6页使所有本批新纹理每边≤4096。
 - [x] 原生4189项/73张1080p和22张手机比例图、实际Boss攻击/死亡/捕获/回池专项通过，详见Validation。
@@ -173,7 +178,7 @@
 - [ ] A5：汇总全库高清/仅扩图/保留原图结论和运行纹理预算，完成总审查。
 - [ ] T2～T5余项：除本批选角/地图菜单已接入外，其余UI、关卡世界宽屏、触屏、导出和真机仍按计划实施。
 
-这些是阶段任务，不额外计入下方文件总数。未来新增素材在实际创建时另行入表，累计新增6图已纳入当前667项，不预先计入未来素材；选角侧景不再作为必须新增的资源。
+这些是阶段任务，不额外计入下方文件总数。未来新增素材在实际创建时另行入表，只计入本轮实际存在的文件，不预先计入未来素材；选角侧景不再作为必须新增的资源。
 
 ## 图像完成量总览
 
@@ -184,16 +189,16 @@
 | [悟空背包专用预览](#art-images-03) | 13 | 13 | 0 | 0 |
 | [唐僧背包专用预览](#art-images-04) | 13 | 13 | 0 | 0 |
 | [英雄状态与角色配套贴图](#art-images-05) | 4 | 0 | 0 | 4 |
-| [敌人、Boss及其图集](#art-images-06) | 60 | 9 | 8（含4项部分完成） | 43 |
-| [独立特效、掉落球、升级与演出](#art-images-07) | 189 | 0 | 0 | 189 |
-| [UI、头像、地图、技能面板与无双画面](#art-images-08) | 230 | 6 | 40（含7项部分完成） | 184 |
+| [敌人、Boss及其图集](#art-images-06) | 66 | 12 | 39（含19项部分提升） | 15 |
+| [独立特效、掉落球、升级与演出](#art-images-07) | 189 | 83 | 105（含1项部分提升） | 1 |
+| [UI、头像、地图、技能面板与无双画面](#art-images-08) | 231 | 18 | 198（含55项部分提升） | 15 |
 | [装备、消耗品与地面图标](#art-images-09) | 79 | 0 | 1 | 78 |
 | [伤害、恢复数字与文字图集](#art-images-10) | 10 | 0 | 4 | 6 |
 | [关卡背景、地形、平台与前景](#art-images-11) | 37 | 0 | 2 | 35 |
 | [主题SVG、工程图标与其他图像](#art-images-12) | 5 | 0 | 0 | 5 |
-| **合计** | **666** | **67** | **55（含11项部分完成）** | **544** |
+| **合计** | **673** | **165** | **349（含75项部分提升）** | **159** |
 
-## 全部图像文件（666项）
+## 全部图像文件（673项）
 
 以下链接均指向当前正式文件；每个文件只列一次。目录相对`Godot/GodotProject/`；尺寸是本轮读取的当前源像素尺寸。`.import`与`.uid`随源资源维护，不作为第二张图重复列项。
 
@@ -435,7 +440,7 @@
 
 目录：`TheGame/Sprites/Effects/Enemies/sea/`
 
-- [x] [shrimp_projectile.png](../Godot/GodotProject/TheGame/Sprites/Effects/Enemies/sea/shrimp_projectile.png) — 19×13 → 38×26；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成。
+- [x] [shrimp_projectile.png](../Godot/GodotProject/TheGame/Sprites/Effects/Enemies/sea/shrimp_projectile.png) — 19×13 → 38×26；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成。
 
 目录：`TheGame/Sprites/Effects/Enemies/zm1_06_garuda_cave/`
 
@@ -524,82 +529,82 @@
 
 目录：`TheGame/Sprites/Effects/loot/`
 
-- [x] [health_01.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_01.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [health_02.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_02.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [health_03.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_03.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [health_04.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_04.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [health_05.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_05.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [health_06.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_06.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [health_07.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_07.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [health_08.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_08.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [health_09.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_09.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [health_10.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_10.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [health_11.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_11.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [health_12.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_12.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [health_13.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_13.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [health_14.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_14.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [health_15.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_15.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [health_16.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_16.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [health_17.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_17.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [health_18.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_18.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [health_19.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_19.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [mana_01.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_01.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [mana_02.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_02.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [mana_03.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_03.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [mana_04.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_04.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [mana_05.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_05.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [mana_06.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_06.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [mana_07.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_07.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [mana_08.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_08.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [mana_09.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_09.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [mana_10.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_10.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [mana_11.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_11.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [mana_12.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_12.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [mana_13.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_13.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [mana_14.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_14.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [mana_15.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_15.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [mana_16.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_16.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [mana_17.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_17.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [mana_18.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_18.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [mana_19.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_19.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [musou_01.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_01.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [musou_02.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_02.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [musou_03.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_03.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [musou_04.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_04.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [musou_05.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_05.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [musou_06.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_06.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [musou_07.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_07.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [musou_08.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_08.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [musou_09.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_09.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [musou_10.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_10.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [musou_11.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_11.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [musou_12.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_12.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [musou_13.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_13.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [musou_14.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_14.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [musou_15.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_15.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [musou_16.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_16.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [musou_17.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_17.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [musou_18.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_18.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [musou_19.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_19.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [soul_01.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_01.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [soul_02.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_02.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [soul_03.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_03.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [soul_04.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_04.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [soul_05.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_05.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [soul_06.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_06.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [soul_07.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_07.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [soul_08.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_08.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [soul_09.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_09.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [soul_10.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_10.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [soul_11.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_11.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [soul_12.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_12.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [soul_13.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_13.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [soul_14.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_14.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [soul_15.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_15.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [soul_16.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_16.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [soul_17.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_17.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [soul_18.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_18.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
-- [x] [soul_19.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_19.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [health_01.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_01.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [health_02.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_02.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [health_03.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_03.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [health_04.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_04.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [health_05.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_05.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [health_06.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_06.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [health_07.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_07.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [health_08.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_08.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [health_09.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_09.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [health_10.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_10.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [health_11.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_11.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [health_12.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_12.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [health_13.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_13.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [health_14.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_14.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [health_15.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_15.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [health_16.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_16.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [health_17.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_17.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [health_18.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_18.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [health_19.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/health_19.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [mana_01.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_01.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [mana_02.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_02.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [mana_03.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_03.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [mana_04.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_04.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [mana_05.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_05.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [mana_06.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_06.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [mana_07.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_07.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [mana_08.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_08.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [mana_09.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_09.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [mana_10.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_10.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [mana_11.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_11.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [mana_12.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_12.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [mana_13.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_13.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [mana_14.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_14.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [mana_15.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_15.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [mana_16.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_16.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [mana_17.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_17.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [mana_18.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_18.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [mana_19.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/mana_19.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [musou_01.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_01.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [musou_02.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_02.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [musou_03.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_03.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [musou_04.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_04.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [musou_05.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_05.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [musou_06.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_06.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [musou_07.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_07.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [musou_08.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_08.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [musou_09.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_09.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [musou_10.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_10.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [musou_11.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_11.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [musou_12.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_12.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [musou_13.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_13.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [musou_14.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_14.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [musou_15.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_15.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [musou_16.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_16.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [musou_17.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_17.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [musou_18.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_18.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [musou_19.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/musou_19.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [soul_01.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_01.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [soul_02.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_02.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [soul_03.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_03.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [soul_04.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_04.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [soul_05.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_05.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [soul_06.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_06.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [soul_07.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_07.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [soul_08.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_08.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [soul_09.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_09.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [soul_10.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_10.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [soul_11.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_11.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [soul_12.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_12.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [soul_13.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_13.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [soul_14.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_14.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [soul_15.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_15.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [soul_16.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_16.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [soul_17.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_17.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [soul_18.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_18.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
+- [x] [soul_19.png](../Godot/GodotProject/TheGame/Sprites/Effects/loot/soul_19.png) — 18×20 → 36×40；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成；已修高密度滤镜核/相位，未逐帧居中。
 
 目录：`TheGame/Sprites/Effects/monster_hit/tangseng/`
 
@@ -643,30 +648,30 @@
 
 - [ ] [tangseng_cure_role_atlas.png](../Godot/GodotProject/TheGame/Sprites/Effects/tangseng/skills/tangseng_cure_role_atlas.png) — 1024×2090；来源受限：Role_v7原位图；正式原图保持，不以插值放大计高清。
 - [ ] [tangseng_dark_ice_atlas.png](../Godot/GodotProject/TheGame/Sprites/Effects/tangseng/skills/tangseng_dark_ice_atlas.png) — 2048×980；来源受限：Role_v7原位图；正式原图保持，不以插值放大计高清。
-- [x] [tangseng_ice_dragon_bolt.png](../Godot/GodotProject/TheGame/Sprites/Effects/tangseng/skills/tangseng_ice_dragon_bolt.png) — 129×90 → 258×180；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成。
-- [x] [tangseng_water_demon_ball_atlas.png](../Godot/GodotProject/TheGame/Sprites/Effects/tangseng/skills/tangseng_water_demon_ball_atlas.png) — 4096×91 → 2048×592；原源2倍重导，20源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成。
+- [x] [tangseng_ice_dragon_bolt.png](../Godot/GodotProject/TheGame/Sprites/Effects/tangseng/skills/tangseng_ice_dragon_bolt.png) — 129×90 → 258×180；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成。
+- [x] [tangseng_water_demon_ball_atlas.png](../Godot/GodotProject/TheGame/Sprites/Effects/tangseng/skills/tangseng_water_demon_ball_atlas.png) — 4096×91 → 2048×592；原源2倍重导，20源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成。
 - [ ] [tangseng_water_demon_fall_atlas.png](../Godot/GodotProject/TheGame/Sprites/Effects/tangseng/skills/tangseng_water_demon_fall_atlas.png) — 1024×1972；来源受限：Role_v7原位图；正式原图保持，不以插值放大计高清。
 
 目录：`TheGame/Sprites/Effects/tangseng/`
 
-- [x] [tangseng_normal_bolt.png](../Godot/GodotProject/TheGame/Sprites/Effects/tangseng/tangseng_normal_bolt.png) — 140×58 → 280×116；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成。
+- [x] [tangseng_normal_bolt.png](../Godot/GodotProject/TheGame/Sprites/Effects/tangseng/tangseng_normal_bolt.png) — 140×58 → 280×116；原源2倍重导，1源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成。
 
 目录：`TheGame/Sprites/Effects/wukong/skills/`
 
-- [x] [wukong_blazing_flash_trail_atlas.png](../Godot/GodotProject/TheGame/Sprites/Effects/wukong/skills/wukong_blazing_flash_trail_atlas.png) — 3528×204 → 1024×1385；原源2倍重导，10源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成。
+- [x] [wukong_blazing_flash_trail_atlas.png](../Godot/GodotProject/TheGame/Sprites/Effects/wukong/skills/wukong_blazing_flash_trail_atlas.png) — 3528×204 → 1024×1385；原源2倍重导，10源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成。
 - [ ] [wukong_fire_demon_combo_atlas.png](../Godot/GodotProject/TheGame/Sprites/Effects/wukong/skills/wukong_fire_demon_combo_atlas.png) — 2214×1856；来源受限：Role_v7原位图；正式原图保持，不以插值放大计高清。
 - [ ] [wukong_fire_demon_descent_atlas.png](../Godot/GodotProject/TheGame/Sprites/Effects/wukong/skills/wukong_fire_demon_descent_atlas.png) — 508×295；来源受限：Role_v7原位图；正式原图保持，不以插值放大计高清。
 - [ ] [wukong_fire_demon_landing_atlas.png](../Godot/GodotProject/TheGame/Sprites/Effects/wukong/skills/wukong_fire_demon_landing_atlas.png) — 942×262；来源受限：Role_v7原位图；正式原图保持，不以插值放大计高清。
-- [x] [wukong_fire_demon_prelude_atlas.png](../Godot/GodotProject/TheGame/Sprites/Effects/wukong/skills/wukong_fire_demon_prelude_atlas.png) — 1326×546 → 512×1157；原源2倍重导，40源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成。
-- [ ] [wukong_skill_inline_effects.png](../Godot/GodotProject/TheGame/Sprites/Effects/wukong/skills/wukong_skill_inline_effects.png) — 3200×4400 → 2048×2739；部分提升：原源2倍重导，122源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；混合位图原精度限制保持。
+- [x] [wukong_fire_demon_prelude_atlas.png](../Godot/GodotProject/TheGame/Sprites/Effects/wukong/skills/wukong_fire_demon_prelude_atlas.png) — 1326×546 → 512×1157；原源2倍重导，40源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成。
+- [ ] [wukong_skill_inline_effects.png](../Godot/GodotProject/TheGame/Sprites/Effects/wukong/skills/wukong_skill_inline_effects.png) — 3200×4400 → 2048×2739；部分提升：原源2倍重导，122源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；混合位图原精度限制保持。
 
 目录：`TheGame/Sprites/Effects/wukong/`
 
-- [x] [wukong_attack_effects.png](../Godot/GodotProject/TheGame/Sprites/Effects/wukong/wukong_attack_effects.png) — 2400×1200 → 512×1216；原源2倍重导，62源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，本批待审；纯矢量高清完成。
+- [x] [wukong_attack_effects.png](../Godot/GodotProject/TheGame/Sprites/Effects/wukong/wukong_attack_effects.png) — 2400×1200 → 512×1216；原源2倍重导，62源时刻；原点/逻辑画布/遮挡/时序保持，实际接入验证，上一批已审；纯矢量高清完成。
 
 <a id="art-images-08"></a>
 
-### UI、头像、地图、技能面板与无双画面（6/230完整完成，7项部分完成）
+### UI、头像、地图、技能面板与无双画面（18/231完整完成，55项部分提升）
 
 目录：`TheGame/Sprites/UI/frontend/`
 
@@ -678,11 +683,11 @@
 - [x] [character_sanzang_ink.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/character_sanzang_ink.png) — 711×1830；原shape510唐僧变换，三倍重导及原生NinePatch验证通过。
 - [x] [character_bajie_ink.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/character_bajie_ink.png) — 711×1830；原shape510八戒变换，三倍重导及原生NinePatch验证通过。
 - [ ] [character_card_background.jpg](../Godot/GodotProject/TheGame/Sprites/UI/frontend/character_card_background.jpg) — 940×590；原bitmap508的JPEG原字节，原shape506遮罩已接入；未提高真实精度，来源受限。
-- [ ] [delete_confirm_cancel.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/delete_confirm_cancel.png) — 68×33；待来源/清晰度处理及1080p验收。
-- [ ] [delete_confirm_cancel_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/delete_confirm_cancel_hover.png) — 68×33；待来源/清晰度处理及1080p验收。
-- [ ] [delete_confirm_confirm.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/delete_confirm_confirm.png) — 68×33；待来源/清晰度处理及1080p验收。
-- [ ] [delete_confirm_confirm_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/delete_confirm_confirm_hover.png) — 68×33；待来源/清晰度处理及1080p验收。
-- [ ] [delete_confirm_panel.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/delete_confirm_panel.png) — 231×133；待来源/清晰度处理及1080p验收。
+- [ ] [delete_confirm_cancel.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/delete_confirm_cancel.png) — 68×33；已复核other3元件217.png；现有源像素或合成保真受限，正式原图保持。
+- [ ] [delete_confirm_cancel_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/delete_confirm_cancel_hover.png) — 68×33；已复核Commonv3720 bitmap78；现有源像素或合成保真受限，正式原图保持。
+- [ ] [delete_confirm_confirm.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/delete_confirm_confirm.png) — 68×33；已复核other3元件212.png；现有源像素或合成保真受限，正式原图保持。
+- [ ] [delete_confirm_confirm_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/delete_confirm_confirm_hover.png) — 68×33；已复核Commonv3720 bitmap73；现有源像素或合成保真受限，正式原图保持。
+- [ ] [delete_confirm_panel.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/delete_confirm_panel.png) — 231×133；已复核other3元件210.png；现有源像素或合成保真受限，正式原图保持。
 - [ ] [journey_map.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/journey_map.png) — 940×590 → 1408×590；部分完成：外围已审/原路径接入，原中心像素保持，正式菜单铺满通过；中心真实高清受源限制，2816×1180恢复小样收益有限、未采用。
 - [ ] [map_bianfuku_current.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/map_bianfuku_current.png) — 425×232；当前登记源为小位图；外层shape/sprite及放大导出不计高清，保留正式原图，来源/保真受限。
 - [ ] [map_bianfuku_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/map_bianfuku_hover.png) — 174×119；当前登记源为小位图；外层shape/sprite及放大导出不计高清，保留正式原图，来源/保真受限。
@@ -690,7 +695,7 @@
 - [x] [map_donghai_current.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/map_donghai_current.png) — 2832×2380；已审2倍矢量光晕第一页（源帧0～9），与第二页共同保持原19帧/24fps，正式接入/验证完成。
 - [x] [map_donghai_current_2.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/map_donghai_current_2.png) — 2832×2380；东海动画第二页（源帧10～18），原生贴图轨切页，所有帧及原时刻保持，正式接入/验证完成。
 - [ ] [map_donghai_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/map_donghai_hover.png) — 1484×530；部分完成：已审2倍矢量光晕已接入，原137×28位图文字仍无高清源，整图继续未勾。
-- [ ] [map_donghai_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/map_donghai_normal.png) — 742×265；原图全透明输入状态；不做无意义增密，原命中遮罩保持，配套命中验收仍待后续。
+- [ ] [map_donghai_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/map_donghai_normal.png) — 742×265；原图全透明，仅作为输入状态；本批原PNG与命中配置保持，高清不计数。
 - [ ] [map_huaguoshan_current.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/map_huaguoshan_current.png) — 480×424；当前登记源为小位图；外层shape/sprite及放大导出不计高清，保留正式原图，来源/保真受限。
 - [ ] [map_huaguoshan_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/map_huaguoshan_hover.png) — 184×198；当前登记源为小位图；外层shape/sprite及放大导出不计高清，保留正式原图，来源/保真受限。
 - [ ] [map_huaguoshan_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/map_huaguoshan_normal.png) — 68×78；当前登记源为小位图；外层shape/sprite及放大导出不计高清，保留正式原图，来源/保真受限。
@@ -702,7 +707,7 @@
 - [ ] [map_niumogu_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/map_niumogu_normal.png) — 57×56；当前登记源为小位图；外层shape/sprite及放大导出不计高清，保留正式原图，来源/保真受限。
 - [x] [map_qianan_current.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/map_qianan_current.png) — 3060×2264；已审原矢量光晕2倍、19帧/24fps；共同透明裁切及offset补偿，原路径接入/帧/命中/双端检查完成。
 - [ ] [map_qianan_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/map_qianan_hover.png) — 674×624；部分完成：已审2倍矢量光晕已接入，原137×28位图文字仍无高清源，整图继续未勾。
-- [ ] [map_qianan_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/map_qianan_normal.png) — 337×312；原图全透明输入状态；不做无意义增密，原命中遮罩保持，配套命中验收仍待后续。
+- [ ] [map_qianan_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/map_qianan_normal.png) — 337×312；原图全透明，仅作为输入状态；本批原PNG与命中配置保持，高清不计数。
 - [ ] [map_qixingdong_current.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/map_qixingdong_current.png) — 570×368；当前登记源为小位图；外层shape/sprite及放大导出不计高清，保留正式原图，来源/保真受限。
 - [ ] [map_qixingdong_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/map_qixingdong_hover.png) — 177×132；当前登记源为小位图；外层shape/sprite及放大导出不计高清，保留正式原图，来源/保真受限。
 - [ ] [map_qixingdong_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/map_qixingdong_normal.png) — 86×64；当前登记源为小位图；外层shape/sprite及放大导出不计高清，保留正式原图，来源/保真受限。
@@ -711,7 +716,7 @@
 - [ ] [map_save_game_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/map_save_game_hover.png) — 138×93；完整原alpha/笔刷背景保持，仅去原字形RGB，文字用Godot字体Label；无中间扣空，主体高清仍受源限制。 原悬停引用保留、与普通态不同。
 - [ ] [map_shazhiwoliu_current.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/map_shazhiwoliu_current.png) — 1930×1640；当前登记源为小位图；外层shape/sprite及放大导出不计高清，保留正式原图，来源/保真受限。
 - [ ] [map_shazhiwoliu_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/map_shazhiwoliu_hover.png) — 386×164；当前登记源为小位图；外层shape/sprite及放大导出不计高清，保留正式原图，来源/保真受限。
-- [ ] [map_shazhiwoliu_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/map_shazhiwoliu_normal.png) — 386×164；原图全透明输入状态；不做无意义增密，原命中遮罩保持，配套命中验收仍待后续。
+- [ ] [map_shazhiwoliu_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/map_shazhiwoliu_normal.png) — 386×164；原图全透明，仅作为输入状态；本批原PNG与命中配置保持，高清不计数。
 - [ ] [map_shuiliandong_current.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/map_shuiliandong_current.png) — 440×344；当前登记源为小位图；外层shape/sprite及放大导出不计高清，保留正式原图，来源/保真受限。
 - [ ] [map_shuiliandong_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/map_shuiliandong_hover.png) — 201×162；当前登记源为小位图；外层shape/sprite及放大导出不计高清，保留正式原图，来源/保真受限。
 - [ ] [map_shuiliandong_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/map_shuiliandong_normal.png) — 60×58；当前登记源为小位图；外层shape/sprite及放大导出不计高清，保留正式原图，来源/保真受限。
@@ -719,126 +724,130 @@
 - [ ] [map_taohuayuan_current.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/map_taohuayuan_current.png) — 460×372；当前登记源为小位图；外层shape/sprite及放大导出不计高清，保留正式原图，来源/保真受限。
 - [ ] [map_taohuayuan_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/map_taohuayuan_hover.png) — 186×187；当前登记源为小位图；外层shape/sprite及放大导出不计高清，保留正式原图，来源/保真受限。
 - [ ] [map_taohuayuan_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/map_taohuayuan_normal.png) — 64×65；当前登记源为小位图；外层shape/sprite及放大导出不计高清，保留正式原图，来源/保真受限。
-- [ ] [menu_close.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/menu_close.png) — 41×41；待来源/清晰度处理及1080p验收。
-- [ ] [menu_close_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/menu_close_hover.png) — 41×41；待来源/清晰度处理及1080p验收。
-- [ ] [menu_separator.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/menu_separator.png) — 241×21；待来源/清晰度处理及1080p验收。
-- [ ] [save_slot_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/save_slot_hover.png) — 260×87；待来源/清晰度处理及1080p验收。
-- [ ] [save_slot_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/save_slot_normal.png) — 260×87；待来源/清晰度处理及1080p验收。
-- [ ] [save_slots_backdrop.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/save_slots_backdrop.png) — 941×591；待来源/清晰度处理及1080p验收。
-- [ ] [settings_scroll.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/settings_scroll.png) — 326×341；待来源/清晰度处理及1080p验收。
-- [ ] [title_backdrop.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/title_backdrop.png) — 941×591；待来源/清晰度处理及1080p验收。
+- [ ] [menu_close.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/menu_close.png) — 41×41；已复核other3元件43.png；现有源像素或合成保真受限，正式原图保持。
+- [ ] [menu_close_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/menu_close_hover.png) — 41×41；已复核backpack3_bitmap元件14；现有源像素或合成保真受限，正式原图保持。
+- [ ] [menu_separator.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/menu_separator.png) — 241×21；已复核other元件161.png；现有源像素或合成保真受限，正式原图保持。
+- [ ] [save_slot_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/save_slot_hover.png) — 260×87；已查现有导出与旧图，尚未确认可保真提高细节的同内容源，正式原图保持。
+- [ ] [save_slot_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/save_slot_normal.png) — 260×87；已查现有导出与旧图，尚未确认可保真提高细节的同内容源，正式原图保持。
+- [ ] [save_slots_backdrop.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/save_slots_backdrop.png) — 941×591；已复核common_shape元件165；现有源像素或合成保真受限，正式原图保持。
+- [ ] [settings_scroll.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/settings_scroll.png) — 326×341；已复核other原位图222.png；现有源像素或合成保真受限，正式原图保持。
+- [ ] [title_backdrop.png](../Godot/GodotProject/TheGame/Sprites/UI/frontend/title_backdrop.png) — 941×591；现有中心为低分辨率位图，已有外围扩图候选不增加中心细节，本批保留正式原图。
 
 目录：`TheGame/Sprites/UI/gogo/`
 
-- [ ] [gogo_sheet.png](../Godot/GodotProject/TheGame/Sprites/UI/gogo/gogo_sheet.png) — 1704×828；待来源/清晰度处理及1080p验收。
+- [ ] [gogo_sheet.png](../Godot/GodotProject/TheGame/Sprites/UI/gogo/gogo_sheet.png) — 1704×828；已复核v25928 main GOGO44；现有源像素或合成保真受限，正式原图保持。
 
 目录：`TheGame/Sprites/UI/hud/`
 
-- [ ] [battle_menu_ws_fill.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_fill.png) — 221×12；待来源/清晰度处理及1080p验收。
-- [ ] [battle_menu_ws_glow_00.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_00.png) — 158×158；待来源/清晰度处理及1080p验收。
-- [ ] [battle_menu_ws_glow_01.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_01.png) — 158×158；待来源/清晰度处理及1080p验收。
-- [ ] [battle_menu_ws_glow_02.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_02.png) — 158×158；待来源/清晰度处理及1080p验收。
-- [ ] [battle_menu_ws_glow_03.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_03.png) — 158×158；待来源/清晰度处理及1080p验收。
-- [ ] [battle_menu_ws_glow_04.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_04.png) — 158×158；待来源/清晰度处理及1080p验收。
-- [ ] [battle_menu_ws_glow_05.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_05.png) — 158×158；待来源/清晰度处理及1080p验收。
-- [ ] [battle_menu_ws_glow_06.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_06.png) — 158×158；待来源/清晰度处理及1080p验收。
-- [ ] [battle_menu_ws_glow_07.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_07.png) — 158×158；待来源/清晰度处理及1080p验收。
-- [ ] [battle_menu_ws_glow_08.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_08.png) — 158×158；待来源/清晰度处理及1080p验收。
-- [ ] [battle_menu_ws_glow_09.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_09.png) — 158×158；待来源/清晰度处理及1080p验收。
-- [ ] [battle_menu_ws_glow_10.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_10.png) — 158×158；待来源/清晰度处理及1080p验收。
-- [ ] [battle_menu_ws_glow_11.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_11.png) — 158×158；待来源/清晰度处理及1080p验收。
-- [ ] [battle_menu_ws_glow_12.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_12.png) — 158×158；待来源/清晰度处理及1080p验收。
-- [ ] [battle_menu_ws_glow_13.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_13.png) — 158×158；待来源/清晰度处理及1080p验收。
-- [ ] [battle_menu_ws_glow_14.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_14.png) — 158×158；待来源/清晰度处理及1080p验收。
-- [ ] [battle_menu_ws_glow_15.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_15.png) — 158×158；待来源/清晰度处理及1080p验收。
-- [ ] [battle_menu_ws_glow_16.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_16.png) — 158×158；待来源/清晰度处理及1080p验收。
-- [ ] [battle_menu_ws_glow_17.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_17.png) — 158×158；待来源/清晰度处理及1080p验收。
-- [ ] [battle_menu_ws_glow_18.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_18.png) — 158×158；待来源/清晰度处理及1080p验收。
-- [ ] [battle_menu_ws_idle.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_idle.png) — 68×68；待来源/清晰度处理及1080p验收。
-- [ ] [battle_menu_ws_under.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_under.png) — 221×27；待来源/清晰度处理及1080p验收。
-- [ ] [battle_skill_icons.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_skill_icons.png) — 495×45；待来源/清晰度处理及1080p验收。
-- [ ] [boss_health_fill.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/boss_health_fill.png) — 340×29；待来源/清晰度处理及1080p验收。
-- [ ] [boss_health_under.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/boss_health_under.png) — 340×29；待来源/清晰度处理及1080p验收。
-- [ ] [combo_caption.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/combo_caption.png) — 224×80；待来源/清晰度处理及1080p验收。
-- [ ] [combo_digits.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/combo_digits.png) — 1600×3200；待来源/清晰度处理及1080p验收。
-- [ ] [hud_exp_fill.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/hud_exp_fill.png) — 144×12；待来源/清晰度处理及1080p验收。
-- [ ] [hud_head_tangseng.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/hud_head_tangseng.png) — 83×76；待来源/清晰度处理及1080p验收。
-- [ ] [hud_head_wukong.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/hud_head_wukong.png) — 83×76；待来源/清晰度处理及1080p验收。
-- [ ] [hud_hp_fill.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/hud_hp_fill.png) — 144×12；待来源/清晰度处理及1080p验收。
-- [ ] [hud_menu_panel.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/hud_menu_panel.png) — 169×133；待来源/清晰度处理及1080p验收。
-- [ ] [hud_mp_fill.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/hud_mp_fill.png) — 144×12；待来源/清晰度处理及1080p验收。
-- [ ] [hud_status_label.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/hud_status_label.png) — 17×46；待来源/清晰度处理及1080p验收。
-- [ ] [hud_status_panel.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/hud_status_panel.png) — 227×87；待来源/清晰度处理及1080p验收。
-- [ ] [hud_ws_frame.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/hud_ws_frame.png) — 260×22；待来源/清晰度处理及1080p验收。
-- [ ] [menu_inventory_caption.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_inventory_caption.png) — 30×17；待来源/清晰度处理及1080p验收。
-- [ ] [menu_inventory_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_inventory_hover.png) — 47×37；待来源/清晰度处理及1080p验收。
-- [ ] [menu_inventory_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_inventory_normal.png) — 47×37；待来源/清晰度处理及1080p验收。
-- [ ] [menu_pet_caption.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_pet_caption.png) — 30×17；待来源/清晰度处理及1080p验收。
-- [ ] [menu_pet_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_pet_hover.png) — 47×37；待来源/清晰度处理及1080p验收。
-- [ ] [menu_pet_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_pet_normal.png) — 47×37；待来源/清晰度处理及1080p验收。
-- [ ] [menu_settings_caption.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_settings_caption.png) — 30×17；待来源/清晰度处理及1080p验收。
-- [ ] [menu_settings_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_settings_hover.png) — 47×37；待来源/清晰度处理及1080p验收。
-- [ ] [menu_settings_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_settings_normal.png) — 47×37；待来源/清晰度处理及1080p验收。
-- [ ] [menu_skills_caption.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_skills_caption.png) — 30×17；待来源/清晰度处理及1080p验收。
-- [ ] [menu_skills_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_skills_hover.png) — 47×37；待来源/清晰度处理及1080p验收。
-- [ ] [menu_skills_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_skills_normal.png) — 47×37；待来源/清晰度处理及1080p验收。
-- [ ] [menu_weapon_caption.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_weapon_caption.png) — 30×17；待来源/清晰度处理及1080p验收。
-- [ ] [menu_weapon_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_weapon_hover.png) — 47×37；待来源/清晰度处理及1080p验收。
-- [ ] [menu_weapon_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_weapon_normal.png) — 47×37；待来源/清晰度处理及1080p验收。
+- [ ] [battle_menu_ws_fill.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_fill.png) — 221×12；已复核OtherMat_v9原位图/原生滤镜：330→329，333→332，340→337，328→306..326，567→565；原图保持；现有源像素或合成保真受限，正式原图保持。
+- [ ] [battle_menu_ws_glow_00.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_00.png) — 158×158；已复核OtherMat_v9原位图/原生滤镜：330→329，333→332，340→337，328→306..326，567→565；原图保持；现有源像素或合成保真受限，正式原图保持。
+- [ ] [battle_menu_ws_glow_01.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_01.png) — 158×158；已复核OtherMat_v9原位图/原生滤镜：330→329，333→332，340→337，328→306..326，567→565；原图保持；现有源像素或合成保真受限，正式原图保持。
+- [ ] [battle_menu_ws_glow_02.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_02.png) — 158×158；已复核OtherMat_v9原位图/原生滤镜：330→329，333→332，340→337，328→306..326，567→565；原图保持；现有源像素或合成保真受限，正式原图保持。
+- [ ] [battle_menu_ws_glow_03.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_03.png) — 158×158；已复核OtherMat_v9原位图/原生滤镜：330→329，333→332，340→337，328→306..326，567→565；原图保持；现有源像素或合成保真受限，正式原图保持。
+- [ ] [battle_menu_ws_glow_04.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_04.png) — 158×158；已复核OtherMat_v9原位图/原生滤镜：330→329，333→332，340→337，328→306..326，567→565；原图保持；现有源像素或合成保真受限，正式原图保持。
+- [ ] [battle_menu_ws_glow_05.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_05.png) — 158×158；已复核OtherMat_v9原位图/原生滤镜：330→329，333→332，340→337，328→306..326，567→565；原图保持；现有源像素或合成保真受限，正式原图保持。
+- [ ] [battle_menu_ws_glow_06.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_06.png) — 158×158；已复核OtherMat_v9原位图/原生滤镜：330→329，333→332，340→337，328→306..326，567→565；原图保持；现有源像素或合成保真受限，正式原图保持。
+- [ ] [battle_menu_ws_glow_07.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_07.png) — 158×158；已复核OtherMat_v9原位图/原生滤镜：330→329，333→332，340→337，328→306..326，567→565；原图保持；现有源像素或合成保真受限，正式原图保持。
+- [ ] [battle_menu_ws_glow_08.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_08.png) — 158×158；已复核OtherMat_v9原位图/原生滤镜：330→329，333→332，340→337，328→306..326，567→565；原图保持；现有源像素或合成保真受限，正式原图保持。
+- [ ] [battle_menu_ws_glow_09.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_09.png) — 158×158；已复核OtherMat_v9原位图/原生滤镜：330→329，333→332，340→337，328→306..326，567→565；原图保持；现有源像素或合成保真受限，正式原图保持。
+- [ ] [battle_menu_ws_glow_10.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_10.png) — 158×158；已复核OtherMat_v9原位图/原生滤镜：330→329，333→332，340→337，328→306..326，567→565；原图保持；现有源像素或合成保真受限，正式原图保持。
+- [ ] [battle_menu_ws_glow_11.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_11.png) — 158×158；已复核OtherMat_v9原位图/原生滤镜：330→329，333→332，340→337，328→306..326，567→565；原图保持；现有源像素或合成保真受限，正式原图保持。
+- [ ] [battle_menu_ws_glow_12.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_12.png) — 158×158；已复核OtherMat_v9原位图/原生滤镜：330→329，333→332，340→337，328→306..326，567→565；原图保持；现有源像素或合成保真受限，正式原图保持。
+- [ ] [battle_menu_ws_glow_13.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_13.png) — 158×158；已复核OtherMat_v9原位图/原生滤镜：330→329，333→332，340→337，328→306..326，567→565；原图保持；现有源像素或合成保真受限，正式原图保持。
+- [ ] [battle_menu_ws_glow_14.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_14.png) — 158×158；已复核OtherMat_v9原位图/原生滤镜：330→329，333→332，340→337，328→306..326，567→565；原图保持；现有源像素或合成保真受限，正式原图保持。
+- [ ] [battle_menu_ws_glow_15.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_15.png) — 158×158；已复核OtherMat_v9原位图/原生滤镜：330→329，333→332，340→337，328→306..326，567→565；原图保持；现有源像素或合成保真受限，正式原图保持。
+- [ ] [battle_menu_ws_glow_16.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_16.png) — 158×158；已复核OtherMat_v9原位图/原生滤镜：330→329，333→332，340→337，328→306..326，567→565；原图保持；现有源像素或合成保真受限，正式原图保持。
+- [ ] [battle_menu_ws_glow_17.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_17.png) — 158×158；已复核OtherMat_v9原位图/原生滤镜：330→329，333→332，340→337，328→306..326，567→565；原图保持；现有源像素或合成保真受限，正式原图保持。
+- [ ] [battle_menu_ws_glow_18.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_glow_18.png) — 158×158；已复核OtherMat_v9原位图/原生滤镜：330→329，333→332，340→337，328→306..326，567→565；原图保持；现有源像素或合成保真受限，正式原图保持。
+- [ ] [battle_menu_ws_idle.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_idle.png) — 68×68；已复核other原位图335.png；现有源像素或合成保真受限，正式原图保持。
+- [ ] [battle_menu_ws_under.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_menu_ws_under.png) — 221×27；已复核OtherMat_v9原位图/原生滤镜：330→329，333→332，340→337，328→306..326，567→565；原图保持；现有源像素或合成保真受限，正式原图保持。
+- [ ] [battle_skill_icons.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_skill_icons.png) — 495×45；已复核OtherMat_v9原位图/原生滤镜：330→329，333→332，340→337，328→306..326，567→565；原图保持；现有源像素或合成保真受限，正式原图保持。
+- [ ] [boss_health_fill.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/boss_health_fill.png) — 340×29；已复核other3元件263.png；现有源像素或合成保真受限，正式原图保持。
+- [ ] [boss_health_under.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/boss_health_under.png) — 340×29；已复核main原位图3.png；现有源像素或合成保真受限，正式原图保持。
+- [ ] [combo_caption.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/combo_caption.png) — 224×80；已复核OtherMat_v9原位图/原生滤镜：330→329，333→332，340→337，328→306..326，567→565；原图保持；现有源像素或合成保真受限，正式原图保持。
+- [ ] [combo_digits.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/combo_digits.png) — 1600×3200；已复核OtherMat_v9原位图/原生滤镜：330→329，333→332，340→337，328→306..326，567→565；原图保持；现有源像素或合成保真受限，正式原图保持。
+- [ ] [hud_exp_fill.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/hud_exp_fill.png) — 144×12；已复核OtherMatv3570；现有源像素或合成保真受限，正式原图保持。
+- [x] [hud_head_tangseng.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/hud_head_tangseng.png) — 83×76 → 166×152；原矢量同造型头像固定原点2倍重导；83×76逻辑尺寸和P2镜像保持，1倍栅格采样有差，见Validation。已实际接入，待本批审查。
+- [x] [hud_head_wukong.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/hud_head_wukong.png) — 83×76 → 166×152；原矢量同造型头像固定原点2倍重导；83×76逻辑尺寸和P2镜像保持，1倍栅格采样有差，见Validation。已实际接入，待本批审查。
+- [ ] [hud_hp_fill.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/hud_hp_fill.png) — 144×12；已复核OtherMatv3570；现有源像素或合成保真受限，正式原图保持。
+- [ ] [hud_menu_panel.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/hud_menu_panel.png) — 169×133；已复核other3元件95.png；现有源像素或合成保真受限，正式原图保持。
+- [ ] [hud_mp_fill.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/hud_mp_fill.png) — 144×12；已复核OtherMatv3570；现有源像素或合成保真受限，正式原图保持。
+- [x] [hud_status_label.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/hud_status_label.png) — 17×46 → 34×92；OtherMat_v9 shape357原白字轮廓2倍重导；P1/P2镜像和逻辑位置保持。已实际接入，待本批审查。
+- [ ] [hud_status_panel.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/hud_status_panel.png) — 227×87；已复核other原位图297.png；现有源像素或合成保真受限，正式原图保持。
+- [ ] [hud_ws_frame.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/hud_ws_frame.png) — 260×22；已复核other原位图303.png；现有源像素或合成保真受限，正式原图保持。
+- [ ] [menu_inventory_caption.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_inventory_caption.png) — 30×17；已复核other3元件140.png；现有源像素或合成保真受限，正式原图保持。
+- [ ] [menu_inventory_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_inventory_hover.png) — 47×37；已复核other3元件143；现有源像素或合成保真受限，正式原图保持。
+- [ ] [menu_inventory_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_inventory_normal.png) — 47×37；已复核other3元件141；现有源像素或合成保真受限，正式原图保持。
+- [ ] [menu_pet_caption.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_pet_caption.png) — 30×17；已复核other3元件158.png；现有源像素或合成保真受限，正式原图保持。
+- [ ] [menu_pet_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_pet_hover.png) — 47×37；已复核other3元件161；现有源像素或合成保真受限，正式原图保持。
+- [ ] [menu_pet_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_pet_normal.png) — 47×37；已复核other3元件159；现有源像素或合成保真受限，正式原图保持。
+- [ ] [menu_settings_caption.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_settings_caption.png) — 30×17；已复核other3元件133.png；现有源像素或合成保真受限，正式原图保持。
+- [ ] [menu_settings_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_settings_hover.png) — 47×37；已复核other3元件136；现有源像素或合成保真受限，正式原图保持。
+- [ ] [menu_settings_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_settings_normal.png) — 47×37；已复核other3元件134；现有源像素或合成保真受限，正式原图保持。
+- [ ] [menu_skills_caption.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_skills_caption.png) — 30×17；已复核other3元件146.png；现有源像素或合成保真受限，正式原图保持。
+- [ ] [menu_skills_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_skills_hover.png) — 47×37；已复核other3元件149；现有源像素或合成保真受限，正式原图保持。
+- [ ] [menu_skills_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_skills_normal.png) — 47×37；已复核other3元件147；现有源像素或合成保真受限，正式原图保持。
+- [ ] [menu_weapon_caption.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_weapon_caption.png) — 30×17；已复核other3元件152.png；现有源像素或合成保真受限，正式原图保持。
+- [ ] [menu_weapon_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_weapon_hover.png) — 47×37；已复核other3元件155；现有源像素或合成保真受限，正式原图保持。
+- [ ] [menu_weapon_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_weapon_normal.png) — 47×37；已复核other3元件153；现有源像素或合成保真受限，正式原图保持。
+
+目录：`TheGame/Sprites/UI/hud/musou_activation/shared/`
+
+- [ ] [musou_activation_light.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/shared/musou_activation_light.png) — 2048×3938；共用光束/火焰/字图图集，19个独立姿态对应24个时刻；原密度，1408×590覆盖画布，含原低精度位图，不计高清。
 
 目录：`TheGame/Sprites/UI/hud/musou_activation/tangseng/`
 
-- [ ] [tangseng_musou_activation_01.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_01.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [tangseng_musou_activation_02.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_02.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [tangseng_musou_activation_03.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_03.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [tangseng_musou_activation_04.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_04.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [tangseng_musou_activation_05.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_05.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [tangseng_musou_activation_06.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_06.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [tangseng_musou_activation_07.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_07.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [tangseng_musou_activation_08.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_08.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [tangseng_musou_activation_09.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_09.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [tangseng_musou_activation_10.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_10.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [tangseng_musou_activation_11.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_11.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [tangseng_musou_activation_12.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_12.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [tangseng_musou_activation_13.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_13.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [tangseng_musou_activation_14.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_14.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [tangseng_musou_activation_15.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_15.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [tangseng_musou_activation_16.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_16.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [tangseng_musou_activation_17.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_17.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [tangseng_musou_activation_18.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_18.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [tangseng_musou_activation_19.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_19.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [tangseng_musou_activation_20.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_20.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [tangseng_musou_activation_21.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_21.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [tangseng_musou_activation_22.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_22.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [tangseng_musou_activation_23.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_23.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [tangseng_musou_activation_24.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_24.png) — 940×590；待来源/清晰度处理及1080p验收。
+- [ ] [tangseng_musou_activation_01.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_01.png) — 原940×590合成帧 → 1×1人物存储；部分提升：本时刻原无可见角色；保留透明帧及实际背景。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [tangseng_musou_activation_02.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_02.png) — 原940×590合成帧 → 1×1人物存储；部分提升：本时刻原无可见角色；保留透明帧及实际背景。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [tangseng_musou_activation_03.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_03.png) — 原940×590合成帧 → 1×1人物存储；部分提升：本时刻原无可见角色；保留透明帧及实际背景。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [tangseng_musou_activation_04.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_04.png) — 原940×590合成帧 → 1×1人物存储；部分提升：本时刻原无可见角色；保留透明帧及实际背景。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [tangseng_musou_activation_05.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_05.png) — 原940×590合成帧 → 97×201人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [tangseng_musou_activation_06.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_06.png) — 原940×590合成帧 → 228×501人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [tangseng_musou_activation_07.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_07.png) — 原940×590合成帧 → 359×678人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [tangseng_musou_activation_08.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_08.png) — 原940×590合成帧 → 490×704人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [tangseng_musou_activation_09.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_09.png) — 原940×590合成帧 → 621×704人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [tangseng_musou_activation_10.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_10.png) — 原940×590合成帧 → 622×704人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [tangseng_musou_activation_11.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_11.png) — 原940×590合成帧 → 622×704人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [tangseng_musou_activation_12.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_12.png) — 原940×590合成帧 → 622×704人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [tangseng_musou_activation_13.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_13.png) — 原940×590合成帧 → 622×704人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [tangseng_musou_activation_14.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_14.png) — 原940×590合成帧 → 622×704人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [tangseng_musou_activation_15.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_15.png) — 原940×590合成帧 → 622×704人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [tangseng_musou_activation_16.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_16.png) — 原940×590合成帧 → 622×704人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [tangseng_musou_activation_17.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_17.png) — 原940×590合成帧 → 622×704人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [tangseng_musou_activation_18.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_18.png) — 原940×590合成帧 → 622×704人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [tangseng_musou_activation_19.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_19.png) — 原940×590合成帧 → 622×704人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [tangseng_musou_activation_20.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_20.png) — 原940×590合成帧 → 622×704人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [tangseng_musou_activation_21.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_21.png) — 原940×590合成帧 → 622×704人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [tangseng_musou_activation_22.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_22.png) — 原940×590合成帧 → 622×704人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [tangseng_musou_activation_23.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_23.png) — 原940×590合成帧 → 622×704人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [tangseng_musou_activation_24.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_24.png) — 原940×590合成帧 → 622×704人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
 
 目录：`TheGame/Sprites/UI/hud/musou_activation/wukong/`
 
-- [ ] [wukong_musou_activation_01.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_01.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [wukong_musou_activation_02.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_02.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [wukong_musou_activation_03.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_03.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [wukong_musou_activation_04.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_04.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [wukong_musou_activation_05.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_05.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [wukong_musou_activation_06.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_06.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [wukong_musou_activation_07.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_07.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [wukong_musou_activation_08.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_08.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [wukong_musou_activation_09.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_09.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [wukong_musou_activation_10.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_10.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [wukong_musou_activation_11.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_11.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [wukong_musou_activation_12.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_12.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [wukong_musou_activation_13.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_13.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [wukong_musou_activation_14.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_14.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [wukong_musou_activation_15.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_15.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [wukong_musou_activation_16.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_16.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [wukong_musou_activation_17.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_17.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [wukong_musou_activation_18.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_18.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [wukong_musou_activation_19.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_19.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [wukong_musou_activation_20.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_20.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [wukong_musou_activation_21.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_21.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [wukong_musou_activation_22.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_22.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [wukong_musou_activation_23.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_23.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [wukong_musou_activation_24.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_24.png) — 940×590；待来源/清晰度处理及1080p验收。
+- [ ] [wukong_musou_activation_01.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_01.png) — 原940×590合成帧 → 1×1人物存储；部分提升：本时刻原无可见角色；保留透明帧及实际背景。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [wukong_musou_activation_02.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_02.png) — 原940×590合成帧 → 1×1人物存储；部分提升：本时刻原无可见角色；保留透明帧及实际背景。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [wukong_musou_activation_03.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_03.png) — 原940×590合成帧 → 1×1人物存储；部分提升：本时刻原无可见角色；保留透明帧及实际背景。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [wukong_musou_activation_04.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_04.png) — 原940×590合成帧 → 1×1人物存储；部分提升：本时刻原无可见角色；保留透明帧及实际背景。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [wukong_musou_activation_05.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_05.png) — 原940×590合成帧 → 34×65人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [wukong_musou_activation_06.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_06.png) — 原940×590合成帧 → 134×117人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [wukong_musou_activation_07.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_07.png) — 原940×590合成帧 → 235×384人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [wukong_musou_activation_08.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_08.png) — 原940×590合成帧 → 335×606人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [wukong_musou_activation_09.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_09.png) — 原940×590合成帧 → 435×629人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [wukong_musou_activation_10.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_10.png) — 原940×590合成帧 → 536×633人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [wukong_musou_activation_11.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_11.png) — 原940×590合成帧 → 608×633人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [wukong_musou_activation_12.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_12.png) — 原940×590合成帧 → 608×633人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [wukong_musou_activation_13.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_13.png) — 原940×590合成帧 → 608×633人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [wukong_musou_activation_14.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_14.png) — 原940×590合成帧 → 608×633人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [wukong_musou_activation_15.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_15.png) — 原940×590合成帧 → 608×633人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [wukong_musou_activation_16.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_16.png) — 原940×590合成帧 → 608×633人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [wukong_musou_activation_17.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_17.png) — 原940×590合成帧 → 608×633人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [wukong_musou_activation_18.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_18.png) — 原940×590合成帧 → 608×633人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [wukong_musou_activation_19.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_19.png) — 原940×590合成帧 → 608×633人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [wukong_musou_activation_20.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_20.png) — 原940×590合成帧 → 608×633人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [wukong_musou_activation_21.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_21.png) — 原940×590合成帧 → 608×633人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [wukong_musou_activation_22.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_22.png) — 原940×590合成帧 → 608×633人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [wukong_musou_activation_23.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_23.png) — 原940×590合成帧 → 608×633人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
+- [ ] [wukong_musou_activation_24.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_24.png) — 原940×590合成帧 → 608×633人物存储；部分提升：原矢量角色2倍重导；保留原点的透明裁片。逻辑画布940×590，原24fps和帧序不变；背景/位图字样仍用原密度。
 
 目录：`TheGame/Sprites/UI/inventory/`
 
@@ -847,80 +856,80 @@
 - [ ] [inventory_action_gift.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_action_gift.png) — 77×31；Common367第1帧为位图组合，1倍RGBA重现通过；来源受限，原图保持。
 - [ ] [inventory_action_gift_disabled.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_action_gift_disabled.png) — 77×31；Common367第2帧为位图组合，1倍RGBA重现通过；来源受限，未机械放大。
 - [ ] [inventory_action_sell.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_action_sell.png) — 77×31；Common381第1帧含位图依赖，1倍RGBA重现通过；来源受限，原图保持。
-- [ ] [inventory_actions_background.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_actions_background.png) — 87×115；已确认Common369纯矢量、原密度RGBA重现通过；后续独立重导/审查，尚未制作2倍或接入。
-- [ ] [inventory_attributes.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_attributes.png) — 325×170；待来源/清晰度处理及1080p验收。
-- [ ] [inventory_cell.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_cell.png) — 50×50；待来源/清晰度处理及1080p验收。
-- [ ] [inventory_exp_fill.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_exp_fill.png) — 241×18；待来源/清晰度处理及1080p验收。
-- [ ] [inventory_exp_frame.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_exp_frame.png) — 213×20；待来源/清晰度处理及1080p验收。
-- [ ] [inventory_ink_frame.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_ink_frame.png) — 702×490；待来源/清晰度处理及1080p验收。
-- [ ] [inventory_level_badge.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_level_badge.png) — 83×59；待来源/清晰度处理及1080p验收。
-- [ ] [inventory_name_plate.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_name_plate.png) — 213×51；待来源/清晰度处理及1080p验收。
-- [ ] [inventory_next_page.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_next_page.png) — 87×33；待来源/清晰度处理及1080p验收。
-- [ ] [inventory_next_page_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_next_page_hover.png) — 87×33；待来源/清晰度处理及1080p验收。
-- [ ] [inventory_panels.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_panels.png) — 941×591；待来源/清晰度处理及1080p验收。
-- [ ] [inventory_preview_light.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_preview_light.png) — 960×1152；待来源/清晰度处理及1080p验收。
-- [ ] [inventory_previous_page.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_previous_page.png) — 87×33；待来源/清晰度处理及1080p验收。
-- [ ] [inventory_previous_page_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_previous_page_hover.png) — 87×33；待来源/清晰度处理及1080p验收。
-- [ ] [inventory_slot_accessory.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_slot_accessory.png) — 51×51；待来源/清晰度处理及1080p验收。
-- [ ] [inventory_slot_armor.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_slot_armor.png) — 51×51；待来源/清晰度处理及1080p验收。
-- [ ] [inventory_slot_costume.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_slot_costume.png) — 50×50；待来源/清晰度处理及1080p验收。
-- [ ] [inventory_slot_title.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_slot_title.png) — 50×50；待来源/清晰度处理及1080p验收。
-- [ ] [inventory_slot_treasure.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_slot_treasure.png) — 51×51；待来源/清晰度处理及1080p验收。
-- [ ] [inventory_slot_weapon.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_slot_weapon.png) — 51×51；待来源/清晰度处理及1080p验收。
-- [ ] [inventory_soul_plate.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_soul_plate.png) — 129×28；待来源/清晰度处理及1080p验收。
-- [ ] [inventory_tab_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_tab_normal.png) — 71×25；待来源/清晰度处理及1080p验收。
-- [ ] [inventory_tab_selected.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_tab_selected.png) — 71×25；待来源/清晰度处理及1080p验收。
+- [x] [inventory_actions_background.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_actions_background.png) — 87×115 → 174×230；Commonv3720 shape369原矢量底板2倍重导；按钮及显示尺寸保持。已实际接入，待本批审查。
+- [ ] [inventory_attributes.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_attributes.png) — 325×170；已复核BackPackInterfacev1000 shape51；现有源像素或合成保真受限，正式原图保持。
+- [ ] [inventory_cell.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_cell.png) — 50×50；已复核common元件43.png；现有源像素或合成保真受限，正式原图保持。
+- [x] [inventory_exp_fill.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_exp_fill.png) — 241×18 → 482×36；backpack_v2 shape7原矢量2倍重导；原位置、原逻辑显示范围和经验进度保持。已实际接入，待本批审查。
+- [x] [inventory_exp_frame.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_exp_frame.png) — 213×20 → 426×40；backpack_v2 shape9原矢量2倍重导；原位置、原逻辑显示范围和经验进度保持。已实际接入，待本批审查。
+- [ ] [inventory_ink_frame.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_ink_frame.png) — 702×490；已复核backpack原位图2.png；现有源像素或合成保真受限，正式原图保持。
+- [ ] [inventory_level_badge.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_level_badge.png) — 83×59；已复核BackPackInterfacev1000 bitmap22；现有源像素或合成保真受限，正式原图保持。
+- [ ] [inventory_name_plate.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_name_plate.png) — 213×51；已查现有导出与旧图，尚未确认可保真提高细节的同内容源，正式原图保持。
+- [ ] [inventory_next_page.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_next_page.png) — 87×33；已查现有导出与旧图，尚未确认可保真提高细节的同内容源，正式原图保持。
+- [ ] [inventory_next_page_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_next_page_hover.png) — 87×33；已查现有导出与旧图，尚未确认可保真提高细节的同内容源，正式原图保持。
+- [ ] [inventory_panels.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_panels.png) — 941×591；已复核backpack3_shape元件4；现有源像素或合成保真受限，正式原图保持。
+- [ ] [inventory_preview_light.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_preview_light.png) — 960×1152；已复核BackPackInterfacev1000 bitmap74；现有源像素或合成保真受限，正式原图保持。
+- [ ] [inventory_previous_page.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_previous_page.png) — 87×33；已查现有导出与旧图，尚未确认可保真提高细节的同内容源，正式原图保持。
+- [ ] [inventory_previous_page_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_previous_page_hover.png) — 87×33；已查现有导出与旧图，尚未确认可保真提高细节的同内容源，正式原图保持。
+- [ ] [inventory_slot_accessory.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_slot_accessory.png) — 51×51；已复核BackPackInterfacev1000；现有源像素或合成保真受限，正式原图保持。
+- [ ] [inventory_slot_armor.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_slot_armor.png) — 51×51；已复核BackPackInterfacev1000；现有源像素或合成保真受限，正式原图保持。
+- [ ] [inventory_slot_costume.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_slot_costume.png) — 50×50；已查现有导出与旧图，尚未确认可保真提高细节的同内容源，正式原图保持。
+- [ ] [inventory_slot_title.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_slot_title.png) — 50×50；已查现有导出与旧图，尚未确认可保真提高细节的同内容源，正式原图保持。
+- [ ] [inventory_slot_treasure.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_slot_treasure.png) — 51×51；已复核BackPackInterfacev1000；现有源像素或合成保真受限，正式原图保持。
+- [ ] [inventory_slot_weapon.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_slot_weapon.png) — 51×51；已复核BackPackInterfacev1000；现有源像素或合成保真受限，正式原图保持。
+- [ ] [inventory_soul_plate.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_soul_plate.png) — 129×28；已查现有导出与旧图，尚未确认可保真提高细节的同内容源，正式原图保持。
+- [ ] [inventory_tab_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_tab_normal.png) — 71×25；已查现有导出与旧图，尚未确认可保真提高细节的同内容源，正式原图保持。
+- [ ] [inventory_tab_selected.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_tab_selected.png) — 71×25；已查现有导出与旧图，尚未确认可保真提高细节的同内容源，正式原图保持。
 
 目录：`TheGame/Sprites/UI/settlement/`
 
-- [ ] [settlement_backdrop.png](../Godot/GodotProject/TheGame/Sprites/UI/settlement/settlement_backdrop.png) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [settlement_failure.png](../Godot/GodotProject/TheGame/Sprites/UI/settlement/settlement_failure.png) — 510×304；待来源/清晰度处理及1080p验收。
-- [ ] [settlement_map_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/settlement/settlement_map_hover.png) — 160×59；待来源/清晰度处理及1080p验收。
-- [ ] [settlement_map_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/settlement/settlement_map_normal.png) — 160×59；待来源/清晰度处理及1080p验收。
-- [ ] [settlement_results.png](../Godot/GodotProject/TheGame/Sprites/UI/settlement/settlement_results.png) — 402×79；待来源/清晰度处理及1080p验收。
-- [ ] [settlement_retry_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/settlement/settlement_retry_hover.png) — 161×60；待来源/清晰度处理及1080p验收。
-- [ ] [settlement_retry_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/settlement/settlement_retry_normal.png) — 161×60；待来源/清晰度处理及1080p验收。
-- [ ] [settlement_success.png](../Godot/GodotProject/TheGame/Sprites/UI/settlement/settlement_success.png) — 510×304；待来源/清晰度处理及1080p验收。
+- [ ] [settlement_backdrop.png](../Godot/GodotProject/TheGame/Sprites/UI/settlement/settlement_backdrop.png) — 940×590；现有中心为低分辨率位图，已有外围扩图候选不增加中心细节，本批保留正式原图。
+- [ ] [settlement_failure.png](../Godot/GodotProject/TheGame/Sprites/UI/settlement/settlement_failure.png) — 510×304；已复核OtherMatv3570 bitmap248；现有源像素或合成保真受限，正式原图保持。
+- [ ] [settlement_map_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/settlement/settlement_map_hover.png) — 160×59；已复核OtherMatv3570 bitmap239；现有源像素或合成保真受限，正式原图保持。
+- [ ] [settlement_map_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/settlement/settlement_map_normal.png) — 160×59；已复核other3元件237.png；现有源像素或合成保真受限，正式原图保持。
+- [ ] [settlement_results.png](../Godot/GodotProject/TheGame/Sprites/UI/settlement/settlement_results.png) — 402×79；已复核other3_bitmap元件230；现有源像素或合成保真受限，正式原图保持。
+- [ ] [settlement_retry_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/settlement/settlement_retry_hover.png) — 161×60；已复核other3_bitmap元件253；现有源像素或合成保真受限，正式原图保持。
+- [ ] [settlement_retry_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/settlement/settlement_retry_normal.png) — 161×60；已复核other3元件250.png；现有源像素或合成保真受限，正式原图保持。
+- [ ] [settlement_success.png](../Godot/GodotProject/TheGame/Sprites/UI/settlement/settlement_success.png) — 510×304；已复核OtherMatv3570 bitmap226；现有源像素或合成保真受限，正式原图保持。
 
 目录：`TheGame/Sprites/UI/skills/`
 
-- [ ] [skill_blazing_flash_learned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_blazing_flash_learned.png) — 65×65；待来源/清晰度处理及1080p验收。
-- [ ] [skill_blazing_flash_unlearned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_blazing_flash_unlearned.png) — 65×65；待来源/清晰度处理及1080p验收。
-- [ ] [skill_dark_ice_thorn_learned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_dark_ice_thorn_learned.png) — 65×65；待来源/清晰度处理及1080p验收。
-- [ ] [skill_dark_ice_thorn_unlearned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_dark_ice_thorn_unlearned.png) — 65×65；待来源/清晰度处理及1080p验收。
-- [ ] [skill_fire_demon_slash_learned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_fire_demon_slash_learned.png) — 65×65；待来源/清晰度处理及1080p验收。
-- [ ] [skill_fire_demon_slash_unlearned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_fire_demon_slash_unlearned.png) — 65×65；待来源/清晰度处理及1080p验收。
-- [ ] [skill_flame_storm_learned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_flame_storm_learned.png) — 65×65；待来源/清晰度处理及1080p验收。
-- [ ] [skill_flame_storm_unlearned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_flame_storm_unlearned.png) — 65×65；待来源/清晰度处理及1080p验收。
-- [ ] [skill_flame_thrust_learned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_flame_thrust_learned.png) — 65×65；待来源/清晰度处理及1080p验收。
-- [ ] [skill_flame_thrust_unlearned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_flame_thrust_unlearned.png) — 65×65；待来源/清晰度处理及1080p验收。
-- [ ] [skill_heavenly_dew_learned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_heavenly_dew_learned.png) — 65×65；待来源/清晰度处理及1080p验收。
-- [ ] [skill_heavenly_dew_unlearned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_heavenly_dew_unlearned.png) — 65×65；待来源/清晰度处理及1080p验收。
-- [ ] [skill_ice_dragon_wave_learned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_ice_dragon_wave_learned.png) — 65×65；待来源/清晰度处理及1080p验收。
-- [ ] [skill_ice_dragon_wave_unlearned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_ice_dragon_wave_unlearned.png) — 65×65；待来源/清晰度处理及1080p验收。
-- [ ] [skill_rising_dragon_learned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_rising_dragon_learned.png) — 65×65；待来源/清晰度处理及1080p验收。
-- [ ] [skill_rising_dragon_unlearned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_rising_dragon_unlearned.png) — 65×65；待来源/清晰度处理及1080p验收。
-- [ ] [skill_water_clone_learned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_water_clone_learned.png) — 65×65；待来源/清晰度处理及1080p验收。
-- [ ] [skill_water_clone_unlearned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_water_clone_unlearned.png) — 65×65；待来源/清晰度处理及1080p验收。
-- [ ] [skill_water_demon_burst_learned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_water_demon_burst_learned.png) — 65×65；待来源/清晰度处理及1080p验收。
-- [ ] [skill_water_demon_burst_unlearned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_water_demon_burst_unlearned.png) — 65×65；待来源/清晰度处理及1080p验收。
-- [ ] [skills_active_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_active_hover.png) — 79×19；待来源/清晰度处理及1080p验收。
-- [ ] [skills_active_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_active_normal.png) — 79×19；待来源/清晰度处理及1080p验收。
-- [ ] [skills_back_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_back_hover.png) — 54×20；待来源/清晰度处理及1080p验收。
-- [ ] [skills_back_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_back_normal.png) — 54×20；待来源/清晰度处理及1080p验收。
-- [ ] [skills_background.jpg](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_background.jpg) — 940×590；待来源/清晰度处理及1080p验收。
-- [ ] [skills_passive_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_passive_hover.png) — 79×19；待来源/清晰度处理及1080p验收。
-- [ ] [skills_passive_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_passive_normal.png) — 79×19；待来源/清晰度处理及1080p验收。
-- [ ] [skills_sanzang_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_sanzang_normal.png) — 61×35；待来源/清晰度处理及1080p验收。
-- [ ] [skills_sanzang_selected.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_sanzang_selected.png) — 61×35；待来源/清晰度处理及1080p验收。
-- [ ] [skills_soul_badge.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_soul_badge.png) — 74×66；待来源/清晰度处理及1080p验收。
-- [ ] [skills_table_active.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_table_active.png) — 746×429；待来源/清晰度处理及1080p验收。
-- [ ] [skills_table_passive.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_table_passive.png) — 746×429；待来源/清晰度处理及1080p验收。
-- [ ] [skills_upgrade_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_upgrade_hover.png) — 48×31；待来源/清晰度处理及1080p验收。
-- [ ] [skills_upgrade_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_upgrade_normal.png) — 48×31；待来源/清晰度处理及1080p验收。
-- [ ] [skills_upgrade_pressed.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_upgrade_pressed.png) — 48×31；待来源/清晰度处理及1080p验收。
-- [ ] [skills_wukong_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_wukong_normal.png) — 60×34；待来源/清晰度处理及1080p验收。
-- [ ] [skills_wukong_selected.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_wukong_selected.png) — 60×34；待来源/清晰度处理及1080p验收。
+- [ ] [skill_blazing_flash_learned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_blazing_flash_learned.png) — 65×65；已复核OtherMat_v9，原技能导出器；1倍37图逐项可见RGBA全等；现有源像素或合成保真受限，正式原图保持。
+- [ ] [skill_blazing_flash_unlearned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_blazing_flash_unlearned.png) — 65×65；已复核OtherMat_v9，原技能导出器；1倍37图逐项可见RGBA全等；现有源像素或合成保真受限，正式原图保持。
+- [ ] [skill_dark_ice_thorn_learned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_dark_ice_thorn_learned.png) — 65×65；已复核OtherMat_v9，原技能导出器；1倍37图逐项可见RGBA全等；现有源像素或合成保真受限，正式原图保持。
+- [ ] [skill_dark_ice_thorn_unlearned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_dark_ice_thorn_unlearned.png) — 65×65；已复核OtherMat_v9，原技能导出器；1倍37图逐项可见RGBA全等；现有源像素或合成保真受限，正式原图保持。
+- [ ] [skill_fire_demon_slash_learned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_fire_demon_slash_learned.png) — 65×65；已复核OtherMat_v9，原技能导出器；1倍37图逐项可见RGBA全等；现有源像素或合成保真受限，正式原图保持。
+- [ ] [skill_fire_demon_slash_unlearned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_fire_demon_slash_unlearned.png) — 65×65；已复核OtherMat_v9，原技能导出器；1倍37图逐项可见RGBA全等；现有源像素或合成保真受限，正式原图保持。
+- [ ] [skill_flame_storm_learned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_flame_storm_learned.png) — 65×65；已复核OtherMat_v9，原技能导出器；1倍37图逐项可见RGBA全等；现有源像素或合成保真受限，正式原图保持。
+- [ ] [skill_flame_storm_unlearned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_flame_storm_unlearned.png) — 65×65；已复核OtherMat_v9，原技能导出器；1倍37图逐项可见RGBA全等；现有源像素或合成保真受限，正式原图保持。
+- [ ] [skill_flame_thrust_learned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_flame_thrust_learned.png) — 65×65；已复核OtherMat_v9，原技能导出器；1倍37图逐项可见RGBA全等；现有源像素或合成保真受限，正式原图保持。
+- [ ] [skill_flame_thrust_unlearned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_flame_thrust_unlearned.png) — 65×65；已复核OtherMat_v9，原技能导出器；1倍37图逐项可见RGBA全等；现有源像素或合成保真受限，正式原图保持。
+- [ ] [skill_heavenly_dew_learned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_heavenly_dew_learned.png) — 65×65；已复核OtherMat_v9，原技能导出器；1倍37图逐项可见RGBA全等；现有源像素或合成保真受限，正式原图保持。
+- [ ] [skill_heavenly_dew_unlearned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_heavenly_dew_unlearned.png) — 65×65；已复核OtherMat_v9，原技能导出器；1倍37图逐项可见RGBA全等；现有源像素或合成保真受限，正式原图保持。
+- [ ] [skill_ice_dragon_wave_learned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_ice_dragon_wave_learned.png) — 65×65；已复核OtherMat_v9，原技能导出器；1倍37图逐项可见RGBA全等；现有源像素或合成保真受限，正式原图保持。
+- [ ] [skill_ice_dragon_wave_unlearned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_ice_dragon_wave_unlearned.png) — 65×65；已复核OtherMat_v9，原技能导出器；1倍37图逐项可见RGBA全等；现有源像素或合成保真受限，正式原图保持。
+- [ ] [skill_rising_dragon_learned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_rising_dragon_learned.png) — 65×65；已复核OtherMat_v9，原技能导出器；1倍37图逐项可见RGBA全等；现有源像素或合成保真受限，正式原图保持。
+- [ ] [skill_rising_dragon_unlearned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_rising_dragon_unlearned.png) — 65×65；已复核OtherMat_v9，原技能导出器；1倍37图逐项可见RGBA全等；现有源像素或合成保真受限，正式原图保持。
+- [ ] [skill_water_clone_learned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_water_clone_learned.png) — 65×65；已复核OtherMat_v9，原技能导出器；1倍37图逐项可见RGBA全等；现有源像素或合成保真受限，正式原图保持。
+- [ ] [skill_water_clone_unlearned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_water_clone_unlearned.png) — 65×65；已复核OtherMat_v9，原技能导出器；1倍37图逐项可见RGBA全等；现有源像素或合成保真受限，正式原图保持。
+- [ ] [skill_water_demon_burst_learned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_water_demon_burst_learned.png) — 65×65；已复核OtherMat_v9，原技能导出器；1倍37图逐项可见RGBA全等；现有源像素或合成保真受限，正式原图保持。
+- [ ] [skill_water_demon_burst_unlearned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_water_demon_burst_unlearned.png) — 65×65；已复核OtherMat_v9，原技能导出器；1倍37图逐项可见RGBA全等；现有源像素或合成保真受限，正式原图保持。
+- [x] [skills_active_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_active_hover.png) — 79×19 → 158×38；OtherMat_v9原技能按钮轮廓2倍重导；普通/悬停及命中范围保持。已实际接入，待本批审查。
+- [x] [skills_active_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_active_normal.png) — 79×19 → 158×38；OtherMat_v9原技能按钮轮廓2倍重导；普通/悬停及命中范围保持。已实际接入，待本批审查。
+- [x] [skills_back_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_back_hover.png) — 54×20 → 108×40；OtherMat_v9原技能按钮轮廓2倍重导；普通/悬停及命中范围保持。已实际接入，待本批审查。
+- [x] [skills_back_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_back_normal.png) — 54×20 → 108×40；OtherMat_v9原技能按钮轮廓2倍重导；普通/悬停及命中范围保持。已实际接入，待本批审查。
+- [ ] [skills_background.jpg](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_background.jpg) — 940×590；现有中心为低分辨率位图，已有外围扩图候选不增加中心细节，本批保留正式原图。
+- [x] [skills_passive_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_passive_hover.png) — 79×19 → 158×38；OtherMat_v9原技能按钮轮廓2倍重导；普通/悬停及命中范围保持。已实际接入，待本批审查。
+- [x] [skills_passive_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_passive_normal.png) — 79×19 → 158×38；OtherMat_v9原技能按钮轮廓2倍重导；普通/悬停及命中范围保持。已实际接入，待本批审查。
+- [ ] [skills_sanzang_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_sanzang_normal.png) — 61×35；已复核OtherMat_v9，原技能导出器；1倍37图逐项可见RGBA全等；现有源像素或合成保真受限，正式原图保持。
+- [ ] [skills_sanzang_selected.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_sanzang_selected.png) — 61×35；已复核OtherMat_v9，原技能导出器；1倍37图逐项可见RGBA全等；现有源像素或合成保真受限，正式原图保持。
+- [ ] [skills_soul_badge.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_soul_badge.png) — 74×66；已复核other原位图586.png；现有源像素或合成保真受限，正式原图保持。
+- [ ] [skills_table_active.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_table_active.png) — 746×429；已复核other原位图581.png；现有源像素或合成保真受限，正式原图保持。
+- [ ] [skills_table_passive.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_table_passive.png) — 746×429；已复核other原位图583.png；现有源像素或合成保真受限，正式原图保持。
+- [ ] [skills_upgrade_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_upgrade_hover.png) — 48×31；已复核other原位图569.png；现有源像素或合成保真受限，正式原图保持。
+- [ ] [skills_upgrade_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_upgrade_normal.png) — 48×31；已复核other原位图569.png；现有源像素或合成保真受限，正式原图保持。
+- [ ] [skills_upgrade_pressed.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_upgrade_pressed.png) — 48×31；已复核other原位图569.png；现有源像素或合成保真受限，正式原图保持。
+- [ ] [skills_wukong_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_wukong_normal.png) — 60×34；已复核OtherMat_v9，原技能导出器；1倍37图逐项可见RGBA全等；现有源像素或合成保真受限，正式原图保持。
+- [ ] [skills_wukong_selected.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_wukong_selected.png) — 60×34；已复核OtherMat_v9，原技能导出器；1倍37图逐项可见RGBA全等；现有源像素或合成保真受限，正式原图保持。
 
 <a id="art-images-09"></a>
 
@@ -1125,7 +1134,7 @@
 
 <!-- art-images:end -->
 
-## 配套美术资源（182项，不计入图像672项）
+## 配套美术资源（183项，不计入图像673项）
 
 这部分列全部业务字体、着色器、独立美术`.tres`文件及地图BitMap遮罩；嵌入其中的子资源不重复记为文件。帧动画的源PNG仍在上表，不能因为动画库已核对就把它引用的所有图片一并勾掉。音频、业务数值Resource、bundle、C#和场景消费者不计为本表美术源；它们必要的接入任务已在上方及Validation记录。
 
@@ -1133,12 +1142,12 @@
 | --- | ---: | ---: | ---: |
 | [字体](#art-support-01) | 8 | 0 | 8 |
 | [着色器](#art-support-02) | 4 | 2 | 2 |
-| [动画库](#art-support-03) | 71 | 21 | 50 |
-| [逐帧动画资源](#art-support-04) | 78 | 14 | 64 |
+| [动画库](#art-support-03) | 71 | 34 | 37 |
+| [逐帧动画资源](#art-support-04) | 79 | 34 | 45 |
 | [外观与物品美术登记](#art-support-05) | 5 | 4 | 1 |
 | [主题与样式](#art-support-06) | 13 | 0 | 13 |
 | [地图透明命中遮罩](#art-support-07) | 3 | 2 | 1 |
-| **合计** | **182** | **43** | **139** |
+| **合计** | **183** | **76** | **107** |
 
 <!-- art-support:start -->
 
@@ -1176,7 +1185,7 @@
 
 <a id="art-support-03"></a>
 
-### 动画库（33/71）
+### 动画库（34/71）
 
 目录：`TheGame/Entitys/Animations/Enemies/Bosses/zm1_02_macaque_king/`
 
@@ -1334,11 +1343,11 @@
 
 目录：`TheGame/Sprites/UI/hud/musou_activation/shared/`
 
-- [ ] [musou_activation_library.tres](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/shared/musou_activation_library.tres) — AnimationLibrary；待关联美术批次的帧引用、时序、定位及实际播放检查。
+- [x] [musou_activation_library.tres](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/shared/musou_activation_library.tres) — 原24时刻与一秒长度保持，加入同帧共用光束轨道，原生与实际播放已验。
 
 <a id="art-support-04"></a>
 
-### 逐帧动画资源（31/78）
+### 逐帧动画资源（34/79）
 
 目录：`TheGame/Sprites/Characters/Enemies/Bosses/zm1_02_macaque_king/`
 
@@ -1483,7 +1492,7 @@
 
 目录：`TheGame/Sprites/Effects/loot/`
 
-- [x] [loot_frames.tres](../Godot/GodotProject/TheGame/Sprites/Effects/loot/loot_frames.tres) — SpriteFrames；原资源字节/时序保持，已验证高清帧绑定、实际播放与回收，本批待审。
+- [x] [loot_frames.tres](../Godot/GodotProject/TheGame/Sprites/Effects/loot/loot_frames.tres) — SpriteFrames；原资源字节/时序保持，已验证高清帧绑定、实际播放与回收，上一批已审。
 
 目录：`TheGame/Sprites/Effects/monster_hit/tangseng/`
 
@@ -1497,20 +1506,20 @@
 
 - [ ] [tangseng_cure_role_frames.tres](../Godot/GodotProject/TheGame/Sprites/Effects/tangseng/skills/tangseng_cure_role_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
 - [ ] [tangseng_dark_ice_frames.tres](../Godot/GodotProject/TheGame/Sprites/Effects/tangseng/skills/tangseng_dark_ice_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
-- [x] [tangseng_water_demon_ball_frames.tres](../Godot/GodotProject/TheGame/Sprites/Effects/tangseng/skills/tangseng_water_demon_ball_frames.tres) — SpriteFrames；只换region/margin，原帧序/duration/24fps保持；本批原生及实际行为已验，待审。
+- [x] [tangseng_water_demon_ball_frames.tres](../Godot/GodotProject/TheGame/Sprites/Effects/tangseng/skills/tangseng_water_demon_ball_frames.tres) — SpriteFrames；只换region/margin，原帧序/duration/24fps保持；上一批原生及实际行为已验，已审。
 - [ ] [tangseng_water_demon_fall_frames.tres](../Godot/GodotProject/TheGame/Sprites/Effects/tangseng/skills/tangseng_water_demon_fall_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
 
 目录：`TheGame/Sprites/Effects/wukong/skills/`
 
-- [x] [wukong_blazing_flash_trail_frames.tres](../Godot/GodotProject/TheGame/Sprites/Effects/wukong/skills/wukong_blazing_flash_trail_frames.tres) — SpriteFrames；只换region/margin，原帧序/duration/24fps保持；本批原生及实际行为已验，待审。
+- [x] [wukong_blazing_flash_trail_frames.tres](../Godot/GodotProject/TheGame/Sprites/Effects/wukong/skills/wukong_blazing_flash_trail_frames.tres) — SpriteFrames；只换region/margin，原帧序/duration/24fps保持；上一批原生及实际行为已验，已审。
 - [ ] [wukong_fire_demon_combo_frames.tres](../Godot/GodotProject/TheGame/Sprites/Effects/wukong/skills/wukong_fire_demon_combo_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
 - [ ] [wukong_fire_demon_descent_frames.tres](../Godot/GodotProject/TheGame/Sprites/Effects/wukong/skills/wukong_fire_demon_descent_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
 - [ ] [wukong_fire_demon_landing_frames.tres](../Godot/GodotProject/TheGame/Sprites/Effects/wukong/skills/wukong_fire_demon_landing_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
-- [x] [wukong_fire_demon_prelude_frames.tres](../Godot/GodotProject/TheGame/Sprites/Effects/wukong/skills/wukong_fire_demon_prelude_frames.tres) — SpriteFrames；只换region/margin，原帧序/duration/24fps保持；本批原生及实际行为已验，待审。
+- [x] [wukong_fire_demon_prelude_frames.tres](../Godot/GodotProject/TheGame/Sprites/Effects/wukong/skills/wukong_fire_demon_prelude_frames.tres) — SpriteFrames；只换region/margin，原帧序/duration/24fps保持；上一批原生及实际行为已验，已审。
 
 目录：`TheGame/Sprites/Effects/wukong/`
 
-- [x] [wukong_effect_animations.tres](../Godot/GodotProject/TheGame/Sprites/Effects/wukong/wukong_effect_animations.tres) — SpriteFrames；只换region/margin，原帧序/duration/24fps保持；本批原生及实际行为已验，待审。
+- [x] [wukong_effect_animations.tres](../Godot/GodotProject/TheGame/Sprites/Effects/wukong/wukong_effect_animations.tres) — SpriteFrames；只换region/margin，原帧序/duration/24fps保持；上一批原生及实际行为已验，已审。
 
 目录：`TheGame/Sprites/Levels/zm1_04_bat_cave/`
 
@@ -1530,13 +1539,17 @@
 - [ ] [battle_skill_icon_frames.tres](../Godot/GodotProject/TheGame/Sprites/UI/hud/battle_skill_icon_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
 - [ ] [combo_digits_frames.tres](../Godot/GodotProject/TheGame/Sprites/UI/hud/combo_digits_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
 
+目录：`TheGame/Sprites/UI/hud/musou_activation/shared/`
+
+- [x] [musou_activation_light_frames.tres](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/shared/musou_activation_light_frames.tres) — SpriteFrames；原密度共享光束图，24时刻/19姿态，与人物共用原播放器，原生与实际播放已验。
+
 目录：`TheGame/Sprites/UI/hud/musou_activation/tangseng/`
 
-- [ ] [tangseng_musou_activation_frames.tres](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
+- [x] [tangseng_musou_activation_frames.tres](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/tangseng/tangseng_musou_activation_frames.tres) — 人物2倍源、完整逻辑画布、原24帧与24fps保持，原生与实际播放已验。
 
 目录：`TheGame/Sprites/UI/hud/musou_activation/wukong/`
 
-- [ ] [wukong_musou_activation_frames.tres](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_frames.tres) — SpriteFrames；待原源高清帧、region/margin、时序、alpha和显示检查。
+- [x] [wukong_musou_activation_frames.tres](../Godot/GodotProject/TheGame/Sprites/UI/hud/musou_activation/wukong/wukong_musou_activation_frames.tres) — 人物2倍源、完整逻辑画布、原24帧与24fps保持，原生与实际播放已验。
 
 <a id="art-support-05"></a>
 
@@ -1596,7 +1609,7 @@
 
 ## 当前未完成项与限制
 
-- 当前完成两英雄身体/武器与专用背包52张及新增墨框3张；选角分层/独立字体已接入，但整卡背景精度仍受限；英雄状态、UI、独立特效、敌人/Boss、图标、数字及地形仍按上表逐项推进。
+- 本批UI中源像素受限的原图、未确认项与演出背景继续按上表追踪；选角分层与独立字体已接入，地图及整卡背景精度仍受限。
 - 三项位图限制仍未勾选：花果山平台缺同内容高精度源，蝙蝠天空恢复收益不明确，粗糙行者棍恢复颜色不保真。原图继续使用，不伪报高清完成。
 - 英雄/背包和选角修正画面已获用户认可；Android压缩、目标GPU纹理/显存、加载/FPS及真机触控未验。
 - 当前保留keep，默认窗口1920×1080；正式横向扩展视野、外围覆盖和16:9～21:9整体适配未完成。

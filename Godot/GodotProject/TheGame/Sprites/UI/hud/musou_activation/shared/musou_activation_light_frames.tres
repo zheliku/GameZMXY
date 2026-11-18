@@ -1,0 +1,143 @@
+[gd_resource type="SpriteFrames" format=3]
+
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/hud/musou_activation/shared/musou_activation_light.png" id="light"]
+
+[sub_resource type="AtlasTexture" id="light_0"]
+atlas = ExtResource("light")
+region = Rect2(16, 3792, 1407, 130)
+margin = Rect2(0, 242, 1, 460)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="light_1"]
+atlas = ExtResource("light")
+region = Rect2(16, 2481, 1407, 132)
+margin = Rect2(0, 241, 1, 458)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="light_2"]
+atlas = ExtResource("light")
+region = Rect2(16, 3629, 1407, 131)
+margin = Rect2(0, 241, 1, 459)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="light_3"]
+atlas = ExtResource("light")
+region = Rect2(16, 2645, 1407, 132)
+margin = Rect2(0, 241, 1, 458)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="light_4"]
+atlas = ExtResource("light")
+region = Rect2(16, 2809, 1407, 132)
+margin = Rect2(0, 241, 1, 458)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="light_5"]
+atlas = ExtResource("light")
+region = Rect2(16, 2973, 1407, 132)
+margin = Rect2(0, 241, 1, 458)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="light_6"]
+atlas = ExtResource("light")
+region = Rect2(16, 3137, 1407, 132)
+margin = Rect2(0, 241, 1, 458)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="light_7"]
+atlas = ExtResource("light")
+region = Rect2(16, 3301, 1407, 132)
+margin = Rect2(0, 241, 1, 458)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="light_8"]
+atlas = ExtResource("light")
+region = Rect2(16, 3465, 1407, 132)
+margin = Rect2(0, 241, 1, 458)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="light_9"]
+atlas = ExtResource("light")
+region = Rect2(16, 2317, 1408, 132)
+margin = Rect2(0, 241, 0, 458)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="light_10"]
+atlas = ExtResource("light")
+region = Rect2(16, 16, 1407, 281)
+margin = Rect2(0, 172, 1, 309)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="light_11"]
+atlas = ExtResource("light")
+region = Rect2(16, 1141, 1407, 234)
+margin = Rect2(0, 193, 1, 356)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="light_12"]
+atlas = ExtResource("light")
+region = Rect2(16, 1926, 1407, 187)
+margin = Rect2(0, 214, 1, 403)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="light_13"]
+atlas = ExtResource("light")
+region = Rect2(16, 2145, 1407, 140)
+margin = Rect2(0, 235, 1, 450)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="light_14"]
+atlas = ExtResource("light")
+region = Rect2(16, 1671, 1407, 223)
+margin = Rect2(0, 150, 1, 367)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="light_15"]
+atlas = ExtResource("light")
+region = Rect2(16, 1407, 1407, 232)
+margin = Rect2(0, 141, 1, 358)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="light_16"]
+atlas = ExtResource("light")
+region = Rect2(16, 873, 1407, 236)
+margin = Rect2(0, 137, 1, 354)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="light_17"]
+atlas = ExtResource("light")
+region = Rect2(16, 602, 1407, 239)
+margin = Rect2(0, 134, 1, 351)
+filter_clip = true
+
+[sub_resource type="AtlasTexture" id="light_18"]
+atlas = ExtResource("light")
+region = Rect2(16, 329, 1407, 241)
+margin = Rect2(0, 132, 1, 349)
+filter_clip = true
+
+[resource]
+animations = [{"frames": [{"duration": 1.0, "texture": SubResource("light_0")},
+{"duration": 1.0, "texture": SubResource("light_1")},
+{"duration": 1.0, "texture": SubResource("light_2")},
+{"duration": 1.0, "texture": SubResource("light_3")},
+{"duration": 1.0, "texture": SubResource("light_4")},
+{"duration": 1.0, "texture": SubResource("light_5")},
+{"duration": 1.0, "texture": SubResource("light_6")},
+{"duration": 1.0, "texture": SubResource("light_7")},
+{"duration": 1.0, "texture": SubResource("light_8")},
+{"duration": 1.0, "texture": SubResource("light_9")},
+{"duration": 1.0, "texture": SubResource("light_10")},
+{"duration": 1.0, "texture": SubResource("light_11")},
+{"duration": 1.0, "texture": SubResource("light_12")},
+{"duration": 1.0, "texture": SubResource("light_13")},
+{"duration": 1.0, "texture": SubResource("light_14")},
+{"duration": 1.0, "texture": SubResource("light_14")},
+{"duration": 1.0, "texture": SubResource("light_15")},
+{"duration": 1.0, "texture": SubResource("light_15")},
+{"duration": 1.0, "texture": SubResource("light_16")},
+{"duration": 1.0, "texture": SubResource("light_16")},
+{"duration": 1.0, "texture": SubResource("light_17")},
+{"duration": 1.0, "texture": SubResource("light_17")},
+{"duration": 1.0, "texture": SubResource("light_18")},
+{"duration": 1.0, "texture": SubResource("light_18")}], "loop": false, "name": &"musou_activation", "speed": 24.0}]

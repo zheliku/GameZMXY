@@ -46,16 +46,18 @@ public sealed partial class UiSmokeScenario
                 await WaitFramesAsync(2);
                 Control activation = CurrentBattleForm().GetNode<Control>("m_MusouActivation");
                 AnimatedSprite2D clip = activation.GetNode<AnimatedSprite2D>("Frame/Animation");
+                AnimatedSprite2D light = activation.GetNode<AnimatedSprite2D>("Frame/Light");
                 await WaitUntilAsync(() => clip.Frame > 0, "无双开场没有按真实时间推进首帧");
                 string expectedFrames = hero.HeroId == 2 ? "tangseng_musou_activation_frames.tres" : "wukong_musou_activation_frames.tres";
                 Check(activation.Visible && GF.Base.IsGamePaused && clip.Frame > 0 &&
                     clip.SpriteFrames.ResourcePath.EndsWith("/" + expectedFrames) &&
                     clip.SpriteFrames.GetFrameCount("musou_activation") == 24 &&
-                    clip.SpriteFrames.GetFrameTexture("musou_activation", clip.Frame).GetSize() == new Vector2(940, 590),
-                    "无双演出没有使用当前英雄的官方24帧940×590图集");
+                    clip.SpriteFrames.GetFrameTexture("musou_activation", clip.Frame).GetSize() * clip.Scale == new Vector2(940, 590) &&
+                    light.Frame == clip.Frame,
+                    "无双演出没有保持当前英雄的24帧、逻辑画布或灯光同步");
                 await CaptureCombatAsync($"hero_{hero.HeroId}_musou_activation_{ticks}");
                 await WaitUntilAsync(() => clip.Frame >= 18 || !activation.Visible, "无双后半段演出未推进");
-                Check(activation.Visible, "无双演出提前结束");
+                Check(activation.Visible && light.Frame == clip.Frame, "无双演出提前结束或灯光与人物不同步");
                 await CaptureCombatAsync($"hero_{hero.HeroId}_musou_activation_tail_{ticks}");
                 await WaitUntilAsync(() => !GF.Base.IsGamePaused, "无双开场没有结束");
                 await WaitFramesAsync(2);
