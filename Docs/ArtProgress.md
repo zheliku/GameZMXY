@@ -2,7 +2,7 @@
 
 更新时间：2026-11-18。本页持续维护逐项进度。**电脑美术主设计16:9，以1920×1080验收；手机主设计20:9，以2400×1080作预览参考，实际按设备像素输出。** 其他手机比例有限留边/裁切兼容；4K屏允许继续放大1080p标准，940×590玩法核心保持。
 
-**图像源文件：174 / 673 已完成制作、接入及必要验证。6张在用飘字图集已原路径增密，4张停用旧样式原件保存；本批待审。全库424项来源/保真受限（含75项部分提升）、75项其他待处理；配套78/183。**
+**图像源文件：174 / 693 完整完成。关卡批次核对原37图，8张前景、2张地面、2张平台局部提清，5张天空完成外围覆盖；新增20张必要分片，未将局部提升或外围算整图高清。全库479项来源/保真受限（含107项部分提升）、40项其他待处理；配套78/183。**
 
 另列183份配套美术资源，其中78份已完成密度联动、时序核对或必要显示验证，不计入图片完成量。
 
@@ -24,9 +24,13 @@
 
 ## 目前做了什么
 
+- [x] 11关37张原图逐项核对源图、场景引用和逻辑尺寸；12张从官方原矩阵恢复局部细节并接入。五天空在原路径由1440×690扩至2048×690，原画像素保持。
+- [x] Godot 11关、三种比例验证范围与分页，地形碰撞、遮挡、视差、水流和刺锥时序保持；实跑花果山1080p与4K全屏，坡面及七星洞双跳通过。[1080p等位对照](../Godot/GodotProject/.godot/validation/art_terrain_delivery_20261118/terrain_1920_details.png) · [20:9/21:9覆盖对照](../Godot/GodotProject/.godot/validation/art_terrain_delivery_20261118/sky_2400_2520_compare.png) · [1920×1080实跑](../Godot/GodotProject/.godot/validation/art_terrain_delivery_20261118/live_level_1_1920.png)。
+- [ ] 本批画面审查；位图中心和全图高清未完成，七星洞标准宽屏进关仍受旧门区限制，Android真机待验。
+
 - [x] 伤害、恢复和MISS整类10图查源，6张在用按原覆盖重建并原路径接入；受击三图为6倍源像素，恢复与MISS为2倍。4张旧迁入样式不接入。
 - [x] 1920×1080首通实跑伤害与拾取；正式飘字专项900组、原图与接入版501组等逻辑注册对比通过。16:9、20:9、21:9原生输出9图。 [电脑峰值对照](../Godot/GodotProject/.godot/validation/art_numbers_coverage_20261118/native_1920_peak.png) · [手机20:9对照](../Godot/GodotProject/.godot/validation/art_numbers_coverage_20261118/native_2400_idle.png) · [实跑伤害](../Godot/GodotProject/.godot/validation/art_numbers_coverage_20261118/live_damage_1920.png)。
-- [ ] 本批画面审查；4张旧样式不勾高清，手机比例为桌面预览，Android真机与地形另验。
+- [x] 飘字批已获认可；4张旧样式不勾高清，手机比例为桌面预览。
 
 - [x] 装备与消耗品79张逐项查源：3张恢复品从原矢量2倍重导并原路径接入，76张装备图标核对官方位图后保持原件。
 - [x] 3种恢复品与38件装备实际落地/贴地、拾取和回池，以及背包穿卸通过；三比例原生231项检查、18张图。审计工具正确检查悟空六列400源像素格，原逻辑格保持200。
@@ -115,7 +119,8 @@
 - [ ] 独立战斗特效、球、升级、死亡、出口动画：核对原生滤镜、透明度、注册点及全部动画帧。
 - [ ] 装备/消耗品/地面图标：逐项核对高精度同内容源；来源不足或保真不通过时明确记录。
 - [ ] 伤害/恢复数字和字图：保留字形、顺序、基线及比例字宽，完成1080p实际显示检查。
-- [ ] 11关背景、地形、前景和平台：逐项查矢量/位图依赖，保留定位、接缝和碰撞。
+- [x] 11关背景、地形、前景和平台完成整类查源，12图局部提清；原定位、接缝和碰撞通过。
+- [ ] 地形类整图高清：原嵌入位图精度仍受限；见下方逐图状态。
 - [ ] 字体、着色器、动画资源、主题/样式：按下方配套资源逐项完成联动或实际显示检查。
 - [x] A1c准备：核实地图上游SelectPLace505→shape389→JPEG388仍940×590；冻结原PNG中心，准备1408×590画布/遮罩、554600像素RGBA差0及6比例裁切计划，原地点坐标不动。
 - [x] A1c候选：复用已授权本地ECPA/原gpt-image-2官方CLI，完成1408×590原密度外围扩图、554600中心像素差0、100%/200%接缝图及6目标×原图/候选共12张原生场景预览；原地图控件几何不变。
@@ -181,7 +186,8 @@
 
 猴兵正式接入：[原图/正式2倍同尺寸](../Godot/GodotProject/.godot/validation/art_monkey_install_20261116/installed_review_1080p.png)、[电脑1920×1080](../Godot/GodotProject/.godot/validation/art_monkey_install_20261116/monkey_1920_attack_1_left.png)、[手机20:9](../Godot/GodotProject/.godot/validation/art_monkey_install_20261116/monkey_2400_attack_1_right.png)。以真实SetFacing保留原offset随朝向镜像；首批FlipH静态小样不代替实机转向验证。详见CrossPlatformPlan 2.12.31和Validation。
 
-- [ ] A3：其余静态UI背景与五张共享天空的外围扩图；选角按连续四联画方案，不强制卡间/两侧新增环境；只在原画外新增环境。
+- [x] A3五张共享天空右侧外围接入；11关三比例天空可见范围通过。本项只记录覆盖。
+- [ ] A3其余静态UI背景外围与天空原中心高清；选角按连续四联画方案。
 - [ ] A4：两英雄48帧无双演出覆盖/高清及四张短关条件候选，取景裁决与实际效果分别验收。
 - [ ] A5：汇总全库高清/仅扩图/保留原图结论和运行纹理预算，完成总审查。
 - [ ] T2～T5余项：除本批选角/地图菜单已接入外，其余UI、关卡世界宽屏、触屏、导出和真机仍按计划实施。
@@ -1049,77 +1055,99 @@
 
 <a id="art-images-11"></a>
 
-### 关卡背景、地形、平台与前景（0/37）
+### 关卡背景、地形、平台与前景（37个原图项：12项部分提清、5项已扩覆盖；57个运行PNG中0项完整高清）
+
+12个原路径采用原源2倍重合成（10幅长图各3片、2张平台各1图）；20张新增分片从属对应原图，不独立勾整图高清。天空扩展单独计覆盖。所有原图基线见[本批来源与消费者](../Godot/GodotProject/.godot/validation/art_terrain_delivery_20261118/manifest.json)。
 
 目录：`TheGame/Sprites/Levels/zm1_01_huaguoshan/`
 
-- [ ] [huaguoshan_ground.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_01_huaguoshan/huaguoshan_ground.png) — 4812×170；待来源/清晰度处理及1080p验收。
-- [ ] [huaguoshan_platform.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_01_huaguoshan/huaguoshan_platform.png) — 263×75；来源受限：shape56实为263×75位图填充；2倍采样不算高清，暂保留原图。
-- [ ] [level_1_bg_end.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_01_huaguoshan/level_1_bg_end.png) — 1440×690；待来源/清晰度处理及1080p验收。
-- [ ] [level_1_floor.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_01_huaguoshan/level_1_floor.png) — 4700×170；待来源/清晰度处理及1080p验收。
-- [ ] [level_1_front.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_01_huaguoshan/level_1_front.png) — 4957×633；待来源/清晰度处理及1080p验收。
-- [ ] [level_1_platform.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_01_huaguoshan/level_1_platform.png) — 264×76；待来源/清晰度处理及1080p验收。
+- [ ] [huaguoshan_ground.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_01_huaguoshan/huaguoshan_ground.png) — 原4812×170；shape60使用bitmap58/59，原密度没有可取回的纹理细节；已修接缝和原图保留。
+- [ ] [huaguoshan_platform.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_01_huaguoshan/huaguoshan_platform.png) — 原263×75；shape56填充bitmap55，内嵌源也是263×75；2倍不增加纹理细节，保留原图。
+- [ ] [level_1_bg_end.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_01_huaguoshan/level_1_bg_end.png) — 原1440×690；旧工程19_1，官方同题材bitmap19同分辨率，已扩右侧608，现2048×690；原中心像素完全保持，清晰度仍受原始位图限制。
+- [ ] [level_1_floor.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_01_huaguoshan/level_1_floor.png) — 原4700×170；旧工程183原4812×170的调试场裁图，已有少量颜色细调；`test_arena`引用，保留原图。
+- [ ] [level_1_front.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_01_huaguoshan/level_1_front.png) — 原4957×633；部分提清：sprite161按原矩阵2倍重合成为9914×1266，恢复19处源缩小位图填充的采样；仍有位图精度上限。 分片：原路径为第1片。
+- [ ] [level_1_front_2.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_01_huaguoshan/level_1_front_2.png) — 3322×1266；同幅2倍图的必要分片（含采样边），沿用整图部分提清状态。
+- [ ] [level_1_front_3.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_01_huaguoshan/level_1_front_3.png) — 3312×1266；同幅2倍图的必要分片（含采样边），沿用整图部分提清状态。
+- [ ] [level_1_platform.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_01_huaguoshan/level_1_platform.png) — 原264×76；与旧工程177可见像素一致，当前无场景消费者，保留原图。
 
 目录：`TheGame/Sprites/Levels/zm1_02_shuiliandong/`
 
-- [ ] [shuiliandong_front.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_02_shuiliandong/shuiliandong_front.png) — 5112×542；待来源/清晰度处理及1080p验收。
-- [ ] [shuiliandong_ground.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_02_shuiliandong/shuiliandong_ground.png) — 4724×314；待来源/清晰度处理及1080p验收。
-- [ ] [shuiliandong_platform.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_02_shuiliandong/shuiliandong_platform.png) — 179×51；待来源/清晰度处理及1080p验收。
-- [ ] [shuiliandong_water.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_02_shuiliandong/shuiliandong_water.png) — 549×83；待来源/清晰度处理及1080p验收。
-- [ ] [shuiliandong_waves.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_02_shuiliandong/shuiliandong_waves.png) — 1600×50；待来源/清晰度处理及1080p验收。
+- [ ] [shuiliandong_front.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_02_shuiliandong/shuiliandong_front.png) — 原5112×542；部分提清：sprite163按原矩阵2倍重合成为10224×1084，恢复16处源缩小位图填充的采样；仍有位图精度上限。 分片：原路径为第1片。
+- [ ] [shuiliandong_front_2.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_02_shuiliandong/shuiliandong_front_2.png) — 3424×1084；同幅2倍图的必要分片（含采样边），沿用整图部分提清状态。
+- [ ] [shuiliandong_front_3.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_02_shuiliandong/shuiliandong_front_3.png) — 3416×1084；同幅2倍图的必要分片（含采样边），沿用整图部分提清状态。
+- [ ] [shuiliandong_ground.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_02_shuiliandong/shuiliandong_ground.png) — 原4724×314；来源受限，原源元件97的位图填充未提供更高精度；保留原图及注册。
+- [ ] [shuiliandong_platform.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_02_shuiliandong/shuiliandong_platform.png) — 原179×51；来源受限，原源元件88的位图填充未提供更高精度；保留原图及注册。
+- [ ] [shuiliandong_water.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_02_shuiliandong/shuiliandong_water.png) — 原549×83；bitmap89原生位图；水洞两条各325格、24fps的水流轨道按原时序播放，原图保留。
+- [ ] [shuiliandong_waves.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_02_shuiliandong/shuiliandong_waves.png) — 原1600×50；bitmap91原生位图；水洞两条各325格、24fps的水流轨道按原时序播放，原图保留。
 
 目录：`TheGame/Sprites/Levels/zm1_03_taohuayuan/`
 
-- [ ] [taohuayuan_front.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_03_taohuayuan/taohuayuan_front.png) — 4965×489；待来源/清晰度处理及1080p验收。
-- [ ] [taohuayuan_ground.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_03_taohuayuan/taohuayuan_ground.png) — 4724×148；待来源/清晰度处理及1080p验收。
-- [ ] [taohuayuan_rock.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_03_taohuayuan/taohuayuan_rock.png) — 189×155；待来源/清晰度处理及1080p验收。
+- [ ] [taohuayuan_front.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_03_taohuayuan/taohuayuan_front.png) — 原4965×489；部分提清：sprite168按原矩阵2倍重合成为9930×978，恢复53处源缩小位图填充的采样；仍有位图精度上限。 分片：原路径为第1片。
+- [ ] [taohuayuan_front_2.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_03_taohuayuan/taohuayuan_front_2.png) — 3326×978；同幅2倍图的必要分片（含采样边），沿用整图部分提清状态。
+- [ ] [taohuayuan_front_3.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_03_taohuayuan/taohuayuan_front_3.png) — 3318×978；同幅2倍图的必要分片（含采样边），沿用整图部分提清状态。
+- [ ] [taohuayuan_ground.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_03_taohuayuan/taohuayuan_ground.png) — 原4724×148；来源受限，原源元件101的位图填充未提供更高精度；保留原图及注册。
+- [ ] [taohuayuan_rock.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_03_taohuayuan/taohuayuan_rock.png) — 原189×155；来源受限，原源元件103的位图填充未提供更高精度；保留原图及注册。
 
 目录：`TheGame/Sprites/Levels/zm1_04_bat_cave/`
 
-- [ ] [bat_cave_front.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_04_bat_cave/bat_cave_front.png) — 4944×632；待来源/清晰度处理及1080p验收。
-- [ ] [bat_cave_ground.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_04_bat_cave/bat_cave_ground.png) — 4700×308；待来源/清晰度处理及1080p验收。
-- [ ] [bat_cave_sky.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_04_bat_cave/bat_cave_sky.png) — 1440×690；保真方法未通过：原生位图，超分在1080p无明确收益；暂保留原图。
-- [ ] [bat_cave_spike_atlas.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_04_bat_cave/bat_cave_spike_atlas.png) — 190×256；待来源/清晰度处理及1080p验收。
+- [ ] [bat_cave_front.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_04_bat_cave/bat_cave_front.png) — 原4944×632；部分提清：sprite185按原矩阵2倍重合成为9888×1264，恢复6处源缩小位图填充的采样；仍有位图精度上限。 分片：原路径为第1片。
+- [ ] [bat_cave_front_2.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_04_bat_cave/bat_cave_front_2.png) — 3312×1264；同幅2倍图的必要分片（含采样边），沿用整图部分提清状态。
+- [ ] [bat_cave_front_3.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_04_bat_cave/bat_cave_front_3.png) — 3304×1264；同幅2倍图的必要分片（含采样边），沿用整图部分提清状态。
+- [ ] [bat_cave_ground.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_04_bat_cave/bat_cave_ground.png) — 原4700×308；部分提清：shape107按原矩阵2倍重合成为9400×616，恢复2处源缩小位图填充的采样；仍有位图精度上限。 分片：原路径为第1片。
+- [ ] [bat_cave_ground_2.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_04_bat_cave/bat_cave_ground_2.png) — 3148×616；同幅2倍图的必要分片（含采样边），沿用整图部分提清状态。
+- [ ] [bat_cave_ground_3.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_04_bat_cave/bat_cave_ground_3.png) — 3142×616；同幅2倍图的必要分片（含采样边），沿用整图部分提清状态。
+- [ ] [bat_cave_sky.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_04_bat_cave/bat_cave_sky.png) — 原1440×690；bitmap18，已扩右侧608，现2048×690；原中心像素完全保持，清晰度仍受原始位图限制。
+- [ ] [bat_cave_spike_atlas.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_04_bat_cave/bat_cave_spike_atlas.png) — 原190×256；sprite113、20帧、5列×4行，依赖原位图；核对原图与格序，保留分格和24fps。
 
 目录：`TheGame/Sprites/Levels/zm1_05_qixing_cave/`
 
-- [ ] [qixing_cave_front.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_05_qixing_cave/qixing_cave_front.png) — 5025×634；待来源/清晰度处理及1080p验收。
-- [ ] [qixing_cave_sky.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_05_qixing_cave/qixing_cave_sky.png) — 1440×690；待来源/清晰度处理及1080p验收。
-- [ ] [qixing_ground.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_05_qixing_cave/qixing_ground.png) — 4700×407；待来源/清晰度处理及1080p验收。
-- [ ] [qixing_lower_platform.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_05_qixing_cave/qixing_lower_platform.png) — 421×139；待来源/清晰度处理及1080p验收。
-- [ ] [qixing_upper_platform.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_05_qixing_cave/qixing_upper_platform.png) — 412×451；待来源/清晰度处理及1080p验收。
+- [ ] [qixing_cave_front.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_05_qixing_cave/qixing_cave_front.png) — 原5025×634；部分提清：sprite190按原矩阵2倍重合成为10050×1268，恢复11处源缩小位图填充的采样；仍有位图精度上限。 分片：原路径为第1片。
+- [ ] [qixing_cave_front_2.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_05_qixing_cave/qixing_cave_front_2.png) — 3366×1268；同幅2倍图的必要分片（含采样边），沿用整图部分提清状态。
+- [ ] [qixing_cave_front_3.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_05_qixing_cave/qixing_cave_front_3.png) — 3358×1268；同幅2倍图的必要分片（含采样边），沿用整图部分提清状态。
+- [ ] [qixing_cave_sky.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_05_qixing_cave/qixing_cave_sky.png) — 原1440×690；bitmap18，已扩右侧608，现2048×690；原中心像素完全保持，清晰度仍受原始位图限制。
+- [ ] [qixing_ground.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_05_qixing_cave/qixing_ground.png) — 原4700×407；部分提清：shape115按原矩阵2倍重合成为9400×814，恢复1处源缩小位图填充的采样；仍有位图精度上限。 分片：原路径为第1片。
+- [ ] [qixing_ground_2.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_05_qixing_cave/qixing_ground_2.png) — 3148×814；同幅2倍图的必要分片（含采样边），沿用整图部分提清状态。
+- [ ] [qixing_ground_3.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_05_qixing_cave/qixing_ground_3.png) — 3142×814；同幅2倍图的必要分片（含采样边），沿用整图部分提清状态。
+- [ ] [qixing_lower_platform.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_05_qixing_cave/qixing_lower_platform.png) — 原421×139；部分提清：shape117按原矩阵2倍重合成为842×278，恢复3处源缩小位图填充的采样；仍有位图精度上限。
+- [ ] [qixing_upper_platform.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_05_qixing_cave/qixing_upper_platform.png) — 原412×451；部分提清：shape116按原矩阵2倍重合成为824×902，恢复6处源缩小位图填充的采样；仍有位图精度上限。
 
 目录：`TheGame/Sprites/Levels/zm1_06_garuda_cave/`
 
-- [ ] [garuda_cave_front.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_06_garuda_cave/garuda_cave_front.png) — 4942×651；待来源/清晰度处理及1080p验收。
-- [ ] [garuda_cave_ground.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_06_garuda_cave/garuda_cave_ground.png) — 4700×474；待来源/清晰度处理及1080p验收。
+- [ ] [garuda_cave_front.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_06_garuda_cave/garuda_cave_front.png) — 原4942×651；部分提清：sprite197按原矩阵2倍重合成为9884×1302，恢复4处源缩小位图填充的采样；仍有位图精度上限。 分片：原路径为第1片。
+- [ ] [garuda_cave_front_2.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_06_garuda_cave/garuda_cave_front_2.png) — 3312×1302；同幅2倍图的必要分片（含采样边），沿用整图部分提清状态。
+- [ ] [garuda_cave_front_3.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_06_garuda_cave/garuda_cave_front_3.png) — 3302×1302；同幅2倍图的必要分片（含采样边），沿用整图部分提清状态。
+- [ ] [garuda_cave_ground.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_06_garuda_cave/garuda_cave_ground.png) — 原4700×474；来源受限，原源元件118的位图填充未提供更高精度；保留原图及注册。
 
 目录：`TheGame/Sprites/Levels/zm1_07_shore/`
 
-- [ ] [sea_shore_front.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_07_shore/sea_shore_front.png) — 5023×509；待来源/清晰度处理及1080p验收。
-- [ ] [sea_shore_ground.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_07_shore/sea_shore_ground.png) — 4700×402；待来源/清晰度处理及1080p验收。
-- [ ] [sea_shore_sky.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_07_shore/sea_shore_sky.png) — 1440×690；待来源/清晰度处理及1080p验收。
+- [ ] [sea_shore_front.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_07_shore/sea_shore_front.png) — 原5023×509；来源受限，原源元件233的位图填充未提供更高精度；保留原图及注册。
+- [ ] [sea_shore_ground.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_07_shore/sea_shore_ground.png) — 原4700×402；来源受限，原源元件121的位图填充未提供更高精度；保留原图及注册。
+- [ ] [sea_shore_sky.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_07_shore/sea_shore_sky.png) — 原1440×690；bitmap17，已扩右侧608，现2048×690；原中心像素完全保持，清晰度仍受原始位图限制。
 
 目录：`TheGame/Sprites/Levels/zm1_08_east_sea/`
 
-- [ ] [east_sea_front.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_08_east_sea/east_sea_front.png) — 4959×557；待来源/清晰度处理及1080p验收。
-- [ ] [east_sea_ground.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_08_east_sea/east_sea_ground.png) — 4700×391；待来源/清晰度处理及1080p验收。
+- [ ] [east_sea_front.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_08_east_sea/east_sea_front.png) — 原4959×557；部分提清：sprite239按原矩阵2倍重合成为9918×1114，恢复1处源缩小位图填充的采样；仍有位图精度上限。 分片：原路径为第1片。
+- [ ] [east_sea_front_2.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_08_east_sea/east_sea_front_2.png) — 3322×1114；同幅2倍图的必要分片（含采样边），沿用整图部分提清状态。
+- [ ] [east_sea_front_3.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_08_east_sea/east_sea_front_3.png) — 3314×1114；同幅2倍图的必要分片（含采样边），沿用整图部分提清状态。
+- [ ] [east_sea_ground.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_08_east_sea/east_sea_ground.png) — 原4700×391；来源受限，原源元件122的位图填充未提供更高精度；保留原图及注册。
 
 目录：`TheGame/Sprites/Levels/zm1_09_shark_whirlpool/`
 
-- [ ] [shark_whirlpool_front.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_09_shark_whirlpool/shark_whirlpool_front.png) — 4964×509；待来源/清晰度处理及1080p验收。
-- [ ] [shark_whirlpool_ground.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_09_shark_whirlpool/shark_whirlpool_ground.png) — 4700×95；待来源/清晰度处理及1080p验收。
+- [ ] [shark_whirlpool_front.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_09_shark_whirlpool/shark_whirlpool_front.png) — 原4964×509；部分提清：sprite243按原矩阵2倍重合成为9928×1018，恢复1处源缩小位图填充的采样；仍有位图精度上限。 分片：原路径为第1片。
+- [ ] [shark_whirlpool_front_2.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_09_shark_whirlpool/shark_whirlpool_front_2.png) — 3324×1018；同幅2倍图的必要分片（含采样边），沿用整图部分提清状态。
+- [ ] [shark_whirlpool_front_3.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_09_shark_whirlpool/shark_whirlpool_front_3.png) — 3318×1018；同幅2倍图的必要分片（含采样边），沿用整图部分提清状态。
+- [ ] [shark_whirlpool_ground.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_09_shark_whirlpool/shark_whirlpool_ground.png) — 原4700×95；来源受限，原源元件123的位图填充未提供更高精度；保留原图及注册。
 
 目录：`TheGame/Sprites/Levels/zm1_10_bull_demon_valley/`
 
-- [ ] [bull_demon_valley_front.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_10_bull_demon_valley/bull_demon_valley_front.png) — 1880×590；待来源/清晰度处理及1080p验收。
-- [ ] [bull_demon_valley_ground.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_10_bull_demon_valley/bull_demon_valley_ground.png) — 1896×95；待来源/清晰度处理及1080p验收。
-- [ ] [bull_demon_valley_sky.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_10_bull_demon_valley/bull_demon_valley_sky.png) — 1440×690；待来源/清晰度处理及1080p验收。
+- [ ] [bull_demon_valley_front.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_10_bull_demon_valley/bull_demon_valley_front.png) — 原1880×590；来源受限，原源元件246为位图组合；保留原图，外围依T3-3取景裁决。
+- [ ] [bull_demon_valley_ground.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_10_bull_demon_valley/bull_demon_valley_ground.png) — 原1896×95；来源受限，原源元件125为位图组合；保留原图，外围依T3-3取景裁决。
+- [ ] [bull_demon_valley_sky.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_10_bull_demon_valley/bull_demon_valley_sky.png) — 原1440×690；bitmap16，已扩右侧608，现2048×690；原中心像素完全保持，清晰度仍受原始位图限制。
 
 目录：`TheGame/Sprites/Levels/zm1_11_hidden_dragon_palace/`
 
-- [ ] [dragon_palace_front.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_11_hidden_dragon_palace/dragon_palace_front.png) — 944×504；待来源/清晰度处理及1080p验收。
-- [ ] [dragon_palace_ground.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_11_hidden_dragon_palace/dragon_palace_ground.png) — 1300×97；待来源/清晰度处理及1080p验收。
+- [ ] [dragon_palace_front.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_11_hidden_dragon_palace/dragon_palace_front.png) — 原944×504；来源受限，原源元件252为位图组合；保留原图，外围依T3-3取景裁决。
+- [ ] [dragon_palace_ground.png](../Godot/GodotProject/TheGame/Sprites/Levels/zm1_11_hidden_dragon_palace/dragon_palace_ground.png) — 原1300×97；来源受限，原源元件127为位图组合；保留原图，外围依T3-3取景裁决。
 
 <a id="art-images-12"></a>
 

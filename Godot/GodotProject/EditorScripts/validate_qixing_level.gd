@@ -15,7 +15,10 @@ func _validate() -> void:
 	var hill: CollisionPolygon2D = level.get_node("World/Geometry/Slopes/Hill03/Surface")
 	assert(hill.polygon.size() == 6)
 	var ground: Sprite2D = level.get_node("World/Geometry/Artwork/QixingGround")
-	assert(level.get_node("Camera2D").limit_right == floori(ground.position.x + ground.texture.get_width()))
+	var bounds := ground.get_rect()
+	for page: Sprite2D in ground.get_children():
+		bounds = bounds.merge(page.transform * page.get_rect())
+	assert(level.get_node("Camera2D").limit_right == floori((ground.transform * bounds).end.x))
 	for index in [3,4,5]:
 		assert(not level.has_node("World/Geometry/Ground/Surface%02d" % index))
 	assert(level.get_node("World/Geometry/Artwork").get_child_count() == 3)
@@ -25,7 +28,7 @@ func _validate() -> void:
 		"res://TheGame/Entitys/Enemies/Monsters/Ground/knife_demon/knife_demon_entity.tscn",
 		"res://TheGame/Entitys/Enemies/Bosses/zm1_05_qixing_cave/lion_camel_king_entity.tscn"]:
 		var actor: Node = load(scene).instantiate()
-		for binding in ["m_Body", "m_AnimPlayer", "m_HurtBox", "m_HitBox", "m_HitBoxRoot", "_perception"]:
+		for binding in ["_body", "_animPlayer", "_hurtBox", "_hitBox", "_hitBoxRoot", "_perception"]:
 			assert(actor.get(binding) != null, scene + " missing " + binding)
 		assert(actor.get_node("m_HurtBox").position == Vector2.ZERO)
 		var player: AnimationPlayer = actor.get("_animPlayer")
@@ -33,14 +36,18 @@ func _validate() -> void:
 			assert(player.has_animation(attack))
 		actor.free()
 	var form: Control = load("res://TheGame/UIs/map_form.tscn").instantiate()
-	var library: AnimationLibrary = form.get_node("Frame/m_LocationAnimation").get_animation_library("qixingdong")
+	var animator: AnimationPlayer = form.get_node("Frame/m_LocationAnimation")
+	var library := animator.get_animation_library("qixingdong")
+	var animation_root := animator.get_node(animator.root_node)
 	assert(library.resource_path == "res://TheGame/Sprites/UI/frontend/map_qixingdong_hover_animation.tres")
-	assert(form.get_node("Frame/m_Qixingdong").get_child_count() == 1)
+	var location := form.get_node("Frame/m_Qixingdong")
+	assert(location.get("_hoverImage") == location.get_node("LocationGlow"))
+	assert(location.get_node("CurrentHint") is Sprite2D)
 	for title in library.get_animation_list():
 		var animation := library.get_animation(title)
 		for track in animation.get_track_count():
 			var path := String(animation.track_get_path(track)).get_slice(":", 0)
-			assert(form.get_node_or_null(path) != null, "Invalid qixing map track " + path)
+			assert(animation_root.get_node_or_null(path) != null, "Invalid qixing map track " + path)
 	form.free()
 	print("QIXING CAVE VALIDATION PASS: level=5, 20 spawn markers, 9 gates, 5 rectangles + 1 continuous hill, 3 actor scenes")
 	level.free()

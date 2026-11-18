@@ -4,7 +4,11 @@
 [ext_resource type="Script" uid="uid://cwi2bj6ocy16c" path="res://TheGame/GameScripts/Entity/FloatingText/FloatingTextPresenter.cs" id="2_wgdky"]
 [ext_resource type="Texture2D" uid="uid://bhodnueoii1od" path="res://TheGame/Sprites/Levels/zm1_05_qixing_cave/qixing_cave_sky.png" id="3_i7y5c"]
 [ext_resource type="Texture2D" uid="uid://brubit7gkr1h7" path="res://TheGame/Sprites/Levels/zm1_05_qixing_cave/qixing_cave_front.png" id="4_ib8ca"]
+[ext_resource type="Texture2D" uid="uid://drbkd43ki0nmk" path="res://TheGame/Sprites/Levels/zm1_05_qixing_cave/qixing_cave_front_2.png" id="Front_page2"]
+[ext_resource type="Texture2D" uid="uid://cmve1r68wgj5d" path="res://TheGame/Sprites/Levels/zm1_05_qixing_cave/qixing_cave_front_3.png" id="Front_page3"]
 [ext_resource type="Texture2D" uid="uid://de34ehd07wiwk" path="res://TheGame/Sprites/Levels/zm1_05_qixing_cave/qixing_ground.png" id="5_adpqo"]
+[ext_resource type="Texture2D" uid="uid://c4rgk7olfd42j" path="res://TheGame/Sprites/Levels/zm1_05_qixing_cave/qixing_ground_2.png" id="QixingGround_page2"]
+[ext_resource type="Texture2D" uid="uid://bsoejwl8ch4xx" path="res://TheGame/Sprites/Levels/zm1_05_qixing_cave/qixing_ground_3.png" id="QixingGround_page3"]
 [ext_resource type="Texture2D" uid="uid://dfeqx6gvyy5bi" path="res://TheGame/Sprites/Levels/zm1_05_qixing_cave/qixing_upper_platform.png" id="6_aduvp"]
 [ext_resource type="Texture2D" uid="uid://kvrobdhjw7o8" path="res://TheGame/Sprites/Levels/zm1_05_qixing_cave/qixing_lower_platform.png" id="7_weqiv"]
 [ext_resource type="Script" uid="uid://bkq4g0l6t4k15" path="res://TheGame/GameScripts/Entity/Level/Spawning/LevelSpawnPointsNode.cs" id="8_q3qon"]
@@ -211,6 +215,30 @@ size = Vector2(20, 1800)
 [sub_resource type="RectangleShape2D" id="PlayerScreenWallShape"]
 size = Vector2(8, 4000)
 
+[sub_resource type="AtlasTexture" id="Front_region1"]
+atlas = ExtResource("4_ib8ca")
+region = Rect2(0, 0, 3350, 1268)
+
+[sub_resource type="AtlasTexture" id="Front_region2"]
+atlas = ExtResource("Front_page2")
+region = Rect2(8, 0, 3350, 1268)
+
+[sub_resource type="AtlasTexture" id="Front_region3"]
+atlas = ExtResource("Front_page3")
+region = Rect2(8, 0, 3350, 1268)
+
+[sub_resource type="AtlasTexture" id="QixingGround_region1"]
+atlas = ExtResource("5_adpqo")
+region = Rect2(0, 0, 3134, 814)
+
+[sub_resource type="AtlasTexture" id="QixingGround_region2"]
+atlas = ExtResource("QixingGround_page2")
+region = Rect2(8, 0, 3132, 814)
+
+[sub_resource type="AtlasTexture" id="QixingGround_region3"]
+atlas = ExtResource("QixingGround_page3")
+region = Rect2(8, 0, 3134, 814)
+
 [node name="Level_5" type="Node2D" unique_id=1550976978 node_paths=PackedStringArray("_spawnPoints", "_triggers", "_gates", "_spawner", "_camera", "_exit", "_floatingText")]
 script = ExtResource("1_gwtmy")
 _musicId = 1003
@@ -241,7 +269,18 @@ centered = false
 
 [node name="Front" type="Sprite2D" parent="World/Background" unique_id=1298458761]
 position = Vector2(-80, -72)
-texture = ExtResource("4_ib8ca")
+scale = Vector2(0.5, 0.5)
+texture = SubResource("Front_region1")
+centered = false
+
+[node name="Page2" type="Sprite2D" parent="World/Background/Front"]
+position = Vector2(3350, 0)
+texture = SubResource("Front_region2")
+centered = false
+
+[node name="Page3" type="Sprite2D" parent="World/Background/Front"]
+position = Vector2(6700, 0)
+texture = SubResource("Front_region3")
 centered = false
 
 [node name="Geometry" type="Node2D" parent="World" unique_id=930087367]
@@ -250,16 +289,29 @@ centered = false
 
 [node name="QixingGround" type="Sprite2D" parent="World/Geometry/Artwork" unique_id=1344976562]
 position = Vector2(-18.3, 222.2)
-texture = ExtResource("5_adpqo")
+scale = Vector2(0.5, 0.5)
+texture = SubResource("QixingGround_region1")
+centered = false
+
+[node name="Page2" type="Sprite2D" parent="World/Geometry/Artwork/QixingGround"]
+position = Vector2(3134, 0)
+texture = SubResource("QixingGround_region2")
+centered = false
+
+[node name="Page3" type="Sprite2D" parent="World/Geometry/Artwork/QixingGround"]
+position = Vector2(6266, 0)
+texture = SubResource("QixingGround_region3")
 centered = false
 
 [node name="QixingUpperPlatform" type="Sprite2D" parent="World/Geometry/Artwork" unique_id=127734096]
 position = Vector2(2968.55, -173.7)
+scale = Vector2(0.5, 0.5)
 texture = ExtResource("6_aduvp")
 centered = false
 
 [node name="QixingLowerPlatform" type="Sprite2D" parent="World/Geometry/Artwork" unique_id=647802209]
 position = Vector2(1184.85, 375.35)
+scale = Vector2(0.5, 0.5)
 texture = ExtResource("7_weqiv")
 centered = false
 

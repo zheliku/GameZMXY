@@ -1,5 +1,45 @@
 # 验证
 
+## 关卡背景、地形、平台与前景接入（2026-11-18，本批交审）
+
+基线Git `898f494f`，原37PNG和`.import`、11场景置于`before/`。更新17张正式原路径PNG：12张按原矩阵局部提清，5张只补天空覆盖。新增20幅采样分片及导入文件；8个场景只调整美术层绘制，未调整物理或窗口。Collection Res按集中规范50经原生成器更新；七星洞既有校验改按分片合成逻辑边界校对相机，并对齐已在用的导出字段与地图动画根。框架、配置、生成器本身未改。
+
+| 检查 | 实测 |
+| --- | --- |
+| 来源/像素 | 34张可见RGBA以1倍官方导出完全复现，3张按旧工程来源核实；123处源位图缩小采样恢复。4幅重复拼缝处仅校正602个新栅格像素。12幅母版由正式分片逐像素重建；20新增分片之外，原37份`.import`内容与UID保持。五天空中心4,968,000像素RGBA逐像素相同，扩展区域为(1440,0)起608×690。 |
+| 三比例原生 | `art_terrain_delivery_final_1920/2400/2520_20261118`均退出0，stderr为空。8,574项原节点、注册、层级、视差、相机与碰撞检查；20个分片边界在整数和非整数位置共采3,110,400像素，和同引擎未切母版最大差1/255。66个天空窗口都覆盖，最右取样1818.389<2048；共144张预览。水帘洞两轨各325个键，0/2/13.5秒水流偏移与原场景一致，动画保持。 |
+| Windows实跑 | 花果山截到1920×1080及3840×2160全屏，逻辑视域同为1048×590，悟空落地且运行场景确实加载新纹理。另旧测试入口用940逻辑宽跑七星洞并截到1720×1080有效画面。`--terrain-only` 48组坡面走跑、停步、续走、跳跃通过；`--qixing-platform-only` 8组真实双跳登上原平台，对向、走跑和60/120Hz通过。普通七星洞标准宽屏进关仍在第一段[0,940]报不足一屏；花果山标准全流程烟测首帧在相机位移480→524的断言失败，拍屏和专项通过均不代表全关通关。 |
+| 导入/引用/代价 | 两次Godot正式导入和编辑器构建重扫退出0，stderr为空；Collection Res生成1031项，构建0错误、5条既有弃用警告。Profile/Battle/Level分别339/197/19项全部通过。蝙蝠窟和七星洞场景校验通过；2355序列化路径、392 UID、`git diff --check`通过。新增纹理最大单边3424。受改层的未压缩RGBA8估算，花果山15.76→53.42 MiB、七星洞24.17→87.17 MiB，未包含英雄/UI/其他场景资源，不是实测驻留峰值。 |
+| 诊断与界限 | 带截帧的引擎测试启动前留有既有`AdvanceToLevel`空引用，捕获后退出有ObjectDB及资源诊断；坡面/平台专项保留预期NodePool类型故障注入及退出5/1诊断。Collection Res退出的9 Viewport等RID和14303 ObjectDB占用另见日志。手机比例是在Windows固定镜头实绘，Android真机、内存和T3端部/门区未验。 |
+
+[同逻辑1080p裁片](../Godot/GodotProject/.godot/validation/art_terrain_delivery_20261118/terrain_1920_details.png) · [石纹原图/插值/重导样本](../Godot/GodotProject/.godot/validation/art_terrain_delivery_20261118/shape_candidates_crop.png) · [20:9/21:9端部对比](../Godot/GodotProject/.godot/validation/art_terrain_delivery_20261118/sky_2400_2520_compare.png) · [花果山实跑1080p](../Godot/GodotProject/.godot/validation/art_terrain_delivery_20261118/live_level_1_1920.png) · [花果山实跑4K全屏](../Godot/GodotProject/.godot/validation/art_terrain_delivery_20261118/live_level_1_3840.png) · [七星洞940核心实跑](../Godot/GodotProject/.godot/validation/art_terrain_delivery_20261118/live_level_5_1920_940_core.png)。
+
+从仓库根复现主要检查（`prepare_install.py prepare`仅在原Git基线生成候选；正式状态直接验证）：
+
+```powershell
+$v = 'Godot/GodotProject/.godot/validation'
+$b = "$v/art_terrain_delivery_20261118"
+$runner = "$v/movement_presets/run_godot.py"
+python $runner art_terrain_delivery_import_final_20261118 --headless --editor --import
+python $runner art_terrain_delivery_collection_20261118 --headless --editor --script res://EditorScripts/regenerate_collection.gd
+dotnet build Godot/GodotProject/GodotProject.csproj --no-restore -v minimal
+foreach ($name in 'Profile', 'Battle', 'Level') { dotnet test "Tests/${name}Tests/${name}Tests.csproj" --no-restore -v quiet }
+python $runner art_terrain_delivery_editor_scan_20261118 --headless --editor --build-solutions --quit --no-window
+foreach ($width in 1920, 2400, 2520) {
+    python $runner "art_terrain_delivery_final_${width}_20261118" --rendering-method gl_compatibility --audio-driver Dummy --resolution 640x384 --quit-after 3000 --script res://.godot/validation/art_terrain_delivery_20261118/preview_levels.gd -- $width
+}
+python "$b/make_review.py"
+python $runner art_terrain_delivery_slope_runtime_20261118 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 22000 -- --smoketest=ui --terrain-only
+python $runner art_terrain_delivery_platform_runtime_20261118 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 10000 -- --smoketest=ui --qixing-platform-only
+python $runner art_terrain_delivery_capture1_20261118 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 3000 --script res://.godot/validation/art_terrain_delivery_20261118/live.gd -- --smoketest
+python $runner art_terrain_delivery_live1_fullscreen_20261118 --fullscreen --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 3000 --script res://.godot/validation/art_terrain_delivery_20261118/live.gd -- --smoketest --capture-4k
+python $runner art_terrain_delivery_live5_ground_contact_20261118 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 4000 --script res://.godot/validation/art_terrain_delivery_20261118/live.gd -- --smoketest=level5 --capture-core-only
+python $runner art_terrain_delivery_qixing_validator_ok_20261118 --headless --quit-after 300 --script res://EditorScripts/validate_qixing_level.gd
+python $runner art_terrain_delivery_bat_validation_20261118 --headless --quit-after 300 --script res://EditorScripts/validate_bat_cave_level.gd
+python Tools/ProjectMaintenance/validate_game_references.py
+git diff --check
+```
+
 ## 正式飘字覆盖恢复与1080p接入（2026-11-18，本批交审）
 
 六张在用PNG替换在原路径，三张伤害6倍、回血/回魔/MISS 2倍，共50个数字格与1张词图。原件保留Git与`.godot/validation/art_numbers_coverage_20261118/before/`。只有飘字场景皮肤设置、按密度换算字图的裁框/宽度和旧烟测配套有代码差异；共享纹理只读取一次，无新运行节点。上批物品暂存补丁保持，其他美术、显示设置、玩法不变。

@@ -4,6 +4,8 @@
 [ext_resource type="Script" uid="uid://cwi2bj6ocy16c" path="res://TheGame/GameScripts/Entity/FloatingText/FloatingTextPresenter.cs" id="2_y2rkl"]
 [ext_resource type="Texture2D" uid="uid://cpk7ttkaom0hn" path="res://TheGame/Sprites/Levels/zm1_01_huaguoshan/level_1_bg_end.png" id="3_k131c"]
 [ext_resource type="Texture2D" uid="uid://sb875ec3ijue" path="res://TheGame/Sprites/Levels/zm1_03_taohuayuan/taohuayuan_front.png" id="4_wpq4p"]
+[ext_resource type="Texture2D" uid="uid://dbtnx7n2u3uqd" path="res://TheGame/Sprites/Levels/zm1_03_taohuayuan/taohuayuan_front_2.png" id="Front_page2"]
+[ext_resource type="Texture2D" uid="uid://42pq1umk3prt" path="res://TheGame/Sprites/Levels/zm1_03_taohuayuan/taohuayuan_front_3.png" id="Front_page3"]
 [ext_resource type="Texture2D" uid="uid://ded21w6qkvpq7" path="res://TheGame/Sprites/Levels/zm1_03_taohuayuan/taohuayuan_ground.png" id="5_5d4yh"]
 [ext_resource type="Texture2D" uid="uid://co8fkgdpbj5fy" path="res://TheGame/Sprites/Levels/zm1_03_taohuayuan/taohuayuan_rock.png" id="6_ggrho"]
 [ext_resource type="Script" uid="uid://bkq4g0l6t4k15" path="res://TheGame/GameScripts/Entity/Level/Spawning/LevelSpawnPointsNode.cs" id="7_ng8vg"]
@@ -188,6 +190,18 @@ size = Vector2(20, 1800)
 [sub_resource type="RectangleShape2D" id="PlayerScreenWallShape"]
 size = Vector2(8, 4000)
 
+[sub_resource type="AtlasTexture" id="Front_region1"]
+atlas = ExtResource("4_wpq4p")
+region = Rect2(0, 0, 3310, 978)
+
+[sub_resource type="AtlasTexture" id="Front_region2"]
+atlas = ExtResource("Front_page2")
+region = Rect2(8, 0, 3310, 978)
+
+[sub_resource type="AtlasTexture" id="Front_region3"]
+atlas = ExtResource("Front_page3")
+region = Rect2(8, 0, 3310, 978)
+
 [node name="Level_3" type="Node2D" unique_id=1550976978 node_paths=PackedStringArray("_spawnPoints", "_triggers", "_gates", "_spawner", "_camera", "_exit", "_floatingText")]
 script = ExtResource("1_xmcxy")
 _musicId = 1002
@@ -218,7 +232,18 @@ centered = false
 
 [node name="Front" type="Sprite2D" parent="World/Background" unique_id=225948518]
 position = Vector2(-30, 144)
-texture = ExtResource("4_wpq4p")
+scale = Vector2(0.5, 0.5)
+texture = SubResource("Front_region1")
+centered = false
+
+[node name="Page2" type="Sprite2D" parent="World/Background/Front"]
+position = Vector2(3310, 0)
+texture = SubResource("Front_region2")
+centered = false
+
+[node name="Page3" type="Sprite2D" parent="World/Background/Front"]
+position = Vector2(6620, 0)
+texture = SubResource("Front_region3")
 centered = false
 
 [node name="Geometry" type="Node2D" parent="World" unique_id=930087367]
