@@ -135,19 +135,21 @@ script = ExtResource("item")
 _pickupId = 1
 _inventoryIcon = ExtResource("icon_8")
 _groundIcon = ExtResource("icon_8")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="item_9"]
 script = ExtResource("item")
 _pickupId = 2
 _inventoryIcon = ExtResource("icon_9")
 _groundIcon = ExtResource("icon_9")
-_groundScale = Vector2(0.9, 0.9)
+_groundScale = Vector2(0.45, 0.45)
 
 [sub_resource type="Resource" id="item_10"]
 script = ExtResource("item")
 _pickupId = 3
 _inventoryIcon = ExtResource("icon_10")
 _groundIcon = ExtResource("icon_10")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="Resource_nffhv"]
 script = ExtResource("item")

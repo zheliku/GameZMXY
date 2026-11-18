@@ -1,5 +1,47 @@
 # 素材来源与复现
 
+## 在用飘字的原覆盖重建与接入（2026-11-18）
+
+像素来源仍是下文确认的OtherMat_v9和迁入PNG。用原始透明外形固定每格位置，把样本拆成透明、黑描边、白描边、原色扫描行渐变的覆盖比例。橙伤、紫伤、回血和旧英雄物理红色可相互佐证轮廓；对齐时仅分析紫字的1px偏移，输出恢复原坐标。各格独立恢复，不让相邻格贡献像素，不换字体或绘制新图。旧原件通过散列对应当前Git基线，另保存在`.godot/validation/art_numbers_coverage_20261118/before/`，复算脚本为`recover.py`，逐字校验和候选散列在`coverage_metrics.json`。
+
+| 正式原路径（`TheGame/Sprites/Number/`） | 源尺寸→接入尺寸 | 逻辑每格 |
+| --- | --- | --- |
+| `damage_number_monster_physics.png`、`damage_number_hero_magic.png` | 300×30→1800×180 | 30×30，十格 |
+| `damage_number_monster_physics_crit.png` | 420×42→2520×252 | 42×42，十格 |
+| `recovery_number_health.png` | 300×30→600×60 | 30×30，十格 |
+| `recovery_number_mana.png` | 330×34→660×68 | 33×34，十格 |
+| `damage_number_miss.png` | 55×24→110×48 | 55×24，单图 |
+
+[伤害十格逐字对照](../Godot/GodotProject/.godot/validation/art_numbers_coverage_20261118/all_damage_comparison.png)和[恢复/MISS逐字对照](../Godot/GodotProject/.godot/validation/art_numbers_coverage_20261118/all_recovery_comparison.png)保留原色与原逻辑尺寸。重建保住每个原像素的覆盖和颜色能量，源格以内的边缘形状由邻域约束，和原栅格相比允许抗锯齿变化；这不是官方原矢量。四张正式未引用的旧伤害样式不变。
+
+## 伤害、恢复数字与MISS整类溯源（2026-11-18）
+
+现用图以`TheGame/Entitys/Effects/floating_text.tscn`的6个贴图引用为准。旧`Art/AllNumber/`原件和OtherMat_v9（恢复后SHA-256 `fa7681aad99fb06f50228530b7f70f6334a1d7052a7bb6ef2ce3c3d81867fd5e`）的SymbolClass、FFDec原位图与正式文件逐字核对。原件和精确alpha框、ID、散列在`.godot/validation/art_numbers_resume_20261118/before/`及`category_catalog.json`。
+
+| 当前样式 | 原源与原格 | 可见像素结论 |
+| --- | --- | --- |
+| 怪物普伤、英雄受击、回血 | `hurtnum` 122/110/107/104/102/100/98/96/94/92；`pnum` 75～66；`bunum` 86～77，均30×30 | 30字逐字可见RGBA全等；回血也与旧`cure`全等。 |
+| 红色暴击 | `bnum` 136～127，42×42 | 10字逐字可见RGBA全等。 |
+| 蓝色回魔 | 现用旧`CureMp/CureMp_0..9.png`，33×34 | 与旧原件全等。OtherMat_v9 `bulnum` 121/109/106/103/101/99/97/95/93/91原格30×30，在项目是旧`damage_number_monster_magic.png`，像素全等，但与现用蓝色回魔渐变、轮廓及注册均不同。 |
+| 闪避 | `miss` ID 76，55×24 | 与现用PNG有97个像素差，最大2/255；保留迁入原件。 |
+| 旧英雄物理、旧怪物魔法、旧怪物魔法暴击、旧真实伤害 | `Tools/LegacyMigration/gen_damage_numbers.gd`对应四组旧PNG，30×30或32×32 | 四套均逐字可见RGBA全等；正式飘字场景未引用，原件继续保存。 |
+
+连击`num0..9`各是有位图的sprite，底图98×98，字形与此批完全不同，见[连击与暴击形状](../Godot/GodotProject/.godot/validation/art_numbers_resume_20261118/source_combo_vs_crit.png)。试用同包42×42的`bnum`给其他颜色找高密度轮廓，即使按可见框重新匹配，彩色笔画掩膜交并比也只有约0.68～0.92；不借用异形或异色内容。第一轮只作原格约束试验，未替换十张正式图片；第二轮沿原源覆盖重建并接入见本页顶部。
+
+## 装备图标查源与地面恢复品2倍接入（2026-11-18）
+
+沿用`OtherMat_v9.swf`恢复版（SHA-256 `fa7681aad99fb06f50228530b7f70f6334a1d7052a7bb6ef2ce3c3d81867fd5e`）和现有装备导出工具。正式以`1acfbd79`为基线；原PNG、登记资源和逐项源ID及散列在`.godot/validation/art_items_resume_20261118/before/`与`category_catalog.json`。旧候选只在原件和导出像素匹配后复用。
+
+| 正式资源 | 原源 | 当前结果 |
+| --- | --- | --- |
+| `pickup_small_peach.png`、`pickup_large_peach.png` | shape274（BigHP中的同一桃子）。项目原小恢复品本来就与大恢复品同桃子图；源SmallHP中的胡萝卜不用于当前小桃子。 | 48×45→96×90，两种显示尺寸继续由缩放0.35/0.45区分。只导同形状，不带源容器阴影。 |
+| `pickup_mana_bottle.png` | shape280（蓝瓶） | 48×44→96×88，缩放0.35；原色及右侧透明留白保持。 |
+| `equipment_*.png`、`ground_*.png`共76张 | 对应背包/地面均为位图；透明前景源72个52×54、4个52×55（背包/地面分用途计数）。 | 当前正式图按原导出约定采用地面透明前景，粗糙/普通背包图另有既有图标处理，可见RGBA全部匹配。保留原件。 |
+
+恢复品两shape无位图/滤镜依赖，原舞台对齐后重导，不逐图裁紧。原密度导出与旧栅格仍有抗锯齿差异，可见RGBA平均绝对差为1.02～1.08/255；2倍归一alpha总量差0.53%～0.72%，密度折回同一源画布的透明度质心偏差小于0.031像素。`GroundItemNode.Show`仍以可见底边贴地；末行采样变化产生至多0.45逻辑像素的透明画布纵向调整。原显示大小、命中和领取时间轨保持。复现用上次`art_items_numbers_20261117`中的`prepare_consumables.py`、`render_consumables.py`形状导出证据，本轮`prepare.py`核对后仅接入三张恢复品。
+
+复用同一原图散列的粗糙行者棍位图实验：SwinIR 2倍回采样可见RGB MAE为19.77/255（普通插值1.12/255），约束后回采样误差可降至0.82/255，仍无证据说明新增细纹来自原图。另核对普通/精良行者服及地煞戒指，同尺寸插值只增加采样，未见更高精度的同内容来源。对照留在本轮忽略验证目录，未替换装备位图。
+
 ## UI按钮、头像、背包与无双演出（2026-11-18）
 
 以013d5f85当前正式UI为准，旧候选只在原件或源证据散列匹配后复用。12张原矢量图从旧候选逐字节复用，一律替换到原路径，现有导入UID保持；没有以旧场景覆盖当前项目。逐图来源、当前散列和受限项在`.godot/validation/art_ui_resume_20261118/installation.json`及`category_catalog_final.json`。
@@ -763,9 +805,9 @@ BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7ce
 
 ## 装备与地面恢复品
 
-`Tools/LegacyMigration/import_equipment_assets.py` 逐字节复制旧项目 `Art/ItemIcon/peach.png` 为 `Sprites/Items/consumables/pickup_small_peach.png` 与 `pickup_large_peach.png`（大桃子通过显示比例区分），`Bble.png` 为 `pickup_mana_bottle.png`。
+早期由`Tools/LegacyMigration/import_equipment_assets.py`复制旧项目 `Art/ItemIcon/peach.png` 和`Bble.png`，现在两桃与蓝瓶已按本页顶部的原矢量方案接入。
 
-旧工程的粗糙装备图标缺失，曾暂用普通图；现已删除这组临时替代图。目前登记的十五件装备图片均直接导出自官方 [OtherMat_v9.swf](https://sbai.4399.com/4399swf/upload_swf/ftp5/hanbao/20110624/3/OtherMat_v9.swf)，恢复后 SHA-256 见 OfficialReference。原背包位图带黑色底板；按用户要求，背包和地面现在均使用对应的透明前景位图，保留原始 alpha，未重绘或调色。
+旧工程的粗糙装备图标缺失，曾暂用普通图；现已删除这组临时替代图。当前38件装备的图标来源均为官方 [OtherMat_v9.swf](https://sbai.4399.com/4399swf/upload_swf/ftp5/hanbao/20110624/3/OtherMat_v9.swf)，恢复后 SHA-256 见 OfficialReference。原背包位图带黑色底板；按用户要求，背包和地面均使用对应的透明前景位图，粗糙/普通背包图沿用既有图标处理，未重绘装备。
 
 | 装备 | 背包位图 ID | 地面位图 ID | TheGame/Sprites/Items/equipment 文件名后缀 |
 | --- | ---: | ---: | --- |
@@ -833,8 +875,8 @@ BOSS 导出校验恢复后的 Monster_v1 SHA-256 为 `5bd88da4211870f2ca2354b7ce
 
 | 新资源 | 来源 | 处理 |
 | --- | --- | --- |
-| `Sprites/Number/recovery_number_health.png` | 旧 `Art/AllNumber/cure/cure_0..9.png` | 原位图横向拼接，绿色恢复生命数字 |
-| `Sprites/Number/recovery_number_mana.png` | 旧 `Art/AllNumber/CureMp/CureMp_0..9.png` | 原位图横向拼接，蓝色恢复魔法数字 |
+| `Sprites/Number/recovery_number_health.png` | 旧 `Art/AllNumber/cure/cure_0..9.png`，与OtherMat_v9 `bunum0..9`可见RGBA全等 | 原位图横向拼接，绿色恢复生命数字 |
+| `Sprites/Number/recovery_number_mana.png` | 旧 `Art/AllNumber/CureMp/CureMp_0..9.png`，33×34/格 | 蓝色恢复魔法数字，保留现用版；与更小的官方`bulnum`区别见本页顶部 |
 | `Sprites/UI/inventory/inventory_actions_background.png` | 造梦三 `Commonv3720.swf`，shape 369 | 87×115 菜单底板 |
 | `inventory_action_equip.png` / `inventory_action_equip_disabled.png` | 同包 sprite 376，第 1/2 帧 | 77×31 装备按钮 |
 | `inventory_action_gift_disabled.png` | 同包 sprite 367，第 2 帧 | 单人赠送禁用 |

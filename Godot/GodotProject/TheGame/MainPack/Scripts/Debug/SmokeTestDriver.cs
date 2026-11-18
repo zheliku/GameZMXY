@@ -748,9 +748,10 @@ public partial class SmokeTestDriver : Node
             failures.Add($"待机时特效动画应为 empty，实际 {effect.Animation}");
         }
 
-        if (!effect.Scale.IsEqualApprox(Vector2.One))
+        // 悟空特效图集以 2 倍密度导入，RESET 的 0.5 缩放保持原逻辑尺寸。
+        if (!effect.Scale.IsEqualApprox(Vector2.One * .5f))
         {
-            failures.Add($"待机时特效 scale 应为 (1,1)，实际 {effect.Scale}");
+            failures.Add($"待机时特效 scale 应为 (0.5,0.5)，实际 {effect.Scale}");
         }
 
         if (effect.Frame != 0)

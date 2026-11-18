@@ -16,6 +16,8 @@ _enemyCritical = ExtResource("3_mpc")
 _heroDamage = ExtResource("7_hm")
 _health = ExtResource("health")
 _mana = ExtResource("mana")
+_damageDensity = 6
+_recoveryDensity = 2
 _miss = NodePath("m_Content/m_Miss")
 _content = NodePath("m_Content")
 
@@ -23,4 +25,5 @@ _content = NodePath("m_Content")
 
 [node name="m_Miss" type="Sprite2D" parent="m_Content" unique_id=1112531652]
 visible = false
+scale = Vector2(0.5, 0.5)
 texture = ExtResource("9_miss")

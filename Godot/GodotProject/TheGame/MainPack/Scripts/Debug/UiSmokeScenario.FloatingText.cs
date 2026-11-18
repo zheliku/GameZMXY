@@ -14,6 +14,8 @@ using GodotGameFramework;
 /// </summary>
 public sealed partial class UiSmokeScenario
 {
+    private readonly Dictionary<Texture2D, Rect2I[]> _floatingGlyphBounds = new(); // 同组专项用例共用独立读取的裁格。
+
     /// <summary>
     /// 验证被动挂树、样式、暂停、自然结束、场景隔离、延迟事件与节点复用。
     /// </summary>
@@ -253,19 +255,31 @@ public sealed partial class UiSmokeScenario
     {
         Sprite2D[] digits = SmokeInspection.ReadField<Sprite2D[]>(node, "_digits").Where(x => x.Visible).ToArray();
         Check(digits.Length == expectedCount, "数字字距检查的数位数量错误");
-        using Image image = digits[0].Texture.GetImage();
-        if (image.IsCompressed())
+        Texture2D sheet = digits[0].Texture;
+        int density = SmokeInspection.ReadField<int>(node, centered ? "_damageDensity" : "_recoveryDensity");
+        float pixelScale = 1f / density;
+        int cellWidth = sheet.GetWidth() / 10;
+        if (!_floatingGlyphBounds.TryGetValue(sheet, out Rect2I[] glyphBounds))
         {
-            image.Decompress();
+            using Image image = sheet.GetImage();
+            if (image.IsCompressed())
+            {
+                image.Decompress();
+            }
+
+            glyphBounds = new Rect2I[10];
+            for (int number = 0; number < glyphBounds.Length; number++)
+            {
+                using Image glyph = image.GetRegion(new Rect2I(number * cellWidth, 0, cellWidth, image.GetHeight()));
+                Rect2I visible = glyph.GetUsedRect();
+                int left = Mathf.FloorToInt(visible.Position.X / (float)density);
+                int right = Mathf.CeilToInt(visible.End.X / (float)density);
+                glyphBounds[number] = new Rect2I(left, 0, right - left, image.GetHeight() / density);
+            }
+            _floatingGlyphBounds.Add(sheet, glyphBounds);
         }
 
-        int cellWidth = image.GetWidth() / 10;
-        int widest = 0;
-        for (int number = 0; number < 10; number++)
-        {
-            using Image glyph = image.GetRegion(new Rect2I(number * cellWidth, 0, cellWidth, image.GetHeight()));
-            widest = Math.Max(widest, glyph.GetUsedRect().Size.X);
-        }
+        int widest = glyphBounds.Max(bounds => bounds.Size.X);
         float firstLeft = 0;
         float previousRight = 0;
         for (int i = 0; i < digits.Length; i++)
@@ -273,22 +287,24 @@ public sealed partial class UiSmokeScenario
             Sprite2D digit = digits[i];
             Rect2 region = digit.RegionRect;
             int number = (int)region.Position.X / cellWidth;
-            using Image original = image.GetRegion(new Rect2I(number * cellWidth, 0, cellWidth, image.GetHeight()));
-            Rect2I bounds = original.GetUsedRect();
-            Check(region.Position.X == number * cellWidth + bounds.Position.X && region.Size.X == bounds.Size.X &&
-                region.Position.Y == 0 && region.Size.Y == image.GetHeight(), "数字裁切丢失描边或改变纵向注册位置");
-            float left = digit.Position.X - (digit.Centered ? region.Size.X * .5f : 0);
+            Rect2I bounds = glyphBounds[number];
+            Check(digit.Scale.IsEqualApprox(Vector2.One * pixelScale) &&
+                region.Position.X == number * cellWidth + bounds.Position.X * density &&
+                region.Size.X == bounds.Size.X * density && region.Position.Y == 0 && region.Size.Y == bounds.Size.Y * density,
+                "数字裁切丢失描边或改变逻辑注册位置");
+            float width = region.Size.X * pixelScale;
+            float left = digit.Position.X - (digit.Centered ? width * .5f : 0);
             if (i == 0)
             {
                 firstLeft = left;
             }
             else
             {
-                float expectedGap = (2 * widest - digits[i - 1].RegionRect.Size.X - region.Size.X) / 6f;
+                float expectedGap = (2 * widest - digits[i - 1].RegionRect.Size.X * pixelScale - width) / 6f;
                 Check(Math.Abs(left - previousRight - expectedGap) < .001,
                     $"数字侧留白错误：实际 {left - previousRight:F4}px，应为 {expectedGap:F4}px");
             }
-            previousRight = left + region.Size.X;
+            previousRight = left + width;
         }
         Check(Math.Abs(centered ? firstLeft + previousRight : firstLeft) < .001, "数字整串居中或左对齐错误");
     }

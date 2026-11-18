@@ -457,7 +457,7 @@ BaseMonster按攻击者Role1/Role2分别播放BeattackByRole1/BeattackByRole2，
 
 `BaseObject.addCureMc → ANumber.aNumImage`：生命使用绿色 bunum，魔法使用蓝色 bulnum，从领取时英雄坐标 `(-20,-60)` 偏移处显示，数字原点固定步长 20px；每 40ms 上移 3px，共 25 次，无缩放弹出或淡出。原版显示配置恢复量，即使生命/魔法已满仍显示，不改为钳制后的差值。项目保留恢复量、偏移及一秒上移 75px，暂停停止；按用户 2026-10-14 要求，改为按每个字符实际可见宽度排布，并按窄字与该样式最宽字的宽度差补充侧留白，宽字保持紧凑、窄字适度松开，避免等步长造成窄字符周围空隙过大。该字距调整区别于原版固定步长。
 
-伤害数字按官方接收方样式选择：怪物普通受伤统一使用 `hurtnum` 橙色图集，怪物暴击使用 `bnum` 红色图集，英雄受伤统一使用 `pnum` 紫色图集；物理、魔法和真实伤害不再各自选择一套颜色。蓝色仅保留给魔法恢复 `bulnum`，绿色保留给生命恢复 `bunum`。当前文件名 `damage_number_monster_physics.png`、`damage_number_hero_magic.png` 是迁入时的兼容名称，像素内容分别对应 `hurtnum` 和 `pnum`。
+伤害数字按官方接收方样式选择：怪物普通受伤统一使用 `hurtnum` 橙色图集，怪物暴击使用 `bnum` 红色图集，英雄受伤统一使用 `pnum` 紫色图集；物理、魔法和真实伤害不再各自选择一套颜色。官方蓝色恢复用 `bulnum`，绿色恢复用 `bunum`。项目当前同样将蓝、绿留给回魔和回血；绿色逐字与 `bunum` 像素相同，蓝色视觉沿用旧项目的33×34 `CureMp`，不等于30×30的 `bulnum`（逐字核对见 [LegacyAssetMap](LegacyAssetMap.md)）。当前文件名 `damage_number_monster_physics.png`、`damage_number_hero_magic.png` 是迁入时的兼容名称，像素内容分别对应 `hurtnum` 和 `pnum`。
 
 `FallEquipObj.as` 与 `SmallHP.as` 在成功领取后执行 0.8 秒 TweenMax：Y 减 100、alpha 降至 0，完成才移除；默认二次缓出。项目接触时只入账一次，随后仅推进外置领取动画；满包保持原地，暂停停止动画，关卡退出统一回池。
 

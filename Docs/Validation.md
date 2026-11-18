@@ -1,6 +1,111 @@
 # 验证
 
-## UI整类与无双共享图层（2026-11-18，本批交审）
+## 正式飘字覆盖恢复与1080p接入（2026-11-18，本批交审）
+
+六张在用PNG替换在原路径，三张伤害6倍、回血/回魔/MISS 2倍，共50个数字格与1张词图。原件保留Git与`.godot/validation/art_numbers_coverage_20261118/before/`。只有飘字场景皮肤设置、按密度换算字图的裁框/宽度和旧烟测配套有代码差异；共享纹理只读取一次，无新运行节点。上批物品暂存补丁保持，其他美术、显示设置、玩法不变。
+
+| 检查 | 实际结果 |
+| --- | --- |
+| 像素与轮廓 | 51项分格检验：新图面积下采样回原格，预乘RGBA最大差约0.5/255；源透明格与非透明支撑区一致，50%外轮廓拓扑检查一致，逐字透明度质心偏移小于0.0024逻辑px。原笔画和颜色边界仍有亚像素抗锯齿差，不能反推唯一原高分辨率图。40个已知原字降2倍再恢复的对照，按样式平均预乘MAE为4.51～5.09/255，双线性为22.44～25.12/255。 |
+| 原生绘制 | `art_numbers_coverage_final_1920/2400/2520_20261118`均退出0，stderr为空。9张原生1080高对照；501组穷举旧/新布局，三个比例共1606个绘制裁框保持，验证C#裁格、基线、比例字距、恢复左起和伤害居中，截图验证开始、脉冲峰值、上移/淡出。 |
+| 真实1920×1080 | `art_numbers_coverage_floating_1920_20261118`、`art_numbers_coverage_pickup_1920_20261118`均`SMOKE PASS`，保留9种调用×100组比例字距、拾取入账、暂停及跨样式回池。`art_numbers_coverage_combat_1920_20261118`截到实际命中2倍脉冲，验证当帧纹理1800×180、子图缩放1/6；5次命中、同屏飘字峰值2、38次状态切换，`SMOKE PASS`。此前失败的是待机特效烟测仍期望1，已按既有Wukong RESET的0.5密度修正测试。 |
+| 构建/引用 | `dotnet build` 0错、5条既有弃用警告；Profile/Battle/Level分别339/197/19项全过。Godot重导入六图与编辑器重扫退出0、stderr为空；引用2315路径/392 UID通过。最大边2520，六图按无mipmap RGBA8约5.22MiB，手机比例为桌面预览，Android设备驻留和输入未测。 |
+| 进程诊断 | 拾取和飘字专项各有预期NodePool类型错误注入；关停分别150/10和5/1（ObjectDB/资源），拾取另有RID诊断。带截图入口的战斗总烟测在进入流程前有4次测试前端AdvanceToLevel空引用，之后通过全部断言并退出0，关停8/1。另跑不带截帧脚本、用驱动自行退出的`art_numbers_coverage_combat_standard_20261118`：38次状态切换断言通过；退出发生`0xC0000005`，堆栈为Godot原生数组终结器，不计该进程通过。两类日志均保留，未改框架及前端启动。 |
+
+[1080p原图／双线性／正式成品](../Godot/GodotProject/.godot/validation/art_numbers_coverage_20261118/native_1920_peak.png) · [20:9原生对照](../Godot/GodotProject/.godot/validation/art_numbers_coverage_20261118/native_2400_idle.png) · [21:9淡出](../Godot/GodotProject/.godot/validation/art_numbers_coverage_20261118/native_2520_tail.png) · [实际战斗](../Godot/GodotProject/.godot/validation/art_numbers_coverage_20261118/live_damage_1920.png) · [实际回血与回魔](../Godot/GodotProject/.godot/validation/art_numbers_coverage_20261118/live_recovery_1920.png)。
+
+从仓库根复现：
+
+```powershell
+$v = 'Godot/GodotProject/.godot/validation'
+$batch = "$v/art_numbers_coverage_20261118"
+$runner = "$v/movement_presets/run_godot.py"
+python "$batch/recover.py"
+dotnet build Godot/GodotProject/GodotProject.csproj --no-restore -v quiet
+python $runner art_numbers_coverage_import_20261118 --headless --editor --import --quit
+python $runner art_numbers_coverage_editor_scan_20261118 --headless --editor --build-solutions --quit --no-window
+foreach ($width in 1920, 2400, 2520) {
+    python $runner "art_numbers_coverage_final_${width}_20261118" --rendering-method gl_compatibility --audio-driver Dummy --resolution 640x384 --quit-after 240 --script res://.godot/validation/art_numbers_coverage_20261118/preview_installed.gd -- $width
+}
+python $runner art_numbers_coverage_floating_1920_20261118 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=ui --floating-only
+python $runner art_numbers_coverage_pickup_1920_20261118 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=ui --equipment-only
+python $runner art_numbers_coverage_combat_1920_20261118 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 --script res://.godot/validation/art_numbers_coverage_20261118/live_damage.gd -- --smoketest
+# 标准战斗入口退出诊断另有记录。
+python $runner art_numbers_coverage_combat_standard_20261118 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest
+foreach ($name in 'Profile', 'Battle', 'Level') { dotnet test "Tests/${name}Tests/${name}Tests.csproj" --no-restore -v quiet }
+python Tools/ProjectMaintenance/validate_game_references.py
+git diff --check
+```
+
+## 伤害、恢复数字与MISS整类首轮查源（2026-11-18，历史，未替换）
+
+已核对10张图集和正式场景的6个贴图引用、4个旧样式；零正式图片替换。与开工基线相比本批仅六份文档变化，上批已暂存的补丁、全部正式PNG/导入/UID/场景及脚本保持。清单168/673完整、430来源/保真受限（含75部分）、75其他待处理，配套78/183。原件、候选、统计和截图保存在`.godot/validation/art_numbers_resume_20261118/`。
+
+| 检查 | 实际结果 |
+| --- | --- |
+| 查源/分格 | 90个数字格及MISS逐一核对；橙伤害、红暴击、紫受击、绿回血40格逐字与OtherMat_v9可见RGBA全等；MISS 97像素、最大2/255差。当前蓝色回魔和旧样式与其旧PNG全等；原包98×98连击图非同一字形，原包30×30回魔图与当前33×34/格颜色/轮廓不同。 |
+| 1080高实际像素 | 30px普通字的画幅在1倍约55屏幕像素、2倍脉冲约110；42px红暴击画幅3倍峰值约231，实际可见字高34～35源像素、187～192屏幕像素。即使2倍候选也只有84源像素覆盖该峰值；未改放大曲线。 |
+| 位图试验 | 按原格在预乘RGBA上做普通双线性与原像素约束候选，钳至原可见范围，深浅底均检查。候选相对普通插值回采样MAE由8.42～10.12降到3.52～4.75/255（按风格平均），深浅底单字99分位误差仍约20～21/255。40个退化再恢复的已知参考对照，候选仍有16.27～19.01/255平均差。峰值描边变利但未证实恢复原细节，不接入。 |
+| 三比例原生渲染 | 三例`art_numbers_resume_native_1920/2400/2520_20261118`退出0、stderr为空。调用正式节点的C#布局和秒制采样；同逻辑尺寸对照0时刻、2/3倍峰值、上升/淡出，共117个正式场景实例、315个绘制矩形位置检查、9张1080高截图。候选只在隔离夹具换贴图，未改生产代码或视口。 |
+| 实际1080p专项 | `art_numbers_resume_floating_1920_20261118`、`art_numbers_resume_pickup_1920_20261118`均退出0/SMOKE PASS。前者覆盖9种调用组合各100组的字距、纵向注册、脉冲、暂停、作用域隔离、回池；后者通过关卡实际拾取/恢复入账、上升与回收，保存回血和回魔截图。第一次专项的强制绘制截图未显示临时飘字，视觉以本表真实事件截帧与三比例原生对照为准。 |
+| 战斗实际截帧及旧断言 | `art_numbers_resume_combat_1920_20261118`普通攻击接近2倍时截到实际伤害，4次命中、累计50伤害、同屏飘字峰值2。战斗总烟测退出1：原`SmokeTestDriver`待机特效断言要求scale=1，现用特效是此前的0.5密度补偿。该问题不属于本批飘字，未修改断言或生产图。 |
+| 引用与关停 | 项目引用2315路径/392UID、`git diff --check`通过。两项专项有预期NodePool类型故障注入；关停飘字专项5个ObjectDB/1个资源、拾取专项173/20另有Canvas/纹理/字体RID，战斗整体验证为8/1。没有把关停诊断或整体失败当作通过；手机仅桌面原生比例预览。 |
+
+画面：[1920×1080脉冲峰值对照](../Godot/GodotProject/.godot/validation/art_numbers_resume_20261118/native_1920_peak.png)、[20:9原尺寸对照](../Godot/GodotProject/.godot/validation/art_numbers_resume_20261118/native_2400_idle.png)、[21:9上升与淡出](../Godot/GodotProject/.godot/validation/art_numbers_resume_20261118/native_2520_tail.png)、[实际伤害](../Godot/GodotProject/.godot/validation/art_numbers_resume_20261118/live_damage_1920.png)、[实际回血和回魔](../Godot/GodotProject/.godot/validation/art_numbers_resume_20261118/live_recovery_1920.png)。
+
+从仓库根复现（飘字与实跑证据由runner隔离存档）：
+
+```powershell
+$v = 'Godot/GodotProject/.godot/validation'
+$batch = "$v/art_numbers_resume_20261118"
+$runner = "$v/movement_presets/run_godot.py"
+python "$batch/audit_numbers.py"
+python "$batch/restore_numbers.py"
+foreach ($width in 1920, 2400, 2520) {
+    python $runner "art_numbers_resume_native_${width}_20261118" --rendering-method gl_compatibility --audio-driver Dummy --resolution 640x384 --quit-after 240 --script res://.godot/validation/art_numbers_resume_20261118/preview.gd -- $width
+}
+python $runner art_numbers_resume_floating_1920_20261118 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=ui --floating-only
+python $runner art_numbers_resume_pickup_1920_20261118 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=ui --equipment-only
+python $runner art_numbers_resume_combat_1920_20261118 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 --script res://.godot/validation/art_numbers_resume_20261118/live_damage.gd -- --smoketest
+python Tools/ProjectMaintenance/validate_game_references.py
+git diff --check
+```
+
+## 装备、消耗品与地面图标整类（2026-11-18，已获认可）
+
+三张恢复品在正式原路径生效：大小桃`48×45→96×90`，蓝瓶`48×44→96×88`。仅调整三个`_groundScale`值补偿密度；按1080/590显示比例，源像素约为屏幕像素的1.21～1.56倍。76张装备PNG不改，因源/保真受限仍不计入高清。无生产C#、碰撞、场景、图集或显示设定改动。Git基线`1acfbd79`，原件和运行证据在`.godot/validation/art_items_resume_20261118/`。
+
+| 检查 | 实际结果 |
+| --- | --- |
+| 查源/原件 | 79项逐项登记；76张装备图与官方位图和已存在的背包图标处理可见RGBA全等。三张恢复品来自shape274/280；2倍归一alpha总量差0.53%～0.72%，同画布质心偏差小于0.031源逻辑像素。理论RGBA8总量0.098 MiB。 |
+| 三比例渲染 | `art_items_resume_native_1920/2400/2520_20261118`各77项、6个领取时刻图，共231项/18张，均退出0、stderr空。41项身份、引用及尺度，原画布横向定位与原逻辑显示尺寸、碰撞及可见底边贴地一致。透明末行采样变化引起画布纵向偏移0.35/0.45逻辑像素，贴地点相同。 |
+| 真实关卡 | `art_items_resume_equipment_20261118`实际1920×1080，退出0、`SMOKE PASS`。3种恢复品及38件装备落地与不透明底边、恢复入账、0.8秒上移淡出、暂停、满包、过期、回池，以及悟空15件装备的实际跨页穿卸/战斗与背包预览通过。存档使用runner隔离目录。 |
+| 离线装备审计 | 38身份/38外观记录，悟空含基础身体与武器17个绑定、两层各86个引用格；按现有密度检查六列400源像素格。声明1倍却用2倍图的17个绑定和不支持的密度3均正确拒绝；测试未改正式图集。 |
+| 导入/引用/Git | Godot导入退出0、stderr空；引用2315路径、392 UID通过；`git diff --check`通过。最终与4194个基线文件对比，仅三张PNG、一份外观登记、一份离线工具及五份文档变动，索引、原`.import`和其余文件保持。清单168/673、配套78/183。 |
+| 烟测诊断 | NodePool类型不符来自测试故意注入。关停仍输出38个CanvasItem RID、24个Texture/8个ShapedText/2个Font RID、175个ObjectDB和18个占用资源；24条GL纹理释放诊断见stderr，与行为断言分别记录。 |
+
+[1920×1080同尺寸裁片对照](../Godot/GodotProject/.godot/validation/art_items_resume_20261118/comparison_1920_detail.png)、[2400×1080手机比例对照](../Godot/GodotProject/.godot/validation/art_items_resume_20261118/comparison_2400_detail.png)、[2520×1080手机比例对照](../Godot/GodotProject/.godot/validation/art_items_resume_20261118/comparison_2520_detail.png)、[实际关卡掉落截图](../Godot/GodotProject/.godot/validation/art_items_resume_20261118/live_ground_pickups_1920.png)、[实际拾取上移截图](../Godot/GodotProject/.godot/validation/art_items_resume_20261118/live_pickup_rising_1920.png)、[装备位图抽查](../Godot/GodotProject/.godot/validation/art_items_resume_20261118/equipment_bitmap_review.png)。掉落截图同时验证41种物品，有多件叠放；分件清晰度以同尺寸对照看。手机比例为桌面原生渲染，未测Android真机。
+
+在仓库根复现：
+
+```powershell
+$v = 'Godot/GodotProject/.godot/validation'
+$batch = "$v/art_items_resume_20261118"
+$runner = "$v/movement_presets/run_godot.py"
+python "$batch/prepare.py" --install
+python $runner art_items_resume_import_20261118 --headless --editor --import --quit
+foreach ($width in 1920, 2400, 2520) {
+    python $runner "art_items_resume_native_${width}_20261118" --rendering-method gl_compatibility --audio-driver Dummy --resolution 640x384 --quit-after 1200 --script res://.godot/validation/art_items_resume_20261118/preview.gd -- $width
+}
+python "$batch/make_review.py"
+python $runner art_items_resume_equipment_20261118 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 18000 -- --smoketest=ui --equipment-only
+python Tools/LegacyMigration/audit_equipment_appearances.py --repo . --output "$batch/equipment_audit.json"
+python "$batch/verify_audit_contract.py"
+python Tools/ProjectMaintenance/validate_game_references.py
+git diff --check
+```
+
+## UI整类与无双共享图层（2026-11-18，已获认可）
 
 当前正式12图原矢量2倍替换、48个无双时刻分层，新增1张共享图/导入文件和1份SpriteFrames；共用原生时钟，无生产C#、玩法、显示设置或原PNG导入/UID改动。逐项清单165/673、配套76/183。原版与证据保留在`.godot/validation/art_ui_resume_20261118/`。已审的地图去字与布局保留，地图及技能等低精度位图仍受源精度限制。
 

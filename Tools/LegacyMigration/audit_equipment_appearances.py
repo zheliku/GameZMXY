@@ -131,9 +131,10 @@ def _texture_report(project, resource_path):
 
 
 def _hero_atlas_bindings(project):
-    """Read the playable hero's independent body and weapon atlas bindings."""
+    """Read the playable hero's body/weapon atlas bindings and texture density."""
     path = project / "TheGame/Sprites/Characters/Heroes/wukong/wukong_appearance.tres"
     text = path.read_text(encoding="utf-8")
+    density = re.search(r"^_textureDensity = (.+)$", text, re.M)
     resources = {
         identifier: resource_path
         for resource_path, identifier in re.findall(
@@ -154,7 +155,7 @@ def _hero_atlas_bindings(project):
         )}
         entries[0] = resources[base[1]]
         bindings[kind] = entries
-    return bindings
+    return bindings, int(density[1]) if density else 1
 
 
 def _animation_frame_cells(project):
@@ -182,8 +183,11 @@ def _animation_frame_cells(project):
     return cells
 
 
-def _atlas_motion_report(project, bindings):
+def _atlas_motion_report(project, bindings, density):
     """Check every mapped atlas against the shared animation frame contract."""
+    if density not in (1, 2):
+        return [], [f"Wukong appearance has unsupported texture density {density}"]
+    pixel_cell_size = 200 * density
     cells = _animation_frame_cells(project)
     errors = []
     records = []
@@ -195,9 +199,10 @@ def _atlas_motion_report(project, bindings):
                 errors.append(f"Wukong {kind} EquipmentId {equipment_id}: {report['error']}")
                 continue
             width, height = report["size"]
-            if width % 200 or height % 200 or width // 200 != 6:
+            if width != 6 * pixel_cell_size or height % pixel_cell_size:
                 errors.append(
-                    f"Wukong {kind} EquipmentId {equipment_id}: atlas must be six 200px columns, got {width}x{height}"
+                    f"Wukong {kind} EquipmentId {equipment_id}: atlas must be six {pixel_cell_size}px columns, "
+                    f"got {width}x{height}"
                 )
                 continue
             loaded[equipment_id] = Image.open(project / resource_path.removeprefix("res://")).convert("RGBA")
@@ -205,8 +210,7 @@ def _atlas_motion_report(project, bindings):
         base = loaded.get(0)
         if base is None:
             continue
-        base_height = base.height // 200
-        max_cell = 6 * base_height
+        max_cell = 6 * (base.height // pixel_cell_size)
         for equipment_id, image in loaded.items():
             if image.size != base.size:
                 errors.append(
@@ -218,16 +222,22 @@ def _atlas_motion_report(project, bindings):
                 if cell < 0 or cell >= max_cell:
                     errors.append(f"Wukong {kind} EquipmentId {equipment_id}: animation references cell {cell} outside {max_cell}")
                     continue
-                x, y = (cell % 6) * 200, (cell // 6) * 200
-                actual_visible = image.crop((x, y, x + 200, y + 200)).getchannel("A").getbbox() is not None
-                base_visible = base.crop((x, y, x + 200, y + 200)).getchannel("A").getbbox() is not None
+                x, y = (cell % 6) * pixel_cell_size, (cell // 6) * pixel_cell_size
+                box = (x, y, x + pixel_cell_size, y + pixel_cell_size)
+                actual_visible = image.crop(box).getchannel("A").getbbox() is not None
+                base_visible = base.crop(box).getchannel("A").getbbox() is not None
                 if actual_visible != base_visible:
                     errors.append(
                         f"Wukong {kind} EquipmentId {equipment_id}: cell {cell} alpha coverage differs from base atlas"
                     )
             image.close()
         base.close()
-        records.append({"kind": kind, "equipment_ids": sorted(entries), "frame_count": len(cells[kind])})
+        records.append({
+            "kind": kind,
+            "equipment_ids": sorted(entries),
+            "frame_count": len(cells[kind]),
+            "pixel_cell_size": pixel_cell_size,
+        })
     return records, errors
 
 
@@ -256,8 +266,8 @@ def audit(args):
     config_dir = repo / "Configs/GameConfig/Datas"
     items = _equipment_rows(config_dir)
     appearances = _appearance_entries(project)
-    atlas_bindings = _hero_atlas_bindings(project)
-    atlas_motion, atlas_errors = _atlas_motion_report(project, atlas_bindings)
+    atlas_bindings, atlas_density = _hero_atlas_bindings(project)
+    atlas_motion, atlas_errors = _atlas_motion_report(project, atlas_bindings, atlas_density)
     item_ids = {item["id"] for item in items}
     errors = list(atlas_errors) + _wardrobe_binding_errors(items, atlas_bindings)
     records = []

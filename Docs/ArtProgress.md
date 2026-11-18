@@ -1,10 +1,10 @@
 # 美术资源任务清单
 
-更新时间：2026-11-17。本页持续维护逐项进度。**电脑美术主设计16:9，以1920×1080验收；手机主设计20:9，以2400×1080作预览参考，实际按设备像素输出。** 其他手机比例有限留边/裁切兼容；4K屏允许继续放大1080p标准，940×590玩法核心保持。
+更新时间：2026-11-18。本页持续维护逐项进度。**电脑美术主设计16:9，以1920×1080验收；手机主设计20:9，以2400×1080作预览参考，实际按设备像素输出。** 其他手机比例有限留边/裁切兼容；4K屏允许继续放大1080p标准，940×590玩法核心保持。
 
-**图像源文件：165 / 673 已完成制作、接入及必要验证。本批原矢量高清12图；双英雄无双48时刻人物部分提升，光束/字样仍用原密度。全库349项来源/保真受限（含75项部分提升）、159项其他待处理；配套76/183。上一批特效已审，本批UI待审。**
+**图像源文件：174 / 673 已完成制作、接入及必要验证。6张在用飘字图集已原路径增密，4张停用旧样式原件保存；本批待审。全库424项来源/保真受限（含75项部分提升）、75项其他待处理；配套78/183。**
 
-另列183份配套美术资源，其中76份已完成密度联动、时序核对或必要显示验证，不计入图片完成量。
+另列183份配套美术资源，其中78份已完成密度联动、时序核对或必要显示验证，不计入图片完成量。
 
 勾选含义：`[x]`表示该项对应的制作/接入/必要验证已完成；`[ ]`表示尚未完成。**完成实验、生成样稿或找到源文件，不等于素材高清通过；“等待用户审图”单独保留。** 原生SVG、字体和样式按1080p实际显示核对，需要时可保留原件，不强行栅格化或放大。
 
@@ -24,10 +24,18 @@
 
 ## 目前做了什么
 
+- [x] 伤害、恢复和MISS整类10图查源，6张在用按原覆盖重建并原路径接入；受击三图为6倍源像素，恢复与MISS为2倍。4张旧迁入样式不接入。
+- [x] 1920×1080首通实跑伤害与拾取；正式飘字专项900组、原图与接入版501组等逻辑注册对比通过。16:9、20:9、21:9原生输出9图。 [电脑峰值对照](../Godot/GodotProject/.godot/validation/art_numbers_coverage_20261118/native_1920_peak.png) · [手机20:9对照](../Godot/GodotProject/.godot/validation/art_numbers_coverage_20261118/native_2400_idle.png) · [实跑伤害](../Godot/GodotProject/.godot/validation/art_numbers_coverage_20261118/live_damage_1920.png)。
+- [ ] 本批画面审查；4张旧样式不勾高清，手机比例为桌面预览，Android真机与地形另验。
+
+- [x] 装备与消耗品79张逐项查源：3张恢复品从原矢量2倍重导并原路径接入，76张装备图标核对官方位图后保持原件。
+- [x] 3种恢复品与38件装备实际落地/贴地、拾取和回池，以及背包穿卸通过；三比例原生231项检查、18张图。审计工具正确检查悟空六列400源像素格，原逻辑格保持200。
+- [x] 上一批物品获认可；76张装备位图仍等同内容更高精度源或可证明保真的改善，Android真机尚未测。
+
 - [x] UI整类230项逐项复核候选、正式引用和源精度；12张矢量原路径2倍接入，新增1张共享光束图集，当前UI清单231项。
 - [x] 悟空/唐僧无双原各24帧人物源重导；共享原密度光束和原暗幕延伸两侧，保持原遮挡、原点、24fps和暂停恢复。
 - [x] 1920/2400/2520×1080合计5958项原生检查、138张图；实际1080p背包技能、悟空及唐僧无双专项通过。
-- [ ] 本批UI画面审查；地图/技能底图和无双字图等位图高清、Android真机继续未完成。
+- [x] 上一批UI画面已获认可；地图/技能底图和无双字图等位图高清、Android真机继续未完成。
 
 - [x] 独立特效189项查源；84图/333源时刻原路径接入，83纯矢量图完整高清、1混合图部分；104位图与1未确认源保持原图。
 - [x] 修正掉落球等高密度滤镜核/相位，保持原光晕和共同原点；最大新纹理2739，理论RGBA8约36.79MiB；原生三比例1998项/60图及五个实际专项通过。
@@ -192,11 +200,11 @@
 | [敌人、Boss及其图集](#art-images-06) | 66 | 12 | 39（含19项部分提升） | 15 |
 | [独立特效、掉落球、升级与演出](#art-images-07) | 189 | 83 | 105（含1项部分提升） | 1 |
 | [UI、头像、地图、技能面板与无双画面](#art-images-08) | 231 | 18 | 198（含55项部分提升） | 15 |
-| [装备、消耗品与地面图标](#art-images-09) | 79 | 0 | 1 | 78 |
-| [伤害、恢复数字与文字图集](#art-images-10) | 10 | 0 | 4 | 6 |
+| [装备、消耗品与地面图标](#art-images-09) | 79 | 3 | 76 | 0 |
+| [伤害、恢复数字与文字图集](#art-images-10) | 10 | 6 | 4 | 0 |
 | [关卡背景、地形、平台与前景](#art-images-11) | 37 | 0 | 2 | 35 |
 | [主题SVG、工程图标与其他图像](#art-images-12) | 5 | 0 | 0 | 5 |
-| **合计** | **673** | **165** | **349（含75项部分提升）** | **159** |
+| **合计** | **673** | **174** | **424（含75项部分提升）** | **75** |
 
 ## 全部图像文件（673项）
 
@@ -767,12 +775,12 @@
 - [ ] [combo_caption.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/combo_caption.png) — 224×80；已复核OtherMat_v9原位图/原生滤镜：330→329，333→332，340→337，328→306..326，567→565；原图保持；现有源像素或合成保真受限，正式原图保持。
 - [ ] [combo_digits.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/combo_digits.png) — 1600×3200；已复核OtherMat_v9原位图/原生滤镜：330→329，333→332，340→337，328→306..326，567→565；原图保持；现有源像素或合成保真受限，正式原图保持。
 - [ ] [hud_exp_fill.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/hud_exp_fill.png) — 144×12；已复核OtherMatv3570；现有源像素或合成保真受限，正式原图保持。
-- [x] [hud_head_tangseng.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/hud_head_tangseng.png) — 83×76 → 166×152；原矢量同造型头像固定原点2倍重导；83×76逻辑尺寸和P2镜像保持，1倍栅格采样有差，见Validation。已实际接入，待本批审查。
-- [x] [hud_head_wukong.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/hud_head_wukong.png) — 83×76 → 166×152；原矢量同造型头像固定原点2倍重导；83×76逻辑尺寸和P2镜像保持，1倍栅格采样有差，见Validation。已实际接入，待本批审查。
+- [x] [hud_head_tangseng.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/hud_head_tangseng.png) — 83×76 → 166×152；原矢量同造型头像固定原点2倍重导；83×76逻辑尺寸和P2镜像保持，1倍栅格采样有差，见Validation。已实际接入并获认可。
+- [x] [hud_head_wukong.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/hud_head_wukong.png) — 83×76 → 166×152；原矢量同造型头像固定原点2倍重导；83×76逻辑尺寸和P2镜像保持，1倍栅格采样有差，见Validation。已实际接入并获认可。
 - [ ] [hud_hp_fill.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/hud_hp_fill.png) — 144×12；已复核OtherMatv3570；现有源像素或合成保真受限，正式原图保持。
 - [ ] [hud_menu_panel.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/hud_menu_panel.png) — 169×133；已复核other3元件95.png；现有源像素或合成保真受限，正式原图保持。
 - [ ] [hud_mp_fill.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/hud_mp_fill.png) — 144×12；已复核OtherMatv3570；现有源像素或合成保真受限，正式原图保持。
-- [x] [hud_status_label.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/hud_status_label.png) — 17×46 → 34×92；OtherMat_v9 shape357原白字轮廓2倍重导；P1/P2镜像和逻辑位置保持。已实际接入，待本批审查。
+- [x] [hud_status_label.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/hud_status_label.png) — 17×46 → 34×92；OtherMat_v9 shape357原白字轮廓2倍重导；P1/P2镜像和逻辑位置保持。已实际接入并获认可。
 - [ ] [hud_status_panel.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/hud_status_panel.png) — 227×87；已复核other原位图297.png；现有源像素或合成保真受限，正式原图保持。
 - [ ] [hud_ws_frame.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/hud_ws_frame.png) — 260×22；已复核other原位图303.png；现有源像素或合成保真受限，正式原图保持。
 - [ ] [menu_inventory_caption.png](../Godot/GodotProject/TheGame/Sprites/UI/hud/menu_inventory_caption.png) — 30×17；已复核other3元件140.png；现有源像素或合成保真受限，正式原图保持。
@@ -856,11 +864,11 @@
 - [ ] [inventory_action_gift.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_action_gift.png) — 77×31；Common367第1帧为位图组合，1倍RGBA重现通过；来源受限，原图保持。
 - [ ] [inventory_action_gift_disabled.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_action_gift_disabled.png) — 77×31；Common367第2帧为位图组合，1倍RGBA重现通过；来源受限，未机械放大。
 - [ ] [inventory_action_sell.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_action_sell.png) — 77×31；Common381第1帧含位图依赖，1倍RGBA重现通过；来源受限，原图保持。
-- [x] [inventory_actions_background.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_actions_background.png) — 87×115 → 174×230；Commonv3720 shape369原矢量底板2倍重导；按钮及显示尺寸保持。已实际接入，待本批审查。
+- [x] [inventory_actions_background.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_actions_background.png) — 87×115 → 174×230；Commonv3720 shape369原矢量底板2倍重导；按钮及显示尺寸保持。已实际接入并获认可。
 - [ ] [inventory_attributes.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_attributes.png) — 325×170；已复核BackPackInterfacev1000 shape51；现有源像素或合成保真受限，正式原图保持。
 - [ ] [inventory_cell.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_cell.png) — 50×50；已复核common元件43.png；现有源像素或合成保真受限，正式原图保持。
-- [x] [inventory_exp_fill.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_exp_fill.png) — 241×18 → 482×36；backpack_v2 shape7原矢量2倍重导；原位置、原逻辑显示范围和经验进度保持。已实际接入，待本批审查。
-- [x] [inventory_exp_frame.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_exp_frame.png) — 213×20 → 426×40；backpack_v2 shape9原矢量2倍重导；原位置、原逻辑显示范围和经验进度保持。已实际接入，待本批审查。
+- [x] [inventory_exp_fill.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_exp_fill.png) — 241×18 → 482×36；backpack_v2 shape7原矢量2倍重导；原位置、原逻辑显示范围和经验进度保持。已实际接入并获认可。
+- [x] [inventory_exp_frame.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_exp_frame.png) — 213×20 → 426×40；backpack_v2 shape9原矢量2倍重导；原位置、原逻辑显示范围和经验进度保持。已实际接入并获认可。
 - [ ] [inventory_ink_frame.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_ink_frame.png) — 702×490；已复核backpack原位图2.png；现有源像素或合成保真受限，正式原图保持。
 - [ ] [inventory_level_badge.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_level_badge.png) — 83×59；已复核BackPackInterfacev1000 bitmap22；现有源像素或合成保真受限，正式原图保持。
 - [ ] [inventory_name_plate.png](../Godot/GodotProject/TheGame/Sprites/UI/inventory/inventory_name_plate.png) — 213×51；已查现有导出与旧图，尚未确认可保真提高细节的同内容源，正式原图保持。
@@ -913,13 +921,13 @@
 - [ ] [skill_water_clone_unlearned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_water_clone_unlearned.png) — 65×65；已复核OtherMat_v9，原技能导出器；1倍37图逐项可见RGBA全等；现有源像素或合成保真受限，正式原图保持。
 - [ ] [skill_water_demon_burst_learned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_water_demon_burst_learned.png) — 65×65；已复核OtherMat_v9，原技能导出器；1倍37图逐项可见RGBA全等；现有源像素或合成保真受限，正式原图保持。
 - [ ] [skill_water_demon_burst_unlearned.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skill_water_demon_burst_unlearned.png) — 65×65；已复核OtherMat_v9，原技能导出器；1倍37图逐项可见RGBA全等；现有源像素或合成保真受限，正式原图保持。
-- [x] [skills_active_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_active_hover.png) — 79×19 → 158×38；OtherMat_v9原技能按钮轮廓2倍重导；普通/悬停及命中范围保持。已实际接入，待本批审查。
-- [x] [skills_active_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_active_normal.png) — 79×19 → 158×38；OtherMat_v9原技能按钮轮廓2倍重导；普通/悬停及命中范围保持。已实际接入，待本批审查。
-- [x] [skills_back_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_back_hover.png) — 54×20 → 108×40；OtherMat_v9原技能按钮轮廓2倍重导；普通/悬停及命中范围保持。已实际接入，待本批审查。
-- [x] [skills_back_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_back_normal.png) — 54×20 → 108×40；OtherMat_v9原技能按钮轮廓2倍重导；普通/悬停及命中范围保持。已实际接入，待本批审查。
+- [x] [skills_active_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_active_hover.png) — 79×19 → 158×38；OtherMat_v9原技能按钮轮廓2倍重导；普通/悬停及命中范围保持。已实际接入并获认可。
+- [x] [skills_active_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_active_normal.png) — 79×19 → 158×38；OtherMat_v9原技能按钮轮廓2倍重导；普通/悬停及命中范围保持。已实际接入并获认可。
+- [x] [skills_back_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_back_hover.png) — 54×20 → 108×40；OtherMat_v9原技能按钮轮廓2倍重导；普通/悬停及命中范围保持。已实际接入并获认可。
+- [x] [skills_back_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_back_normal.png) — 54×20 → 108×40；OtherMat_v9原技能按钮轮廓2倍重导；普通/悬停及命中范围保持。已实际接入并获认可。
 - [ ] [skills_background.jpg](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_background.jpg) — 940×590；现有中心为低分辨率位图，已有外围扩图候选不增加中心细节，本批保留正式原图。
-- [x] [skills_passive_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_passive_hover.png) — 79×19 → 158×38；OtherMat_v9原技能按钮轮廓2倍重导；普通/悬停及命中范围保持。已实际接入，待本批审查。
-- [x] [skills_passive_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_passive_normal.png) — 79×19 → 158×38；OtherMat_v9原技能按钮轮廓2倍重导；普通/悬停及命中范围保持。已实际接入，待本批审查。
+- [x] [skills_passive_hover.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_passive_hover.png) — 79×19 → 158×38；OtherMat_v9原技能按钮轮廓2倍重导；普通/悬停及命中范围保持。已实际接入并获认可。
+- [x] [skills_passive_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_passive_normal.png) — 79×19 → 158×38；OtherMat_v9原技能按钮轮廓2倍重导；普通/悬停及命中范围保持。已实际接入并获认可。
 - [ ] [skills_sanzang_normal.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_sanzang_normal.png) — 61×35；已复核OtherMat_v9，原技能导出器；1倍37图逐项可见RGBA全等；现有源像素或合成保真受限，正式原图保持。
 - [ ] [skills_sanzang_selected.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_sanzang_selected.png) — 61×35；已复核OtherMat_v9，原技能导出器；1倍37图逐项可见RGBA全等；现有源像素或合成保真受限，正式原图保持。
 - [ ] [skills_soul_badge.png](../Godot/GodotProject/TheGame/Sprites/UI/skills/skills_soul_badge.png) — 74×66；已复核other原位图586.png；现有源像素或合成保真受限，正式原图保持。
@@ -933,109 +941,111 @@
 
 <a id="art-images-09"></a>
 
-### 装备、消耗品与地面图标（0/79）
+### 装备、消耗品与地面图标（3/79完整完成，76项来源/保真受限）
+
+[电脑1080p对照](../Godot/GodotProject/.godot/validation/art_items_resume_20261118/comparison_1920_detail.png)、[手机20:9对照](../Godot/GodotProject/.godot/validation/art_items_resume_20261118/comparison_2400_detail.png)、[装备位图抽查](../Godot/GodotProject/.godot/validation/art_items_resume_20261118/equipment_bitmap_review.png)。方案、命令及实际关卡截图见[Validation](Validation.md)。
 
 目录：`TheGame/Sprites/Items/consumables/`
 
-- [ ] [pickup_large_peach.png](../Godot/GodotProject/TheGame/Sprites/Items/consumables/pickup_large_peach.png) — 48×45；待来源/清晰度处理及1080p验收。
-- [ ] [pickup_mana_bottle.png](../Godot/GodotProject/TheGame/Sprites/Items/consumables/pickup_mana_bottle.png) — 48×44；待来源/清晰度处理及1080p验收。
-- [ ] [pickup_small_peach.png](../Godot/GodotProject/TheGame/Sprites/Items/consumables/pickup_small_peach.png) — 48×45；待来源/清晰度处理及1080p验收。
+- [x] [pickup_large_peach.png](../Godot/GodotProject/TheGame/Sprites/Items/consumables/pickup_large_peach.png) — 48×45 → 96×90；OtherMat_v9 shape274原矢量2倍；密度缩放0.9→0.45，原显示尺寸和贴地、领取时序已验，本批已获认可。
+- [x] [pickup_mana_bottle.png](../Godot/GodotProject/TheGame/Sprites/Items/consumables/pickup_mana_bottle.png) — 48×44 → 96×88；OtherMat_v9 shape280原矢量2倍；密度缩放0.7→0.35，原显示尺寸和贴地、领取时序已验，本批已获认可。
+- [x] [pickup_small_peach.png](../Godot/GodotProject/TheGame/Sprites/Items/consumables/pickup_small_peach.png) — 48×45 → 96×90；OtherMat_v9 shape274原矢量2倍；密度缩放0.7→0.35，原显示尺寸和贴地、领取时序已验，本批已获认可。
 
 目录：`TheGame/Sprites/Items/equipment/`
 
-- [ ] [equipment_azure_dragon_blade.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_azure_dragon_blade.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_black_tortoise_armor.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_black_tortoise_armor.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_blood_sea_demon_armor.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_blood_sea_demon_armor.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_blood_sea_evil_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_blood_sea_evil_staff.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_blood_sea_shell.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_blood_sea_shell.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_common_cassock.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_common_cassock.png) — 60×62；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_common_pilgrim_clothes.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_common_pilgrim_clothes.png) — 60×62；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_common_pilgrim_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_common_pilgrim_staff.png) — 60×62；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_common_pine_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_common_pine_staff.png) — 60×62；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_diamond_snare.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_diamond_snare.png) — 52×55；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_earth_fiend_ape_armor.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_earth_fiend_ape_armor.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_earth_fiend_ring.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_earth_fiend_ring.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_earth_fiend_scepter.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_earth_fiend_scepter.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_east_sea_banner.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_east_sea_banner.png) — 52×55；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_excellent_cassock.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_excellent_cassock.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_excellent_pilgrim_clothes.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_excellent_pilgrim_clothes.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_excellent_pilgrim_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_excellent_pilgrim_staff.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_excellent_pine_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_excellent_pine_staff.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_fine_cassock.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_fine_cassock.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_fine_pilgrim_clothes.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_fine_pilgrim_clothes.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_fine_pilgrim_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_fine_pilgrim_staff.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_fine_pine_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_fine_pine_staff.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_heavenly_fiend_moon_halberd.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_heavenly_fiend_moon_halberd.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_heavenly_fiend_necklace.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_heavenly_fiend_necklace.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_heavenly_fiend_robe.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_heavenly_fiend_robe.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_heirloom_bracelet.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_heirloom_bracelet.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_heirloom_clothes.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_heirloom_clothes.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_heirloom_sword.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_heirloom_sword.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_kirin_robe.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_kirin_robe.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_nine_ring_monk_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_nine_ring_monk_staff.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_rough_cassock.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_rough_cassock.png) — 60×62；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_rough_pilgrim_clothes.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_rough_pilgrim_clothes.png) — 60×62；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_rough_pilgrim_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_rough_pilgrim_staff.png) — 60×62；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_rough_pine_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_rough_pine_staff.png) — 60×62；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_ruyi_golden_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_ruyi_golden_staff.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_seven_star_guard.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_seven_star_guard.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_vermilion_bird_ring.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_vermilion_bird_ring.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [equipment_white_tiger_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_white_tiger_staff.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_azure_dragon_blade.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_azure_dragon_blade.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_black_tortoise_armor.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_black_tortoise_armor.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_blood_sea_demon_armor.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_blood_sea_demon_armor.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_blood_sea_evil_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_blood_sea_evil_staff.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_blood_sea_shell.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_blood_sea_shell.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_common_cassock.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_common_cassock.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_common_pilgrim_clothes.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_common_pilgrim_clothes.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_common_pilgrim_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_common_pilgrim_staff.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_common_pine_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_common_pine_staff.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_diamond_snare.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_diamond_snare.png) — 52×55；待来源/清晰度处理及1080p验收。
-- [ ] [ground_earth_fiend_ape_armor.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_earth_fiend_ape_armor.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_earth_fiend_ring.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_earth_fiend_ring.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_earth_fiend_scepter.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_earth_fiend_scepter.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_east_sea_banner.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_east_sea_banner.png) — 52×55；待来源/清晰度处理及1080p验收。
-- [ ] [ground_excellent_cassock.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_excellent_cassock.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_excellent_pilgrim_clothes.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_excellent_pilgrim_clothes.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_excellent_pilgrim_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_excellent_pilgrim_staff.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_excellent_pine_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_excellent_pine_staff.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_fine_cassock.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_fine_cassock.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_fine_pilgrim_clothes.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_fine_pilgrim_clothes.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_fine_pilgrim_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_fine_pilgrim_staff.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_fine_pine_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_fine_pine_staff.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_heavenly_fiend_moon_halberd.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_heavenly_fiend_moon_halberd.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_heavenly_fiend_necklace.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_heavenly_fiend_necklace.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_heavenly_fiend_robe.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_heavenly_fiend_robe.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_heirloom_bracelet.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_heirloom_bracelet.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_heirloom_clothes.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_heirloom_clothes.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_heirloom_sword.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_heirloom_sword.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_kirin_robe.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_kirin_robe.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_nine_ring_monk_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_nine_ring_monk_staff.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_rough_cassock.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_rough_cassock.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_rough_pilgrim_clothes.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_rough_pilgrim_clothes.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_rough_pilgrim_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_rough_pilgrim_staff.png) — 52×54；保真方法未通过：原生52×54位图，超分颜色偏移；暂保留原图。
-- [ ] [ground_rough_pine_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_rough_pine_staff.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_ruyi_golden_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_ruyi_golden_staff.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_seven_star_guard.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_seven_star_guard.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_vermilion_bird_ring.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_vermilion_bird_ring.png) — 52×54；待来源/清晰度处理及1080p验收。
-- [ ] [ground_white_tiger_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_white_tiger_staff.png) — 52×54；待来源/清晰度处理及1080p验收。
+- [ ] [equipment_azure_dragon_blade.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_azure_dragon_blade.png) — 52×54；已核对OtherMat_v9位图33（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_black_tortoise_armor.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_black_tortoise_armor.png) — 52×54；已核对OtherMat_v9位图3（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_blood_sea_demon_armor.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_blood_sea_demon_armor.png) — 52×54；已核对OtherMat_v9位图89（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_blood_sea_evil_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_blood_sea_evil_staff.png) — 52×54；已核对OtherMat_v9位图87（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_blood_sea_shell.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_blood_sea_shell.png) — 52×54；已核对OtherMat_v9位图37（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_common_cassock.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_common_cassock.png) — 60×62；已核对OtherMat_v9位图24（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_common_pilgrim_clothes.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_common_pilgrim_clothes.png) — 60×62；已核对OtherMat_v9位图28（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_common_pilgrim_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_common_pilgrim_staff.png) — 60×62；已核对OtherMat_v9位图15（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_common_pine_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_common_pine_staff.png) — 60×62；已核对OtherMat_v9位图13（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_diamond_snare.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_diamond_snare.png) — 52×55；已核对OtherMat_v9位图10（52×55）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_earth_fiend_ape_armor.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_earth_fiend_ape_armor.png) — 52×54；已核对OtherMat_v9位图113（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_earth_fiend_ring.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_earth_fiend_ring.png) — 52×54；已核对OtherMat_v9位图21（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_earth_fiend_scepter.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_earth_fiend_scepter.png) — 52×54；已核对OtherMat_v9位图111（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_east_sea_banner.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_east_sea_banner.png) — 52×55；已核对OtherMat_v9位图9（52×55）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_excellent_cassock.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_excellent_cassock.png) — 52×54；已核对OtherMat_v9位图23（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_excellent_pilgrim_clothes.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_excellent_pilgrim_clothes.png) — 52×54；已核对OtherMat_v9位图27（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_excellent_pilgrim_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_excellent_pilgrim_staff.png) — 52×54；已核对OtherMat_v9位图32（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_excellent_pine_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_excellent_pine_staff.png) — 52×54；已核对OtherMat_v9位图62（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_fine_cassock.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_fine_cassock.png) — 52×54；已核对OtherMat_v9位图22（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_fine_pilgrim_clothes.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_fine_pilgrim_clothes.png) — 52×54；已核对OtherMat_v9位图26（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_fine_pilgrim_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_fine_pilgrim_staff.png) — 52×54；已核对OtherMat_v9位图31（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_fine_pine_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_fine_pine_staff.png) — 52×54；已核对OtherMat_v9位图34（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_heavenly_fiend_moon_halberd.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_heavenly_fiend_moon_halberd.png) — 52×54；已核对OtherMat_v9位图125（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_heavenly_fiend_necklace.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_heavenly_fiend_necklace.png) — 52×54；已核对OtherMat_v9位图20（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_heavenly_fiend_robe.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_heavenly_fiend_robe.png) — 52×54；已核对OtherMat_v9位图123（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_heirloom_bracelet.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_heirloom_bracelet.png) — 52×54；已核对OtherMat_v9位图19（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_heirloom_clothes.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_heirloom_clothes.png) — 52×54；已核对OtherMat_v9位图5（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_heirloom_sword.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_heirloom_sword.png) — 52×54；已核对OtherMat_v9位图30（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_kirin_robe.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_kirin_robe.png) — 52×54；已核对OtherMat_v9位图1（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_nine_ring_monk_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_nine_ring_monk_staff.png) — 52×54；已核对OtherMat_v9位图35（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_rough_cassock.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_rough_cassock.png) — 60×62；已核对OtherMat_v9位图25（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_rough_pilgrim_clothes.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_rough_pilgrim_clothes.png) — 60×62；已核对OtherMat_v9位图29（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_rough_pilgrim_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_rough_pilgrim_staff.png) — 60×62；已核对OtherMat_v9位图16（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_rough_pine_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_rough_pine_staff.png) — 60×62；已核对OtherMat_v9位图14（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_ruyi_golden_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_ruyi_golden_staff.png) — 52×54；已核对OtherMat_v9位图7（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_seven_star_guard.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_seven_star_guard.png) — 52×54；已核对OtherMat_v9位图18（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_vermilion_bird_ring.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_vermilion_bird_ring.png) — 52×54；已核对OtherMat_v9位图17（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [equipment_white_tiger_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/equipment_white_tiger_staff.png) — 52×54；已核对OtherMat_v9位图64（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_azure_dragon_blade.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_azure_dragon_blade.png) — 52×54；已核对OtherMat_v9位图33（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_black_tortoise_armor.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_black_tortoise_armor.png) — 52×54；已核对OtherMat_v9位图3（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_blood_sea_demon_armor.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_blood_sea_demon_armor.png) — 52×54；已核对OtherMat_v9位图89（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_blood_sea_evil_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_blood_sea_evil_staff.png) — 52×54；已核对OtherMat_v9位图87（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_blood_sea_shell.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_blood_sea_shell.png) — 52×54；已核对OtherMat_v9位图37（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_common_cassock.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_common_cassock.png) — 52×54；已核对OtherMat_v9位图24（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_common_pilgrim_clothes.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_common_pilgrim_clothes.png) — 52×54；已核对OtherMat_v9位图28（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_common_pilgrim_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_common_pilgrim_staff.png) — 52×54；已核对OtherMat_v9位图15（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_common_pine_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_common_pine_staff.png) — 52×54；已核对OtherMat_v9位图13（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_diamond_snare.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_diamond_snare.png) — 52×55；已核对OtherMat_v9位图10（52×55）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_earth_fiend_ape_armor.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_earth_fiend_ape_armor.png) — 52×54；已核对OtherMat_v9位图113（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_earth_fiend_ring.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_earth_fiend_ring.png) — 52×54；已核对OtherMat_v9位图21（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_earth_fiend_scepter.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_earth_fiend_scepter.png) — 52×54；已核对OtherMat_v9位图111（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_east_sea_banner.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_east_sea_banner.png) — 52×55；已核对OtherMat_v9位图9（52×55）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_excellent_cassock.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_excellent_cassock.png) — 52×54；已核对OtherMat_v9位图23（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_excellent_pilgrim_clothes.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_excellent_pilgrim_clothes.png) — 52×54；已核对OtherMat_v9位图27（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_excellent_pilgrim_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_excellent_pilgrim_staff.png) — 52×54；已核对OtherMat_v9位图32（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_excellent_pine_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_excellent_pine_staff.png) — 52×54；已核对OtherMat_v9位图62（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_fine_cassock.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_fine_cassock.png) — 52×54；已核对OtherMat_v9位图22（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_fine_pilgrim_clothes.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_fine_pilgrim_clothes.png) — 52×54；已核对OtherMat_v9位图26（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_fine_pilgrim_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_fine_pilgrim_staff.png) — 52×54；已核对OtherMat_v9位图31（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_fine_pine_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_fine_pine_staff.png) — 52×54；已核对OtherMat_v9位图34（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_heavenly_fiend_moon_halberd.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_heavenly_fiend_moon_halberd.png) — 52×54；已核对OtherMat_v9位图125（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_heavenly_fiend_necklace.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_heavenly_fiend_necklace.png) — 52×54；已核对OtherMat_v9位图20（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_heavenly_fiend_robe.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_heavenly_fiend_robe.png) — 52×54；已核对OtherMat_v9位图123（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_heirloom_bracelet.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_heirloom_bracelet.png) — 52×54；已核对OtherMat_v9位图19（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_heirloom_clothes.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_heirloom_clothes.png) — 52×54；已核对OtherMat_v9位图5（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_heirloom_sword.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_heirloom_sword.png) — 52×54；已核对OtherMat_v9位图30（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_kirin_robe.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_kirin_robe.png) — 52×54；已核对OtherMat_v9位图1（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_nine_ring_monk_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_nine_ring_monk_staff.png) — 52×54；已核对OtherMat_v9位图35（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_rough_cassock.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_rough_cassock.png) — 52×54；已核对OtherMat_v9位图25（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_rough_pilgrim_clothes.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_rough_pilgrim_clothes.png) — 52×54；已核对OtherMat_v9位图29（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_rough_pilgrim_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_rough_pilgrim_staff.png) — 52×54；已核对OtherMat_v9位图16（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_rough_pine_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_rough_pine_staff.png) — 52×54；已核对OtherMat_v9位图14（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_ruyi_golden_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_ruyi_golden_staff.png) — 52×54；已核对OtherMat_v9位图7（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_seven_star_guard.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_seven_star_guard.png) — 52×54；已核对OtherMat_v9位图18（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_vermilion_bird_ring.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_vermilion_bird_ring.png) — 52×54；已核对OtherMat_v9位图17（52×54）及现有图标处理；同内容高精度源待找，原图保持。
+- [ ] [ground_white_tiger_staff.png](../Godot/GodotProject/TheGame/Sprites/Items/equipment/ground_white_tiger_staff.png) — 52×54；已核对OtherMat_v9位图64（52×54）及现有图标处理；同内容高精度源待找，原图保持。
 
 <a id="art-images-10"></a>
 
-### 伤害、恢复数字与文字图集（0/10）
+### 伤害、恢复数字与文字图集（6/10完成，全部在用样式已接入）
 
 目录：`TheGame/Sprites/Number/`
 
-- [ ] [damage_number_hero_magic.png](../Godot/GodotProject/TheGame/Sprites/Number/damage_number_hero_magic.png) — 300×30；已确认pnum0～9为原生30×30位图，各符号/尺寸登记；来源受限，未提高精度。
-- [ ] [damage_number_hero_physics.png](../Godot/GodotProject/TheGame/Sprites/Number/damage_number_hero_physics.png) — 300×30；待来源/清晰度处理及1080p验收。
-- [ ] [damage_number_miss.png](../Godot/GodotProject/TheGame/Sprites/Number/damage_number_miss.png) — 55×24；OtherMat miss/bitmap76为原生55×24位图，来源受限，未提高精度。
-- [ ] [damage_number_monster_magic.png](../Godot/GodotProject/TheGame/Sprites/Number/damage_number_monster_magic.png) — 300×30；待来源/清晰度处理及1080p验收。
-- [ ] [damage_number_monster_magic_crit.png](../Godot/GodotProject/TheGame/Sprites/Number/damage_number_monster_magic_crit.png) — 320×32；待来源/清晰度处理及1080p验收。
-- [ ] [damage_number_monster_physics.png](../Godot/GodotProject/TheGame/Sprites/Number/damage_number_monster_physics.png) — 300×30；hurtnum0～9为原生30×30位图，各符号/尺寸登记；来源受限，不把重新拼接当高清。
-- [ ] [damage_number_monster_physics_crit.png](../Godot/GodotProject/TheGame/Sprites/Number/damage_number_monster_physics_crit.png) — 420×42；bnum0～9为原生42×42位图，各符号/尺寸登记；来源受限，未提高精度。
-- [ ] [damage_number_real.png](../Godot/GodotProject/TheGame/Sprites/Number/damage_number_real.png) — 300×30；待来源/清晰度处理及1080p验收。
-- [ ] [recovery_number_health.png](../Godot/GodotProject/TheGame/Sprites/Number/recovery_number_health.png) — 300×30；待来源/清晰度处理及1080p验收。
-- [ ] [recovery_number_mana.png](../Godot/GodotProject/TheGame/Sprites/Number/recovery_number_mana.png) — 330×34；待来源/清晰度处理及1080p验收。
+- [x] [damage_number_hero_magic.png](../Godot/GodotProject/TheGame/Sprites/Number/damage_number_hero_magic.png) — 300×30→1800×180；6倍原覆盖重建已实测接入。OtherMat_v9 pnum；保留每格原先左移1px的注册。
+- [ ] [damage_number_hero_physics.png](../Godot/GodotProject/TheGame/Sprites/Number/damage_number_hero_physics.png) — 300×30；旧monster/physics十格逐字RGBA全等；正式飘字场景未引用。原件保存。高精度上游未找到。
+- [x] [damage_number_miss.png](../Godot/GodotProject/TheGame/Sprites/Number/damage_number_miss.png) — 55×24→110×48；2倍原覆盖重建已实测接入。OtherMat_v9位图76迁入版为锚点；沿原透明边界、黑白描边。
+- [ ] [damage_number_monster_magic.png](../Godot/GodotProject/TheGame/Sprites/Number/damage_number_monster_magic.png) — 300×30；与旧magic及OtherMat_v9 bulnum0～9的30×30/格逐字RGBA全等；正式飘字场景未引用。原件保存。高精度上游未找到。
+- [ ] [damage_number_monster_magic_crit.png](../Godot/GodotProject/TheGame/Sprites/Number/damage_number_monster_magic_crit.png) — 320×32；旧magiccrit十格逐字RGBA全等；正式飘字场景未引用。原件保存。高精度上游未找到。
+- [x] [damage_number_monster_physics.png](../Godot/GodotProject/TheGame/Sprites/Number/damage_number_monster_physics.png) — 300×30→1800×180；6倍原覆盖重建已实测接入。OtherMat_v9 hurtnum；保留橙黄渐变及原普伤脉冲。
+- [x] [damage_number_monster_physics_crit.png](../Godot/GodotProject/TheGame/Sprites/Number/damage_number_monster_physics_crit.png) — 420×42→2520×252；6倍原覆盖重建已实测接入。OtherMat_v9 bnum；6倍覆盖约231屏幕像素的3倍脉冲峰值。
+- [ ] [damage_number_real.png](../Godot/GodotProject/TheGame/Sprites/Number/damage_number_real.png) — 300×30；旧real十格逐字RGBA全等；正式飘字场景未引用。原件保存。高精度上游未找到。
+- [x] [recovery_number_health.png](../Godot/GodotProject/TheGame/Sprites/Number/recovery_number_health.png) — 300×30→600×60；2倍原覆盖重建已实测接入。OtherMat_v9 bunum与旧cure同源像素；保留原绿色和恢复基线。
+- [x] [recovery_number_mana.png](../Godot/GodotProject/TheGame/Sprites/Number/recovery_number_mana.png) — 330×34→660×68；2倍原覆盖重建已实测接入。继续使用旧CureMp原造型和现有蓝色，不替换为更小的bulnum。
 
 <a id="art-images-11"></a>
 
@@ -1142,12 +1152,12 @@
 | --- | ---: | ---: | ---: |
 | [字体](#art-support-01) | 8 | 0 | 8 |
 | [着色器](#art-support-02) | 4 | 2 | 2 |
-| [动画库](#art-support-03) | 71 | 34 | 37 |
+| [动画库](#art-support-03) | 71 | 35 | 36 |
 | [逐帧动画资源](#art-support-04) | 79 | 34 | 45 |
-| [外观与物品美术登记](#art-support-05) | 5 | 4 | 1 |
+| [外观与物品美术登记](#art-support-05) | 5 | 5 | 0 |
 | [主题与样式](#art-support-06) | 13 | 0 | 13 |
 | [地图透明命中遮罩](#art-support-07) | 3 | 2 | 1 |
-| **合计** | **183** | **76** | **107** |
+| **合计** | **183** | **78** | **105** |
 
 <!-- art-support:start -->
 
@@ -1185,7 +1195,7 @@
 
 <a id="art-support-03"></a>
 
-### 动画库（34/71）
+### 动画库（35/71）
 
 目录：`TheGame/Entitys/Animations/Enemies/Bosses/zm1_02_macaque_king/`
 
@@ -1320,7 +1330,7 @@
 
 目录：`TheGame/Entitys/Animations/`
 
-- [ ] [ground_item_pickup_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/ground_item_pickup_library.tres) — AnimationLibrary；待关联美术批次的帧引用、时序、定位及实际播放检查。
+- [x] [ground_item_pickup_library.tres](../Godot/GodotProject/TheGame/Entitys/Animations/ground_item_pickup_library.tres) — AnimationLibrary；原字节保持，原0.8秒上移淡出、暂停恢复与实际播放通过。
 - [ ] [shuiliandong_river_animation.tres](../Godot/GodotProject/TheGame/Entitys/Animations/shuiliandong_river_animation.tres) — AnimationLibrary；待关联美术批次的帧引用、时序、定位及实际播放检查。
 
 目录：`TheGame/Scenes/Levels/zm1_02_shuiliandong/`
@@ -1553,7 +1563,7 @@
 
 <a id="art-support-05"></a>
 
-### 外观与物品美术登记（4/5）
+### 外观与物品美术登记（5/5）
 
 目录：`TheGame/Sprites/Characters/Heroes/tangseng/`
 
@@ -1567,7 +1577,7 @@
 
 目录：`TheGame/Sprites/Items/`
 
-- [ ] [item_appearances.tres](../Godot/GodotProject/TheGame/Sprites/Items/item_appearances.tres) — ItemAppearancesResource；待全部相关图像身份/尺寸/引用与实际显示检查。
+- [x] [item_appearances.tres](../Godot/GodotProject/TheGame/Sprites/Items/item_appearances.tres) — ItemAppearancesResource；41项身份及图标引用保持，只换算3种恢复品显示缩放，装备引用和真实落地已验。
 
 <a id="art-support-06"></a>
 

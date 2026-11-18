@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Godot;
 using GodotGameFramework.NodePool;
 
@@ -45,6 +45,8 @@ public partial class FloatingTextNode : Node2D, IPoolable
     [Export] private Texture2D _heroDamage; // 官方 pnum：英雄受伤，所有伤害类型共用。
     [Export] private Texture2D _health; // 绿色生命恢复数字。
     [Export] private Texture2D _mana; // 蓝色魔法恢复数字。
+    [Export(PropertyHint.Range, "1,6,1")] private int _damageDensity = 1; // 受击数字每逻辑像素的源像素数。
+    [Export(PropertyHint.Range, "1,6,1")] private int _recoveryDensity = 1; // 恢复数字不播放伤害脉冲，图集可用较低密度。
     [Export] private Sprite2D _miss; // 闪避提示贴图。
     [Export] private Node2D _content; // 数字、提示的共同缩放和透明度节点。
     [Export(PropertyHint.Range, "0,12,0.5")] private float _digitGap = 0f; // 描边已提供视觉间隔，默认不另加空隙；与图集格宽无关。
@@ -52,7 +54,7 @@ public partial class FloatingTextNode : Node2D, IPoolable
 
     private readonly Sprite2D[] _digits = new Sprite2D[MaxDigits]; // 首次取出创建，所有样式复用同一组数字。
     private readonly int[] _digitValues = new int[MaxDigits]; // 本次排布的数位，避免每次显示分配字符串或数组。
-    private readonly Dictionary<Texture2D, Rect2[]> _glyphRegions = new(); // 每种图集首次使用时读取轮廓，池复用保留只读字宽。
+    private static readonly ConditionalWeakTable<Texture2D, Rect2[]> s_glyphPixels = new(); // 各池节点共用首次读图的裁框，不延长纹理寿命。
     private Action<FloatingTextNode> _finished; // 显示完成只通知模块，由模块归还节点。
     private DisplayKind _kind; // 本次使用的动画节奏。
     private bool _isCrit; // 伤害样式是否使用暴击脉冲。
@@ -175,7 +177,7 @@ public partial class FloatingTextNode : Node2D, IPoolable
         {
             sheet = isCrit ? _enemyCritical : _enemyDamage;
         }
-        LayoutDigits(damage, sheet, true);
+        LayoutDigits(damage, sheet, _damageDensity, true);
         Begin(position, DisplayKind.Damage, isCrit, finished);
     }
 
@@ -203,7 +205,7 @@ public partial class FloatingTextNode : Node2D, IPoolable
     /// <param name="finished">显示结束后由模块归还节点。</param>
     public void ShowRecovery(Vector2 position, int amount, RecoveryKind kind, Action<FloatingTextNode> finished)
     {
-        LayoutDigits(amount, kind == RecoveryKind.Mana ? _mana : _health, false);
+        LayoutDigits(amount, kind == RecoveryKind.Mana ? _mana : _health, _recoveryDensity, false);
         Begin(position + new Vector2(-20, -60), DisplayKind.Recovery, false, finished);
     }
 
@@ -233,9 +235,10 @@ public partial class FloatingTextNode : Node2D, IPoolable
     /// </summary>
     /// <param name="value">非负显示量。</param>
     /// <param name="sheet">十格数字图集。</param>
+    /// <param name="density">每逻辑像素对应的源像素数。</param>
     /// <param name="centered">伤害居中，恢复按官方左起排列。</param>
     /// <exception cref="InvalidOperationException">图集不是有效的十格 RGBA 数字图。</exception>
-    private void LayoutDigits(int value, Texture2D sheet, bool centered)
+    private void LayoutDigits(int value, Texture2D sheet, int density, bool centered)
     {
         // 整数除法避免 10 的幂次附近因浮点对数导致少算一位。
         value = Math.Max(0, value);
@@ -251,11 +254,16 @@ public partial class FloatingTextNode : Node2D, IPoolable
             divisor *= 10;
         }
 
-        Rect2[] regions = GetGlyphRegions(sheet);
+        Rect2[] pixels = s_glyphPixels.GetValue(sheet, ReadGlyphRegions);
+        Span<Rect2> regions = stackalloc Rect2[MaxDigits];
         float widest = 0;
-        foreach (Rect2 region in regions)
+        for (int i = 0; i < regions.Length; i++)
         {
-            widest = Math.Max(widest, region.Size.X);
+            // 轮廓在原像素内变细时，仍用覆盖到的整逻辑像素排字。
+            int left = (int)pixels[i].Position.X / density;
+            int right = Mathf.CeilToInt(pixels[i].End.X / density);
+            regions[i] = new Rect2(left, 0, right - left, pixels[i].Size.Y / density);
+            widest = Math.Max(widest, regions[i].Size.X);
         }
 
         float width = _digitGap * (count - 1);
@@ -285,7 +293,8 @@ public partial class FloatingTextNode : Node2D, IPoolable
             digit.Centered = centered;
             digit.Texture = sheet;
             Rect2 region = regions[_digitValues[i]];
-            digit.RegionRect = region;
+            digit.RegionRect = new Rect2(region.Position * density, region.Size * density);
+            digit.Scale = Vector2.One / density;
             digit.Position = new Vector2(cursor + (centered ? region.Size.X * .5f : 0), 0);
             cursor += region.Size.X + _digitGap;
             if (i + 1 < count)
@@ -301,14 +310,9 @@ public partial class FloatingTextNode : Node2D, IPoolable
     /// <param name="sheet">等宽十格仅用于存储的数字图集。</param>
     /// <returns>横向去留白、完整保留原图高度的十个字符区域。</returns>
     /// <exception cref="InvalidOperationException">图集尺寸、图像或数字轮廓无效。</exception>
-    private Rect2[] GetGlyphRegions(Texture2D sheet)
+    private static Rect2[] ReadGlyphRegions(Texture2D sheet)
     {
-        if (_glyphRegions.TryGetValue(sheet, out Rect2[] cached))
-        {
-            return cached;
-        }
-
-        // 只在本池实例首次使用某种素材时解析；缓存随资源引用和池实例一起存活。
+        // 同一纹理只读取一次，避免一批伤害数字同时出现时反复复制高密度图集。
         using Image image = sheet.GetImage();
         if (image == null || image.GetWidth() % 10 != 0 || image.GetHeight() <= 0 ||
             image.GetWidth() < 10 || image.IsCompressed() && image.Decompress() != Error.Ok)
@@ -347,7 +351,6 @@ public partial class FloatingTextNode : Node2D, IPoolable
 
             regions[number] = new Rect2(number * cellWidth + left, 0, right - left + 1, height);
         }
-        _glyphRegions.Add(sheet, regions);
         return regions;
     }
 
