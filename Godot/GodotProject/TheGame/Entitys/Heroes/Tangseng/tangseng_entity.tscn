@@ -119,12 +119,13 @@ frame = 1
 position = Vector2(0, -28)
 
 [node name="m_WaterDemonBall" type="AnimatedSprite2D" parent="m_EffectRoot" unique_id=1871711252]
+scale = Vector2(0.5, 0.5)
 visible = false
 position = Vector2(-515.45, 51.6)
 sprite_frames = ExtResource("22_water_ball")
 animation = &"play"
 frame = 12
-offset = Vector2(11.6, 8.65)
+offset = Vector2(23.2, 17.3)
 
 [node name="m_WaterClone" parent="." unique_id=61025387 instance=ExtResource("19_shadow")]
 visible = false

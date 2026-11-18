@@ -26,8 +26,9 @@ _speed = 360.0
 _travelDistance = 600.0
 
 [node name="Sprite" type="Sprite2D" parent="."]
+scale = Vector2(0.5, 0.5)
 texture = ExtResource("texture")
-offset = Vector2(2.75, -4.5)
+offset = Vector2(5.5, -9)
 
 [node name="HitBox" type="Area2D" parent="."]
 collision_layer = 16

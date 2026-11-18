@@ -1488,7 +1488,7 @@ public sealed partial class UiSmokeScenario
             actor.AdvanceSkillAnimation(.2f);
             actor.EndSkillAnimation();
             AnimatedSprite2D effect = hero.GetNode<AnimatedSprite2D>("m_EffectRoot/m_Effect");
-            Check(effect.Animation == "empty" && effect.Frame == 0 && effect.Scale == Vector2.One &&
+            Check(effect.Animation == "empty" && effect.Frame == 0 && effect.Scale == new Vector2(.5f, .5f) &&
                 hero.GetNode<CollisionShape2D>("m_HitBoxRoot/m_HitBox/CollisionShape2D").Disabled,
                 "中断技能后 RESET 没有恢复光效或判定");
             hero.PlayAnim(HeroAnims.Idle);

@@ -94,6 +94,7 @@ frame = 0
 position = Vector2(0, -28)
 
 [node name="m_Effect" type="AnimatedSprite2D" parent="m_EffectRoot" unique_id=1116269950]
+scale = Vector2(0.5, 0.5)
 sprite_frames = ExtResource("5_da4kq")
 animation = &"empty"
 
@@ -140,11 +141,12 @@ frame = 27
 frame_progress = 1.0
 
 [node name="m_FireDemonPrelude" type="AnimatedSprite2D" parent="." unique_id=1320486072]
+scale = Vector2(0.5, 0.5)
 visible = false
 top_level = true
 sprite_frames = ExtResource("11_l7ihn")
 animation = &"play"
-offset = Vector2(52.15, -117.6)
+offset = Vector2(104.3, -235.2)
 
 [node name="m_StatusEffects" type="Node2D" parent="." unique_id=2100677362]
 

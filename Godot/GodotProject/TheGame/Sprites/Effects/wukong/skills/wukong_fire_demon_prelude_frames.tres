@@ -4,35 +4,43 @@
 
 [sub_resource type="AtlasTexture" id="play_0"]
 atlas = ExtResource("atlas")
-region = Rect2(0, 0, 221, 273)
+region = Rect2(16, 725, 178, 201)
+margin = Rect2(19, 331, 264, 345)
 
 [sub_resource type="AtlasTexture" id="play_1"]
 atlas = ExtResource("atlas")
-region = Rect2(221, 0, 221, 273)
+region = Rect2(226, 725, 178, 201)
+margin = Rect2(19, 331, 264, 345)
 
 [sub_resource type="AtlasTexture" id="play_2"]
 atlas = ExtResource("atlas")
-region = Rect2(442, 0, 221, 273)
+region = Rect2(16, 16, 221, 436)
+margin = Rect2(65, 95, 221, 110)
 
 [sub_resource type="AtlasTexture" id="play_3"]
 atlas = ExtResource("atlas")
-region = Rect2(663, 0, 221, 273)
+region = Rect2(269, 16, 221, 436)
+margin = Rect2(65, 95, 221, 110)
 
 [sub_resource type="AtlasTexture" id="play_4"]
 atlas = ExtResource("atlas")
-region = Rect2(884, 0, 221, 273)
+region = Rect2(16, 484, 184, 209)
+margin = Rect2(231, 30, 258, 337)
 
 [sub_resource type="AtlasTexture" id="play_5"]
 atlas = ExtResource("atlas")
-region = Rect2(1105, 0, 221, 273)
+region = Rect2(232, 484, 184, 209)
+margin = Rect2(231, 30, 258, 337)
 
 [sub_resource type="AtlasTexture" id="play_6"]
 atlas = ExtResource("atlas")
-region = Rect2(0, 273, 221, 273)
+region = Rect2(16, 958, 179, 183)
+margin = Rect2(249, 15, 263, 363)
 
 [sub_resource type="AtlasTexture" id="play_7"]
 atlas = ExtResource("atlas")
-region = Rect2(221, 273, 221, 273)
+region = Rect2(227, 958, 179, 183)
+margin = Rect2(249, 15, 263, 363)
 
 [resource]
 animations = [{

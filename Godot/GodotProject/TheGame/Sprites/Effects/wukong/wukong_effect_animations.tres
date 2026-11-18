@@ -5,243 +5,303 @@
 
 [sub_resource type="AtlasTexture" id="effect_attack_1_3"]
 atlas = ExtResource("effects")
-region = Rect2(0, 0, 400, 300)
+region = Rect2(16, 1157, 70, 43)
+margin = Rect2(240, 366, 730, 557)
 
 [sub_resource type="AtlasTexture" id="effect_attack_1_4"]
 atlas = ExtResource("effects")
-region = Rect2(400, 0, 400, 300)
+region = Rect2(336, 1076, 64, 47)
+margin = Rect2(192, 365, 736, 553)
 
 [sub_resource type="AtlasTexture" id="effect_attack_1_5"]
 atlas = ExtResource("effects")
-region = Rect2(800, 0, 400, 300)
+region = Rect2(397, 1157, 17, 13)
+margin = Rect2(207, 379, 783, 587)
 
 [sub_resource type="AtlasTexture" id="effect_attack_2_3"]
 atlas = ExtResource("effects")
-region = Rect2(1200, 0, 400, 300)
+region = Rect2(118, 1157, 69, 43)
+margin = Rect2(243, 369, 731, 557)
 
 [sub_resource type="AtlasTexture" id="effect_attack_2_4"]
 atlas = ExtResource("effects")
-region = Rect2(1600, 0, 400, 300)
+region = Rect2(432, 1076, 64, 47)
+margin = Rect2(194, 368, 736, 553)
 
 [sub_resource type="AtlasTexture" id="effect_attack_2_5"]
 atlas = ExtResource("effects")
-region = Rect2(2000, 0, 400, 300)
+region = Rect2(347, 1157, 18, 14)
+margin = Rect2(209, 381, 782, 586)
 
 [sub_resource type="AtlasTexture" id="effect_attack_3_0"]
 atlas = ExtResource("effects")
-region = Rect2(0, 300, 400, 300)
+region = Rect2(288, 828, 174, 59)
+margin = Rect2(356, 141, 626, 541)
 
 [sub_resource type="AtlasTexture" id="effect_attack_3_1"]
 atlas = ExtResource("effects")
-region = Rect2(400, 300, 400, 300)
+region = Rect2(16, 985, 174, 59)
+margin = Rect2(356, 141, 626, 541)
 
 [sub_resource type="AtlasTexture" id="effect_attack_3_2"]
 atlas = ExtResource("effects")
-region = Rect2(800, 300, 400, 300)
+region = Rect2(16, 315, 222, 235)
+margin = Rect2(223, 126, 578, 365)
 
 [sub_resource type="AtlasTexture" id="effect_attack_3_3"]
 atlas = ExtResource("effects")
-region = Rect2(1200, 300, 400, 300)
+region = Rect2(270, 315, 222, 235)
+margin = Rect2(223, 126, 578, 365)
 
 [sub_resource type="AtlasTexture" id="effect_attack_3_4"]
 atlas = ExtResource("effects")
-region = Rect2(1600, 300, 400, 300)
+region = Rect2(16, 16, 156, 267)
+margin = Rect2(176, 197, 644, 333)
 
 [sub_resource type="AtlasTexture" id="effect_attack_3_5"]
 atlas = ExtResource("effects")
-region = Rect2(2000, 300, 400, 300)
+region = Rect2(204, 16, 156, 267)
+margin = Rect2(176, 197, 644, 333)
 
 [sub_resource type="AtlasTexture" id="effect_attack_3_6"]
 atlas = ExtResource("effects")
-region = Rect2(0, 600, 400, 300)
+region = Rect2(16, 582, 130, 214)
+margin = Rect2(150, 277, 670, 386)
 
 [sub_resource type="AtlasTexture" id="effect_attack_3_7"]
 atlas = ExtResource("effects")
-region = Rect2(400, 600, 400, 300)
+region = Rect2(178, 582, 130, 214)
+margin = Rect2(150, 277, 670, 386)
 
 [sub_resource type="AtlasTexture" id="effect_attack_3_8"]
 atlas = ExtResource("effects")
-region = Rect2(800, 600, 400, 300)
+region = Rect2(340, 582, 96, 156)
+margin = Rect2(148, 337, 704, 444)
 
 [sub_resource type="AtlasTexture" id="effect_attack_4_0"]
 atlas = ExtResource("effects")
-region = Rect2(1200, 600, 400, 300)
+region = Rect2(16, 828, 240, 125)
+margin = Rect2(212, 293, 560, 475)
 
 [sub_resource type="AtlasTexture" id="effect_attack_4_1"]
 atlas = ExtResource("effects")
-region = Rect2(1600, 600, 400, 300)
+region = Rect2(16, 1076, 288, 49)
+margin = Rect2(307, 343, 512, 551)
 
 [sub_resource type="AtlasTexture" id="effect_attack_4_2"]
 atlas = ExtResource("effects")
-region = Rect2(2000, 600, 400, 300)
+region = Rect2(219, 1157, 96, 19)
+margin = Rect2(484, 317, 704, 581)
 
 [sub_resource type="AtlasTexture" id="effect_attack_4_4"]
 atlas = ExtResource("effects")
-region = Rect2(0, 900, 400, 300)
+region = Rect2(222, 985, 122, 59)
+margin = Rect2(225, 276, 678, 541)
 
 [sub_resource type="AtlasTexture" id="blazing_flash_0"]
 atlas = ExtResource("skills")
-region = Rect2(1600, 2000, 800, 400)
+region = Rect2(1791, 2565, 41, 42)
+margin = Rect2(748, 438, 1559, 758)
 
 [sub_resource type="AtlasTexture" id="blazing_flash_1"]
 atlas = ExtResource("skills")
-region = Rect2(2400, 2000, 800, 400)
+region = Rect2(1864, 2565, 41, 42)
+margin = Rect2(748, 438, 1559, 758)
 
 [sub_resource type="AtlasTexture" id="blazing_flash_2"]
 atlas = ExtResource("skills")
-region = Rect2(0, 2400, 800, 400)
+region = Rect2(1130, 913, 812, 179)
+margin = Rect2(143, 368, 788, 621)
 
 [sub_resource type="AtlasTexture" id="blazing_flash_3"]
 atlas = ExtResource("skills")
-region = Rect2(800, 2400, 800, 400)
+region = Rect2(16, 1144, 812, 179)
+margin = Rect2(143, 368, 788, 621)
 
 [sub_resource type="AtlasTexture" id="blazing_flash_4"]
 atlas = ExtResource("skills")
-region = Rect2(1600, 2400, 800, 400)
+region = Rect2(860, 1144, 812, 179)
+margin = Rect2(143, 368, 788, 621)
 
 [sub_resource type="AtlasTexture" id="blazing_flash_5"]
 atlas = ExtResource("skills")
-region = Rect2(2400, 2400, 800, 400)
+region = Rect2(16, 1355, 812, 179)
+margin = Rect2(143, 368, 788, 621)
 
 [sub_resource type="AtlasTexture" id="blazing_flash_6"]
 atlas = ExtResource("skills")
-region = Rect2(0, 2800, 800, 400)
+region = Rect2(860, 1355, 812, 179)
+margin = Rect2(143, 368, 788, 621)
 
 [sub_resource type="AtlasTexture" id="blazing_flash_7"]
 atlas = ExtResource("skills")
-region = Rect2(800, 2800, 800, 400)
+region = Rect2(16, 1566, 812, 179)
+margin = Rect2(143, 368, 788, 621)
 
 [sub_resource type="AtlasTexture" id="blazing_flash_8"]
 atlas = ExtResource("skills")
-region = Rect2(1600, 2800, 800, 400)
+region = Rect2(483, 913, 166, 191)
+margin = Rect2(731, 361, 1434, 609)
 
 [sub_resource type="AtlasTexture" id="flame_storm_0"]
 atlas = ExtResource("skills")
-region = Rect2(2400, 2800, 800, 400)
+region = Rect2(904, 2565, 411, 118)
+margin = Rect2(611, 448, 1189, 682)
 
 [sub_resource type="AtlasTexture" id="flame_storm_1"]
 atlas = ExtResource("skills")
-region = Rect2(0, 3200, 800, 400)
+region = Rect2(16, 913, 435, 199)
+margin = Rect2(583, 376, 1165, 601)
 
 [sub_resource type="AtlasTexture" id="flame_storm_2"]
 atlas = ExtResource("skills")
-region = Rect2(800, 3200, 800, 400)
+region = Rect2(1481, 622, 527, 203)
+margin = Rect2(542, 374, 1073, 597)
 
 [sub_resource type="AtlasTexture" id="flame_storm_3"]
 atlas = ExtResource("skills")
-region = Rect2(1600, 3200, 800, 400)
+region = Rect2(16, 16, 667, 279)
+margin = Rect2(486, 297, 933, 521)
 
 [sub_resource type="AtlasTexture" id="flame_storm_4"]
 atlas = ExtResource("skills")
-region = Rect2(2400, 3200, 800, 400)
+region = Rect2(729, 327, 667, 262)
+margin = Rect2(503, 303, 933, 538)
 
 [sub_resource type="AtlasTexture" id="flame_storm_5"]
 atlas = ExtResource("skills")
-region = Rect2(0, 3600, 800, 400)
+region = Rect2(16, 622, 690, 259)
+margin = Rect2(462, 318, 910, 541)
 
 [sub_resource type="AtlasTexture" id="flame_storm_6"]
 atlas = ExtResource("skills")
-region = Rect2(800, 3600, 800, 400)
+region = Rect2(16, 327, 681, 263)
+margin = Rect2(467, 317, 919, 537)
 
 [sub_resource type="AtlasTexture" id="flame_storm_7"]
 atlas = ExtResource("skills")
-region = Rect2(1600, 3600, 800, 400)
+region = Rect2(738, 622, 711, 239)
+margin = Rect2(489, 313, 889, 561)
 
 [sub_resource type="AtlasTexture" id="flame_storm_8"]
 atlas = ExtResource("skills")
-region = Rect2(2400, 3600, 800, 400)
+region = Rect2(681, 913, 417, 184)
+margin = Rect2(780, 401, 1183, 616)
 
 [sub_resource type="AtlasTexture" id="flame_storm_9"]
 atlas = ExtResource("skills")
-region = Rect2(0, 4000, 800, 400)
+region = Rect2(540, 2565, 332, 119)
+margin = Rect2(682, 494, 1268, 681)
 
 [sub_resource type="AtlasTexture" id="flame_thrust_0"]
 atlas = ExtResource("skills")
-region = Rect2(2400, 400, 800, 400)
+region = Rect2(588, 2373, 492, 158)
+margin = Rect2(486, 403, 1108, 642)
 
 [sub_resource type="AtlasTexture" id="flame_thrust_1"]
 atlas = ExtResource("skills")
-region = Rect2(0, 800, 800, 400)
+region = Rect2(1112, 2373, 492, 158)
+margin = Rect2(486, 403, 1108, 642)
 
 [sub_resource type="AtlasTexture" id="flame_thrust_2"]
 atlas = ExtResource("skills")
-region = Rect2(800, 800, 800, 400)
+region = Rect2(16, 2565, 492, 158)
+margin = Rect2(486, 403, 1108, 642)
 
 [sub_resource type="AtlasTexture" id="flame_thrust_3"]
 atlas = ExtResource("skills")
-region = Rect2(1600, 800, 800, 400)
+region = Rect2(568, 2177, 540, 160)
+margin = Rect2(486, 403, 1060, 640)
 
 [sub_resource type="AtlasTexture" id="flame_thrust_4"]
 atlas = ExtResource("skills")
-region = Rect2(2400, 800, 800, 400)
+region = Rect2(1140, 2177, 540, 160)
+margin = Rect2(486, 403, 1060, 640)
 
 [sub_resource type="AtlasTexture" id="flame_thrust_5"]
 atlas = ExtResource("skills")
-region = Rect2(0, 1200, 800, 400)
+region = Rect2(16, 2373, 540, 160)
+margin = Rect2(486, 403, 1060, 640)
 
 [sub_resource type="AtlasTexture" id="flame_thrust_6"]
 atlas = ExtResource("skills")
-region = Rect2(800, 1200, 800, 400)
+region = Rect2(860, 1566, 556, 168)
+margin = Rect2(486, 403, 1044, 632)
 
 [sub_resource type="AtlasTexture" id="flame_thrust_7"]
 atlas = ExtResource("skills")
-region = Rect2(1600, 1200, 800, 400)
+region = Rect2(1448, 1566, 556, 168)
+margin = Rect2(486, 403, 1044, 632)
 
 [sub_resource type="AtlasTexture" id="flame_thrust_8"]
 atlas = ExtResource("skills")
-region = Rect2(2400, 1200, 800, 400)
+region = Rect2(16, 1777, 556, 168)
+margin = Rect2(486, 403, 1044, 632)
 
 [sub_resource type="AtlasTexture" id="flame_thrust_9"]
 atlas = ExtResource("skills")
-region = Rect2(0, 1600, 800, 400)
+region = Rect2(580, 1977, 520, 164)
+margin = Rect2(486, 403, 1080, 636)
 
 [sub_resource type="AtlasTexture" id="flame_thrust_10"]
 atlas = ExtResource("skills")
-region = Rect2(800, 1600, 800, 400)
+region = Rect2(1132, 1977, 520, 164)
+margin = Rect2(486, 403, 1080, 636)
 
 [sub_resource type="AtlasTexture" id="flame_thrust_11"]
 atlas = ExtResource("skills")
-region = Rect2(1600, 1600, 800, 400)
+region = Rect2(16, 2177, 520, 164)
+margin = Rect2(486, 403, 1080, 636)
 
 [sub_resource type="AtlasTexture" id="flame_thrust_12"]
 atlas = ExtResource("skills")
-region = Rect2(2400, 1600, 800, 400)
+region = Rect2(604, 1777, 532, 168)
+margin = Rect2(486, 403, 1068, 632)
 
 [sub_resource type="AtlasTexture" id="flame_thrust_13"]
 atlas = ExtResource("skills")
-region = Rect2(0, 2000, 800, 400)
+region = Rect2(1168, 1777, 532, 168)
+margin = Rect2(486, 403, 1068, 632)
 
 [sub_resource type="AtlasTexture" id="flame_thrust_14"]
 atlas = ExtResource("skills")
-region = Rect2(800, 2000, 800, 400)
+region = Rect2(16, 1977, 532, 168)
+margin = Rect2(486, 403, 1068, 632)
 
 [sub_resource type="AtlasTexture" id="rising_dragon_4"]
 atlas = ExtResource("skills")
-region = Rect2(0, 0, 800, 400)
+region = Rect2(1347, 2565, 111, 64)
+margin = Rect2(625, 500, 1489, 736)
 
 [sub_resource type="AtlasTexture" id="rising_dragon_5"]
 atlas = ExtResource("skills")
-region = Rect2(800, 0, 800, 400)
+region = Rect2(1098, 16, 203, 275)
+margin = Rect2(556, 286, 1397, 525)
 
 [sub_resource type="AtlasTexture" id="rising_dragon_6"]
 atlas = ExtResource("skills")
-region = Rect2(1600, 0, 800, 400)
+region = Rect2(882, 16, 184, 277)
+margin = Rect2(568, 284, 1416, 523)
 
 [sub_resource type="AtlasTexture" id="rising_dragon_7"]
 atlas = ExtResource("skills")
-region = Rect2(2400, 0, 800, 400)
+region = Rect2(715, 16, 135, 278)
+margin = Rect2(589, 281, 1465, 522)
 
 [sub_resource type="AtlasTexture" id="rising_dragon_8"]
 atlas = ExtResource("skills")
-region = Rect2(0, 400, 800, 400)
+region = Rect2(1333, 16, 146, 269)
+margin = Rect2(595, 281, 1454, 531)
 
 [sub_resource type="AtlasTexture" id="rising_dragon_9"]
 atlas = ExtResource("skills")
-region = Rect2(800, 400, 800, 400)
+region = Rect2(1633, 2565, 126, 61)
+margin = Rect2(637, 298, 1474, 739)
 
 [sub_resource type="AtlasTexture" id="rising_dragon_14"]
 atlas = ExtResource("skills")
-region = Rect2(1600, 400, 800, 400)
+region = Rect2(1490, 2565, 111, 64)
+margin = Rect2(625, 500, 1489, 736)
 
 [resource]
 animations = [{

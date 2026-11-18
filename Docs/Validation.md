@@ -1,5 +1,45 @@
 # 验证
 
+## 独立特效整类、掉落球滤镜采样与正式接入（2026-11-17，本批交审）
+
+用户认可Boss批次后授权下一批，仅处理Effects分类189图。当前4191文件为基线，原有Boss暂存索引保留。84套原图/场景/库与旧候选before全等后复用查源成果；正式替换84PNG、4份SpriteFrames及相关原有视觉节点，两悟空库仅换视觉offset/scale。火魔斩前奏一行朝向赋值保留0.5密度，原RESET夹具同步期望0.5；没有新增Manager/System、运行加载层、产品图片或修改碰撞/玩法。原PNG.import/UID及所有英雄身体/武器/preview、怪物与Boss素材保持。
+
+Git状态变化：开工HEAD67fb4f7、Boss暂存补丁已取散列；用户在本轮期间提交Boss为120bf68f。原索引补丁散列已变化，不能报告未变；当前暂存区空，助手未提交/暂存/回退，不恢复旧HEAD或索引。范围保护按原工作区文件散列和当前差异核对；最终本批104个既有文件改动、无新增运行文件，其他基线文件逐个保持。
+
+| 检查 | 结果与适用范围 |
+| --- | --- |
+| 来源/完成范围 | 189图逐项记录：83纯矢量高清、1内联技能混合图部分，104原位图和1未确认墓碑原图保持。源Role_v7/Monster_v1恢复散列匹配。83+1实际替换，不把升级/命中/冰块等位图未完成项一并勾选。 |
+| 掉落球旧候选否决 | 旧2倍弱帧alpha总量归一0.9302～1.0692、质心最大偏移1.7323逻辑px，不能直接接入。仅增加blur预算输出相同，未误认作问题已修复。 |
+| 高密度滤镜修正 | 核对FFDec26.3整数化核及偶数核半像素相位，在独立作者副本的BLURFILTER/GLOWFILTER补偿；1倍执行原算法，源SWF/XML/安装目录不改。四类球76帧和相关Role滤镜1倍可见RGBA复现正式原件；2倍实际接入球alpha归一0.996593～1.013667、质心偏移≤0.03975逻辑px。原颜色、strength、passes、knockout、柔光保留，不逐帧居中。 |
+| 源像素/图集 | 176独立可见纹理/姿态（97裁片＋79直接PNG）核对通过。旧177口径计了水魔球共用姿态的重复时刻，不是少帧；333源时刻、所有帧ID/duration/loop/速度和透明时刻保持。稀疏裁片用现有compact_registered_atlas恢复完整虚拟画布，像素无损。 |
+| 纹理尺寸/重复执行 | 本批最大单边2739，未新增分页；RGBA8理论36.79MiB，旧候选稀疏布局93.78MiB。98资源重复接入字节一致，缩放不累计。此数不代表Android驻留或真机性能。 |
+| 原生三比例 | 1920/2400/2520×1080各666次帧/双向/位置/逻辑画布及世界物理形状检查，合计1998项/60张预览；三次退出0/PASS、stderr空。只剥离隔离夹具副本的方法回调，正式方法与判定轨未删；并非Android真机。 |
+| 实际GGF行为 | 五项均退出0/PASS：loot-only覆盖四色飞行、归属、领取及回收；sea-only覆盖虾兵投射物；tangseng-only覆盖唐僧飞弹、水魔球（本轮还覆盖原分身检查）；fire-motion-only覆盖左右朝向与残焰/前奏；inventory-skills-only覆盖命中、声音、打断及RESET恢复。功能专项用940×590窗口，1080p及手机比例视觉由上述原生正式场景夹具验；不代替T3全关宽屏。 |
+| 构建/格式/引用 | 最终构建退出0、0错5既有弃用警告；两处C#修改的dotnet format whitespace检查退出0；2311路径/392UID及git diff --check通过。本批无新增资源路径，不重生Collection或写Git索引。 |
+
+已查看掉落球固定原点/各相位、悟空普攻/烈焰闪及唐僧冰龙波1080p/手机比例图，并查看实际唐僧水魔球游戏截图。看图入口：[本批总览](../Godot/GodotProject/.godot/validation/art_effects_resume_20261117/effects_batch_overview.png)、[掉落球按1080p密度/400%对照](../Godot/GodotProject/.godot/validation/art_effects_resume_20261117/loot_comparison_1080p.png)、[源24fps动图](../Godot/GodotProject/.godot/validation/art_effects_resume_20261117/loot_motion_24fps.png)、[手机20:9冰龙波](../Godot/GodotProject/.godot/validation/art_effects_resume_20261117/native_2400_ice_dragon_bolt_single.png)。过程仅留既有忽略目录art_effects_resume_20261117；正式资源在TheGame，无Docs审图图片副本。
+
+诊断分开记录：导入与三次原生夹具stderr空。五个实际专项均保留既有故意NodePool类型不匹配注入；退出ObjectDB依次12/8/6/6/140，资源占用依次3/1/0/0/10，技能专项另有38个CanvasItem RID及纹理关停占用。功能断言与退出码通过，不把stderr称为空或扩大为框架清理批次。
+
+中间问题：静态检查首次套用旧177计数失败，核对为176独立纹理加1次共用姿态重复，修正计数口径，原333时刻及资源内容不变；清单首次按6个“新修改资源”计配套增量不足，核对还覆盖了未修改的loot_frames及残焰播放库，均有原生和实际行为证据，最终按逐项真实状态72/182。旧缓存掉落球采样失败与预算无效对照均保留，不把其原PASS标签当当前保真依据。
+
+主要命令（完整逐轮参数、退出码和错误见functional_results.json；滤镜作者Java源码/编译散列和固定源身份见source_sampling_verification.json）：
+
+```powershell
+python Godot/GodotProject/.godot/validation/art_effects_resume_20261117/prepare_resume.py
+python Godot/GodotProject/.godot/validation/art_effects_resume_20261117/install.py
+python Godot/GodotProject/.godot/validation/art_effects_resume_20261117/verify_static.py
+python Godot/GodotProject/.godot/validation/movement_presets/run_godot.py art_effects_resume_import_20261117 --headless --editor --import --rendering-method gl_compatibility --audio-driver Dummy
+dotnet build Godot/GodotProject/GodotProject.csproj --no-restore -v minimal
+python Godot/GodotProject/.godot/validation/art_effects_resume_20261117/run_cases.py
+python Godot/GodotProject/.godot/validation/art_effects_resume_20261117/make_review.py
+python Tools/ProjectMaintenance/validate_game_references.py
+dotnet format whitespace Godot/GodotProject/GodotProject.csproj --no-restore --verify-no-changes --include Godot/GodotProject/TheGame/GameScripts/Entity/Heroes/Wukong/WukongEntity.AnimationEvents.cs Godot/GodotProject/TheGame/MainPack/Scripts/Debug/UiSmokeScenario.Skills.cs --verbosity minimal
+git diff --check
+```
+
+清单153/672、来源限制191（部分27）、其他328，配套72/182；本批停审，UI/装备/数字/地形不继续。地图真实高清、原位图效果/墓碑来源、Android真机/驻留预算和T3全关宽屏仍未完成。
+
 ## Boss整类重新接入、分页及图鉴引用（2026-11-17，本批交审）
 
 依用户“继续下一批”和计划2.12.36，仅接入Boss及其专属效果类别。以干净67fb4f7取4179文件/索引新基线；旧Boss候选先核对来源散列与当前旧资源一致，复用有效导出和1倍注册证据，不恢复跨类别内容。正式原路径替换12套（11套2058时刻＋唐僧被抓130时刻），新增6张分页/import；无玩法、碰撞、显示配置、Framework/addons或英雄/普通怪物资源修改。必要的7处地图图鉴裁片随源图布局同步，UI布局不动。

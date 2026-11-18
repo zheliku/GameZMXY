@@ -83,7 +83,7 @@ public partial class WukongEntity
         state.BeginPrelude(this);
         // TopLevel 保持出招原地，不跟随升空或瞬移；动画完成由场景信号隐藏。
         _fireDemonPrelude.GlobalPosition = ((ISkillActor)this).SkillPosition + new Vector2(0, 20);
-        _fireDemonPrelude.Scale = new Vector2(Facing > 0 ? 1 : -1, 1);
+        _fireDemonPrelude.Scale = new Vector2(Facing * Mathf.Abs(_fireDemonPrelude.Scale.X), _fireDemonPrelude.Scale.Y);
         _fireDemonPrelude.Stop();
         _fireDemonPrelude.Frame = 0;
         _fireDemonPrelude.Show();
