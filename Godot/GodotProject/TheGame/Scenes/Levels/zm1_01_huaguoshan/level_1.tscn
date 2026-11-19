@@ -7,6 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://r23t1kwdoaw6" path="res://TheGame/Sprites/Levels/zm1_01_huaguoshan/level_1_front_2.png" id="Front_page2"]
 [ext_resource type="Texture2D" uid="uid://d2iefkmf0fq8f" path="res://TheGame/Sprites/Levels/zm1_01_huaguoshan/level_1_front_3.png" id="Front_page3"]
 [ext_resource type="Texture2D" uid="uid://dw2plrsd3g8u5" path="res://TheGame/Sprites/Levels/zm1_01_huaguoshan/huaguoshan_ground.png" id="5_ngj7n"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Levels/zm1_01_huaguoshan/huaguoshan_ground_page_2.png" id="Artwork71_page_2"]
 [ext_resource type="Script" uid="uid://dd28ay4bkp1fl" path="res://TheGame/GameScripts/Entity/Level/Markers/LevelMarkerResource.cs" id="6_marker_entry"]
 [ext_resource type="Script" uid="uid://bkq4g0l6t4k15" path="res://TheGame/GameScripts/Entity/Level/Spawning/LevelSpawnPointsNode.cs" id="9_spawn_manager"]
 [ext_resource type="Script" uid="uid://b7abdk6hcrmws" path="res://TheGame/GameScripts/Entity/Level/Stages/LevelTriggersNode.cs" id="10_trigger_manager"]
@@ -241,7 +242,14 @@ position = Vector2(-8.35, 431.65)
 texture = ExtResource("5_ngj7n")
 centered = false
 region_enabled = true
-region_rect = Rect2(0, 0, 4708.35, 170)
+region_rect = Rect2(0, 0, 2406, 170)
+
+[node name="Page2" type="Sprite2D" parent="World/Geometry/Ground/Artwork71"]
+position = Vector2(2406, 0)
+texture = ExtResource("Artwork71_page_2")
+centered = false
+region_enabled = true
+region_rect = Rect2(8, 0, 2302.35, 170)
 
 [node name="Slopes" type="Node2D" parent="World/Geometry" unique_id=910163684]
 
@@ -461,6 +469,7 @@ one_way_collision = true
 [node name="Artwork3" type="Sprite2D" parent="World/Platforms/Platform00" unique_id=1712120326]
 z_index = -15
 position = Vector2(-11.9904785, -10.935043)
+scale = Vector2(0.5, 0.5)
 texture = ExtResource("12_jbsfk")
 centered = false
 
@@ -477,6 +486,7 @@ one_way_collision = true
 [node name="Artwork7" type="Sprite2D" parent="World/Platforms/Platform01" unique_id=494659890]
 z_index = -14
 position = Vector2(-9.040283, -8.985062)
+scale = Vector2(0.5, 0.5)
 texture = ExtResource("12_jbsfk")
 centered = false
 
@@ -493,6 +503,7 @@ one_way_collision = true
 [node name="Artwork45" type="Sprite2D" parent="World/Platforms/Platform02" unique_id=1814568328]
 z_index = -13
 position = Vector2(-10.2404785, -10.285049)
+scale = Vector2(0.5, 0.5)
 texture = ExtResource("12_jbsfk")
 centered = false
 

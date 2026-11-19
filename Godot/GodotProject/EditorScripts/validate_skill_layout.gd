@@ -29,12 +29,12 @@ func _run() -> void:
 	_strip_scripts(form)
 	viewport.add_child(form)
 	var rows: Control = form.get_node("Content/m_ActivePage/m_WukongRows")
-	var positions := [Vector2(192.05, 124.7), Vector2(193.05, 201.85), Vector2(193.05, 284), Vector2(193.05, 364.15), Vector2(193.05, 443.3)]
+	var positions := [Vector2(191, 124.5), Vector2(191, 203.5), Vector2(191, 284), Vector2(191, 364.5), Vector2(191, 443.5)]
 	await process_frame
 	await process_frame
 	for i in range(5):
 		var icon: TextureButton = rows.get_node("Skill%d/IconCell/Icon" % (i + 1))
-		assert(icon.global_position.distance_to(positions[i]) < 0.02, "学习图标偏离官方坐标")
+		assert(icon.global_position.distance_to(positions[i]) < 0.02, "学习图标偏离技能页原网格坐标")
 	await _capture(viewport, "skills_layout_active")
 	form.get_node("Content/m_ActivePage").hide()
 	form.get_node("Content/m_PassivePage").show()
@@ -49,15 +49,19 @@ func _run() -> void:
 	_strip_scripts(hud)
 	viewport.add_child(hud)
 	var menu: Sprite2D = hud.get_node("LeftAnchor/MenuPanel")
-	assert(menu.position == Vector2(90, 531) && menu.texture.resource_path.ends_with("hud_menu_panel.png"))
+	var menu_art: Sprite2D = menu.get_node("Backdrop")
+	assert(menu.position == Vector2(90, 531) && menu_art.texture.resource_path.ends_with("hud_menu_panel.png"))
+	assert(menu_art.position == Vector2.ZERO && menu_art.get_rect().size * menu_art.scale == Vector2(169, 133))
 	for entry in [["m_InventoryButton", "inventory"], ["m_SettingsButton", "settings"], ["m_SkillsButton", "skills"], ["WeaponButton", "weapon"], ["PetButton", "pet"]]:
 		var button: TextureButton = menu.get_node(entry[0])
 		assert(button.visible && button.texture_normal.resource_path.ends_with("menu_%s_normal.png" % entry[1]), "旧菜单素材被替换或隐藏")
 	var frame: Sprite2D = menu.get_node("WsFrame")
-	assert(frame.texture != null && frame.texture.resource_path.ends_with("hud_ws_frame.png"), "无双黑色长底板缺失")
-	assert(frame.position == Vector2(113, 25) && frame.texture.get_size() == Vector2(260, 22), "无双底板偏离造三菜单布局")
+	var frame_art: Sprite2D = frame.get_node("Backdrop")
+	assert(frame_art.texture.resource_path.ends_with("hud_ws_frame.png"), "无双黑色长底板缺失")
+	assert(frame.position == Vector2(113, 25) && frame_art.position == Vector2.ZERO
+		&& frame_art.get_rect().size * frame_art.scale == Vector2(260, 22), "无双底板偏离造三菜单布局")
 	var ws_bar: TextureProgressBar = frame.get_node("m_WsBar")
-	assert(ws_bar.scale == Vector2(1.17, 1.03), "无双条宽度未适配黑色底板")
+	assert((ws_bar.size * ws_bar.scale).is_equal_approx(Vector2(221, 28) * Vector2(1.17, 1.03)), "无双条绘制范围偏离黑色底板")
 	var atlas: SpriteFrames = load("res://TheGame/Sprites/UI/hud/battle_skill_icon_frames.tres")
 	var names := ["RisingDragon", "FlameThrust", "BlazingFlash", "FlameStorm", "FireDemonSlash"]
 	for state in range(2):

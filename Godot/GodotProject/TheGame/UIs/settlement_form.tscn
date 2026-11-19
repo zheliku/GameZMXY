@@ -52,7 +52,8 @@ mouse_filter = 2
 
 [node name="Background" type="TextureRect" parent="Content/Backdrop" unique_id=246313495]
 layout_mode = 0
-offset_right = 940.0
+offset_left = -234.0
+offset_right = 1174.0
 offset_bottom = 590.0
 mouse_filter = 2
 texture = ExtResource("backdrop")

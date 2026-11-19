@@ -742,7 +742,6 @@ public sealed partial class UiSmokeScenario
         await WaitUntilAsync(() => hero.OnFloor, "分身专项前本体没有落到真实地形");
         TangsengWaterCloneNode clone = hero.GetNode<GameLogic.Heroes.Tangseng.TangsengWaterCloneNode>("m_WaterClone");
         AnimationPlayer player = clone.GetNode<AnimationPlayer>("AnimationPlayer");
-        Sprite2D sprite = clone.GetNode<Sprite2D>("m_Body");
         int originalTicks = Engine.PhysicsTicksPerSecond;
         try
         {
@@ -760,7 +759,7 @@ public sealed partial class UiSmokeScenario
                     "分身与本体落地脚底不在同一高度");
                 clone.Activate(start, 1);
                 await WaitUntilAsync(() => clone.GlobalPosition.X > start.X + 30, "水幻影没有独立行进");
-                Check(player.CurrentAnimation == "walk" && sprite.Frame is >= 0 and < 16,
+                Check(player.CurrentAnimation == "walk" && player.CurrentAnimationPosition > 0 && player.CurrentAnimationPosition < 16d / 24d,
                     "水幻影走路没有使用原生帧轨道");
                 GF.Base.PauseGame();
                 Vector2 pausedPosition = clone.GlobalPosition;
@@ -782,15 +781,15 @@ public sealed partial class UiSmokeScenario
                 Check(impacts == 1, "分身玄冰阵重复回调");
 
                 int heals = 0;
-                int healFrame = -1;
+                double healTime = -1;
                 clone.Activate(start, -1);
                 clone.PlayHeavenlyDew(() =>
                 {
                     heals++;
-                    healFrame = sprite.Frame;
+                    healTime = player.CurrentAnimationPosition;
                 });
                 await WaitUntilAsync(() => !clone.IsActive, "分身甘露末帧没有结束");
-                Check(heals == 1 && healFrame == 115, $"分身甘露未在原生末帧治疗一次：次数{heals}、回调帧{healFrame}");
+                Check(heals == 1 && healTime >= 49d / 24d - .001 && healTime < 50d / 24d, $"分身甘露未在原生末帧治疗一次：次数{heals}、动画时间{healTime:F4}秒");
 
                 clone.Activate(start, 1);
                 clone.PlayDarkIce(() => impacts++);
@@ -1127,7 +1126,7 @@ public sealed partial class UiSmokeScenario
                 var hudIcon = battleForm.GetNode<TextureRect>($"LeftAnchor/MenuPanel/SkillBar/Skill{definition.Order}/Icon").Texture as AtlasTexture;
                 Check(system.IsLearned(GF.Fsm.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1), definition.Id) && button.Disabled && button.TextureNormal.ResourcePath.EndsWith("_learned.png", StringComparison.Ordinal) &&
                     hudIcon?.Atlas.ResourcePath == "res://TheGame/Sprites/UI/hud/battle_skill_icons.png" &&
-                    hudIcon.Region == new Rect2(definition.Order * 45, 0, 45, 45),
+                    hudIcon.Region == new Rect2(definition.Order * 90, 0, 90, 90),
                     $"学习没有同步两个图标：{definition.Id}");
             }
             Check(flow.GetModel<ProfileModel>().GetSoul(flow.GetModel<ProfileModel>().HeroOf(PlayerSlot.P1)).Value == 200, "五招学习费用不是 3800");

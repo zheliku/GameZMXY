@@ -1,6 +1,155 @@
 # 验证
 
-## 关卡背景、地形、平台与前景接入（2026-11-18，本批交审）
+## 装备、技能图标与近景浮台（2026-11-19）
+
+Godot 4.7.2 Mono，Windows Compatibility。按 §2.12.46 集中交付：正式 PNG 原路径和 UID 保持，旧图在 Git 及 `.godot/validation` 对应批次的 `before/`。2 倍版本复用原有置放、状态和配套资源；密度和行为分开验收。
+
+| 项目 | 结果 |
+| --- | --- |
+| 装备 38 套 / 76 图 | 按原像素面积回采样，预乘色 / alpha 最大差 0.511/255，alpha 裁框等比相同。三个画幅逐项核对背包框、掉落显示框和底部注册，共 38 对/画幅。粗糙图的原 4px 留白和普通品质原白边保留。现有登记 38 个唯一装备身份均有两张图；实际装备、地面掉落、拾取、穿脱和背包重新打开继续播放均通过。 |
+| 技能 21 图 / 1 帧资源 | 战斗 11 格、学习 20 个状态图，按原面积回采样最差 0.461/255；色和透明覆盖保持。`SpriteFrames` 只将源裁框放到 90px，`[resource]` 状态、时长和映射字节保持；三个画幅分别加载 20 张 130×130、核对 10×2 状态引用和原 65/45 逻辑框。1080p 悟空背包技能与唐僧真实学习及效果专项 `SMOKE PASS`。 |
+| 浮台 2 图、8 实例 | 花果山 263×75→526×150、水帘洞 179×51→358×102，回采样最大差分别 0.539/255、0.498/255，透明边界等比不变。场景差异只给装饰 Sprite2D 密度补偿；一共 3+5 个注册，碰撞体、层次和位置序列化保持。在 1920/2400/2520×1080 复核各摆放及三处进入画面的浮台，固定水波时像素差只在浮台区。花果山关场景校验通过，1080p 地形专项 48 组坡面走跑、停续和跳跃通过。 |
+| 路牌与背景 | 起点路牌合在 `level_1_front.png` 中，原源 bitmap 142 的 500×500 像素还含透明区。测试只变更对应不透明区，同面积最大色差 0.25/255，原尺寸观察几乎无改善；正式前景 SHA256 与试验前一致。远山、长地面、旅途地图中心、地图入口主体不收录候选。 |
+| 工程与平台 | 导入通过、编辑器装配语法通过、C# 构建 0 错误（5 条既有框架弃用警告）。`validate_game_references.py` 检查 2370 路径 / 392 UID，`git diff --check` 通过，Git HEAD `72df176f` 与原索引一致。实际烟测退出仍有已知 RID/ObjectDB 和部分 NodePool 预期诊断（`GroundItemNode`/`LootOrbNode` 在此前日志已出现）；各专项均为退出码 0。2400/2520×1080 是 Windows 桌面输出；Android 导出、真机及全关宽屏未验。 |
+
+复核材料：[装备 1080p 第一页](../Godot/GodotProject/.godot/validation/art_equipment_coverage_20261119/equipment_native_1920_1_formal.png) / [第二页](../Godot/GodotProject/.godot/validation/art_equipment_coverage_20261119/equipment_native_1920_2_formal.png) · [技能 1080p 实跑](../Godot/GodotProject/.godot/validation/art_skill_icon_coverage_20261119/skills_1920_wukong_live.png) / [唐僧 20:9 桌面预览](../Godot/GodotProject/.godot/validation/art_skill_icon_coverage_20261119/skills_tangseng_2400_learned_layout.png) · [花果山浮台原位](../Godot/GodotProject/.godot/validation/art_huaguoshan_near_source_20261119/platform1_formal_compare_1080p.png) / [水帘洞浮台原位](../Godot/GodotProject/.godot/validation/art_huaguoshan_near_source_20261119/platform2_formal_compare_1080p.png) · [保留路牌的理由](../Godot/GodotProject/.godot/validation/art_huaguoshan_near_source_20261119/near_native_compare_1080p.png)。`installed.json`、`coverage.json`、`platforms_installed.json` 和 `final_pixel_checks.json` 对应原件、最终尺寸、裁框与差异数据。
+
+```powershell
+$v = 'Godot/GodotProject/.godot/validation'
+$runner = "$v/movement_presets/run_godot.py"
+$live = '--windowed','--resolution','1920x1080','--rendering-method','gl_compatibility','--audio-driver','Dummy','--max-fps','120'
+python $runner art_eq_coverage_real_20261119 @live -- --smoketest=ui --equipment-only
+python $runner art_skill_wukong_final_20261119 @live -- --smoketest=ui --inventory-skills-only
+python $runner art_skill_tangseng_final_20261119 @live -- --smoketest=ui --tangseng-only
+python $runner art_platform_final_terrain_live_20261119 @live -- --smoketest=ui --terrain-only
+python $runner art_skill_layout_render_final_20261119 @live --script res://EditorScripts/validate_skill_layout.gd
+python $runner art_level_scene_final_20261119 --headless --script res://EditorScripts/validate_level_scene.gd
+python $runner art_platform_normalizer_parse_20261119 --headless --check-only --script res://EditorScripts/normalize_level_geometry.gd
+# *_final_1920/2400/2520 记录对应的 .godot/validation 下脚本：
+# art_equipment_coverage_20261119/preview.gd -- <宽> formal
+# art_skill_icon_coverage_20261119/native.gd -- <宽>
+# art_huaguoshan_near_source_20261119/native.gd -- <宽> <关卡1或2> formal
+python Tools/LegacyMigration/audit_equipment_appearances.py --repo . --output "$v/art_equipment_coverage_20261119/equipment_catalog_audit.json"
+python Tools/ProjectMaintenance/validate_game_references.py
+dotnet build Godot/GodotProject/GodotProject.csproj --no-restore
+git diff --check
+```
+
+## HUD 边缘、分页与地图图鉴减载（2026-11-19）
+
+基线 Git `72df176f`，保留此前工作区及索引。Godot 4.7.2 Mono、Windows Compatibility 实绘；原布局 `940×590` 和同平台 KeepHeight 没变。原件、裁框与候选保留在 `.godot/validation` 的对应批次；执行命令在下方。
+
+| 项目 | 实测 |
+| --- | --- |
+| HUD 原图覆盖 | 彩色按钮 5 组共 10 张；血、蓝、经验、Boss、无双共 7 张。按原像素颜色与透明度重建 2 倍边缘，按原格面积回采样的最大预乘色/alpha 差不超过 0.524/255。1920/2400/2520×1080 三比例 30 个左右按钮原位核对、36 次正常点击及 24 次禁用按压未发信号；原逻辑按钮 47×40 同图同位。27 个资源条绘制框、每组八档数值核对，原偏移和方向保持；既有 `validate_hud_bar_alignment.gd` 在三种缩放的三档填充值均未越出底板，技能布局通过。 |
+| 怪物及 Boss 分页 | 7 套现用 SpriteFrames，293 个独立裁框，478 个实际帧引用每画幅逐个对照。1,434 次位置/序列，另有 6 次（两幅肖像 × 三种比例）旧图鉴裁框核对。42 组 GPU 原位绘制最高差 1/255，所有原像素可从新页拼回；最大页 3268。随后图鉴专项换用独立小图集，旧静态裁框仍是原图。 |
+| 地形与调试场 | 9 条视觉层、8 场景（7 正式关卡和 `test_arena`）。三比例各 802 个节点结构/坐标检查，在左、中接缝、最右共 81 组前后帧比较，最大差 1/255；碰撞节点、取景、尾缘和天空视差保持。既有编辑器装配方法在夹具上生成相同裁框，新增分片为子 Sprite2D。实际坡面经过原 60/120Hz 走跑、转向、跳跃回归。 |
+| 地图图鉴降载 | 21 个原裁框合为 1024×1452 的图集，三种画幅每次核对 405,097 个可见 texel RGBA 完全相同，原所有 EntityId、尺寸和 28px 列表项固定，GPU 最大变化 1/255。`MapForm` 序列化纹理闭包按 RGBA8 估算由 549.30 MiB（刚分页后）到 117.47 MiB。分别用全新 Windows 进程隔离装配同一 MapForm 场景，Godot 纹理计数增量 766,808,525→163,099,165 字节，即 731.3→155.5 MiB（约少 79%）；该计数不包含同场战斗驻留，也不是 Android 实测。 |
+| 实际程序 | 花果山 1080p 的前端、战斗 HUD、背包和技能通过；完整前端另通过选角、进关、存档及回池。正式图鉴专项 10 卡片、10 个嵌套悬停/移出、两窗口比例和点击进关通过。该专项首次暴露旧图本来保留的一像素透明边；以原/新裁框 RGBA 一致为证，将旧断言改为一像素容差，正式画面没有重修裁框。花果山 3840×2160 全屏截帧通过，实际逻辑视野仍为 1048×590。`--smoketest=bosses` 与龙王、鲨魔王、鹏魔王原 940×590 流程功能专项通过。已知 NodePool 故障注入、存档错误注入与退出 RID 或 ObjectDB 保留原日志。截帧脚本启动时的旧 AdvanceToLevel 空引用诊断另记，常规主场景与实际专项不受此夹具影响。 |
+| 生成、范围和限制 | Godot 导入、三份已有编辑器脚本语法、Collection Res 1049 项、C# 构建 0 错 5 条既有弃用警告、2370 序列化路径/392 UID、`git diff --check` 通过。旧 35 张 >4096 单边减少到 19；剩下为英雄战斗图集，最大 6800，保留 6 列/200 逻辑格且待目标手机。Windows 预览不代替 Android、全关宽屏或发布包验收。 |
+
+[1080p 资源条原位对照](../Godot/GodotProject/.godot/validation/art_hud_fills_20261119/same_size.png) · [彩色按钮源约束对照](../Godot/GodotProject/.godot/validation/art_hud_buttons_trial_20261119/compare.png) · [1080p 花果山实跑](../Godot/GodotProject/.godot/validation/art_hud_fills_20261119/live_battle_1920.png) · [花果山分页接缝](../Godot/GodotProject/.godot/validation/art_texture_pages_20261119/land_1920_huaguoshan_ground_join_after.png) · [4K 全屏实际截帧](../Godot/GodotProject/.godot/validation/art_hud_fills_20261119/live_level_1_3840.png) · [正式地图图鉴悬停](../Godot/GodotProject/.godot/validation/art_map_guide_atlas_20261119/live_guide_hover_shazhiwoliu.png) · [20:9 肖像绘制](../Godot/GodotProject/.godot/validation/art_map_guide_atlas_20261119/guide_portraits_2400.png) · [当前纹理账本](../Godot/GodotProject/.godot/validation/art_texture_pages_20261119/budget.json)。
+
+```powershell
+$v = 'Godot/GodotProject/.godot/validation'
+$runner = "$v/movement_presets/run_godot.py"
+# 资源导入后以同一 Godot --headless --editor --script res://EditorScripts/regenerate_collection.gd 生成登记。
+$drawArgs = @('--rendering-method','gl_compatibility','--audio-driver','Dummy','--resolution','640x384')
+foreach ($w in 1920,2400,2520) {
+    python $runner "art_texture_pages_atlas_$w`_20261119" @drawArgs --script res://.godot/validation/art_texture_pages_20261119/preview_atlases.gd -- $w
+    python $runner "art_texture_pages_land_$w`_20261119" @drawArgs --script res://.godot/validation/art_texture_pages_20261119/preview_terrain.gd -- $w
+    python $runner "art_hud_fills_native_$w`_20261119" @drawArgs --script res://.godot/validation/art_hud_fills_20261119/preview.gd -- $w formal
+    python $runner "art_hud_color_buttons_native_$w`_20261119" @drawArgs --script res://.godot/validation/art_hud_buttons_trial_20261119/preview.gd -- $w formal
+    python $runner "art_map_guide_atlas_$w`_20261119" @drawArgs --script res://.godot/validation/art_map_guide_atlas_20261119/verify.gd -- $w
+}
+foreach ($variant in 'before','after') {
+    python $runner "art_map_gpu_$variant`_20261119" @drawArgs --script res://.godot/validation/art_map_guide_atlas_20261119/texture_measure.gd -- $variant
+}
+python $runner art_hud_fills_alignment_20261119 @drawArgs --script res://EditorScripts/validate_hud_bar_alignment.gd
+python $runner art_map_guide_hover_verified_20261119 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=frontend --level-guide-only
+python $runner art_hud_battle_fullscreen_final_20261119 --fullscreen --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 3000 --script res://.godot/validation/art_hud_fills_20261119/live_fullscreen.gd -- --smoketest --capture-4k
+# 同运行配置的实跑另用 --smoketest=frontend / --smoketest=ui --inventory-skills-only / --terrain-only。
+# 原战斗窗口 940x590 的 Boss 专项用 --smoketest=bosses 或 --smoketest=ui --dragon-only / --shark-only / --garuda-only。
+python "$v/art_texture_pages_20261119/budget.py"
+dotnet build Godot/GodotProject/GodotProject.csproj -p:Configuration=Debug -p:NuGetAudit=false -v quiet
+python Tools/ProjectMaintenance/validate_game_references.py
+git diff --check
+```
+
+## 美术合并交付与保真余项（2026-11-19）
+
+基线 `72df176f`，Godot `4.7.2.stable.mono.official.ed1daf0bf`，Windows Compatibility 渲染器。正式工程改动和导入登记可见 Git；原件由 Git 与验证目录的 `before/` 保留。未改 `project.godot`、940×590 逻辑核心、控制、角色碰撞和关卡门。Windows 1920×1080 为验收，2400×1080/2520×1080 是桌面画幅预览。
+
+| 检查 | 实测 |
+| --- | --- |
+| 战斗 HUD | 九张位图按原覆盖重建，等面积回采样最大预乘色/alpha 差 <0.26/255；对应 [安装指纹](../Godot/GodotProject/.godot/validation/art_hud_caption_delivery_20261119/install_manifest.json)。三个画幅 54 组 P1/P2 对照，原位置、朝向、绘制范围、同层关系，18 次点击通过；像素差仅在改动图层矩形内。现有技能布局与空/半满/满值专项、官方满值 19 帧透明轮廓通过。旧技能格检查写的是早期坐标，与当前 Git 改前场景已不一致：用相同夹具对比改前改后五格坐标全等，校验固定到当前原网格，未改技能按钮布局。 |
+| 三套菜单 | 三张正式背景原画 1,665,331 像素 RGBA 全等；三画幅 2,046 组布局、149,296 次原画内部抽样最大约 1/255、132 次原生点击、48 张窗口比例图。标题透明边现在承托于纯黑底，原透明像素仍在。结算成功/失败、标题两态、技能两英雄和主动/被动页覆盖。 |
+| 英雄与锚点 | 唐僧水幻影 116 时刻 × 双朝向 × 三画幅共 696 次时序/注册检查通过，24fps 与 200 逻辑格保持；中毒标记两英雄 × 三画幅验证，骷髅边缘提清但仍含原烟雾。冰冻/身上毒雾 35/41 时刻原密度可见 RGBA 全等、原图保持。实际唐僧技能、毒效果、冰冻专项通过；水幻影和冰冻覆盖 60/120Hz，甘露回调仍落在 49/24 秒开始的末时刻范围。 |
+| 配套 | 8 字体、13 主题/样式，十处地图、装备空/占用、保存动画。辅助地图/背包/提示合计 2,865 次检查、657 个原时刻、30 次点击；三张输入态全透明，每种画幅 365,078 个原 mask 位一致及三处原生点击。保留原字体和遮罩，不把位图命中资源算高清。 |
+| 实际流程 | 常规启动完整前端、1080p 背包/技能、花果山 HUD、英雄死亡后结算及重试/回地图均通过；实跑截帧见下。前端自带损坏存档/登记失败注入；带附加截帧脚本的第一次前端因 `FrontendSmokeScenario` 空引用退出 1，同配置走正常主场景的完整前端通过。UI 截帧专项仍有既有 `AdvanceToLevel` 启动诊断和退出 RID/ObjectDB 日志，见 runner 原记录。 |
+| 导入、登记与构建 | Godot 资源导入退出 0；既有 Collection Res 生成 1032 项，仅增技能背景一条和时间戳，工具关停仍报告 RID/ObjectDB。C# 构建 0 错、5 既有弃用警告，2357 序列化路径/392 UID 与 Git 格式检查通过。 |
+| 余项 | 694 项图像中 182 已实施或按用途验收，493 个来源/保真受限、19 个仅保留旧资料；配套 117/183。35 张单边 >4096，最大 6800；按文件和序列化引用估算，不能当真机内存峰值。项目仅登记 Windows 发布预设，2400/2520 是 Windows 预览；Android 真机、T3 短关宽视域和 Windows CLI 成品包子包清单缺失仍各自待验。 |
+
+[HUD 同位置原尺寸](../Godot/GodotProject/.godot/validation/art_hud_caption_delivery_20261119/hud_1080p_comparison.png) · [1080p 实跑 HUD](../Godot/GodotProject/.godot/validation/art_hud_caption_delivery_20261119/live_battle_1920.png) · [三菜单 20:9 前后](../Godot/GodotProject/.godot/validation/art_static_ui_delivery_20261119/three_backgrounds_20_9.png) · [实跑技能](../Godot/GodotProject/.godot/validation/art_static_ui_delivery_20261119/live_skill_1920.png) · [实跑结算](../Godot/GodotProject/.godot/validation/art_static_ui_delivery_20261119/live_settlement_1920.png) · [纹理账本](../Godot/GodotProject/.godot/validation/art_hud_caption_delivery_20261119/budget.json)。
+
+在仓库根运行。脚本、源对照和 runner 日志保存在 Godot 忽略的验证目录；runner 为每个案例隔离本机存档。
+
+```powershell
+$v = 'Godot/GodotProject/.godot/validation'
+$runner = "$v/movement_presets/run_godot.py"
+python $runner art_combined_import_final_20261119 --headless --editor --import --rendering-method gl_compatibility --audio-driver Dummy
+python $runner art_combined_collection_20261119 --headless --editor --rendering-method gl_compatibility --audio-driver Dummy --script res://EditorScripts/regenerate_collection.gd
+dotnet build Godot/GodotProject/GodotProject.csproj -p:Configuration=Debug -p:NuGetAudit=false -v quiet
+foreach ($width in 1920,2400,2520) {
+  python $runner "art_combined_hud_final_${width}_20261119" --rendering-method gl_compatibility --audio-driver Dummy --resolution 640x384 --quit-after 500 --script res://.godot/validation/art_hud_caption_delivery_20261119/preview.gd -- $width
+  python $runner "art_combined_static_${width}_20261119" --rendering-method gl_compatibility --audio-driver Dummy --resolution 640x384 --quit-after 1800 --script res://.godot/validation/art_static_ui_delivery_20261119/preview_native.gd -- $width
+}
+python $runner art_combined_skill_layout_verified_20261119 --rendering-method gl_compatibility --audio-driver Dummy --resolution 940x590 --script res://EditorScripts/validate_skill_layout.gd
+python $runner art_combined_musou_final_20261119 --rendering-method gl_compatibility --audio-driver Dummy --resolution 640x384 --script res://EditorScripts/validate_musou_flash.gd
+python $runner art_combined_frontend_regular_20261119 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 10000 -- --smoketest=frontend
+# 复用相同的窗口和渲染参数，-- --smoketest=ui --inventory-skills-only / --hero-death-only
+# 附加 --script res://.godot/validation/art_hud_caption_delivery_20261119/live.gd 仅做实跑截帧。
+python "$v/art_hud_caption_delivery_20261119/review.py"
+python "$v/art_hud_caption_delivery_20261119/budget.py"
+python Tools/ProjectMaintenance/validate_game_references.py
+git diff --check
+```
+
+## 主题 SVG 与图标整类（2026-11-18，本批交审）
+
+Git基线 `72df176f`；使用 Godot `4.7.2.stable.mono.official.ed1daf0bf`。跟踪的正式修改为两枚设置滑块和 `icon.svg` 的导入参数，SVG/PNG源文件、引用、场景和脚本原样保留。工作目录 `.godot/validation/art_theme_icons_20261118/`，原件和原导入参数在 `before/`。
+
+| 检查 | 实测 |
+| --- | --- |
+| 正式设置页三种比例 | 1920×1080、2400×1080、2520×1080 改前/改后专项均退出0并输出 `SETTINGS THEME PASS`；每种普通、悬停音乐和悬停音效各一对。改动只在两滑块把手内，其他画面像素一致。普通/悬停均保持10×18逻辑尺寸，控件160×24；框外不接收悬停，两条拖至40和23的输入结果一致，关页重开均保留23。 |
+| 实际前端与4K | `art_theme_icons_final_frontend_1920_20261118` 退出0、完整 `SMOKE PASS` 和 `SMOKE-SETTINGS VOLUME PASS`。主菜单/地图/战斗设置入口、独立音乐/音效与UI、静音恢复和写盘均通过。实际 `--fullscreen` 为3840×2160，逻辑视域同电脑1080p为1048×590，专项再次通过；高分辨率只作用于呈现。测试故障注入和关停5个ObjectDB/1个资源在前端日志单独保留。 |
+| Windows EXE 实物 | 原版与新版均从现有 Windows Desktop debug 预设导出（退出0）。从 PE 读出16/32/48/64/128/256六档。旧128档匹配原 SVG 1倍渲染，新256档与原 SVG 2倍渲染（同 `fix_alpha_edges`）RGBA全等；旧256档是128档放大。日志确认新 `.dpitex` 已入包。两个 CLI 包在独立运行时均找不到 `subpackages/GameFrameworkVersion.dat`，均停在 `ProcedurePrepare` 的 `DataTables` 加载，未完成发布包启动；未经本批修改的 DataTableBundle 两版散列相同。 |
+| 图标来源与导入 | `ICON SOURCES PASS`：UID加载512原窗口图，256源纹理字节对照全等，AssetBundle类注册引用64×64编辑器变体。首次工程 `--import` 三图已导入、编辑器插件卸载后退出 `0xC0000005`；用隔离设置重跑 `--headless --editor --import` 退出0、stderr为空，实跑无本批资源解析错误。 |
+| 引用与范围 | `validate_game_references.py` 2355路径/392UID通过，`git diff --check`通过。本批没有窗口或玩法配置改动。2400/2520为Windows上的手机比例预览，没有Android APK与真机测试。 |
+
+[滑块1080p对照](../Godot/GodotProject/.godot/validation/art_theme_icons_20261118/slider_1080p_comparison.png) · [20:9原尺寸](../Godot/GodotProject/.godot/validation/art_theme_icons_20261118/after/2400/hover_m_MusicVolume.png) · [21:9原尺寸](../Godot/GodotProject/.godot/validation/art_theme_icons_20261118/after/2520/hover_m_MusicVolume.png) · [4K全屏](../Godot/GodotProject/.godot/validation/art_theme_icons_20261118/after/3840/hover_m_MusicVolume.png) · [EXE与工程图标对照](../Godot/GodotProject/.godot/validation/art_theme_icons_20261118/icon_review.png)。
+
+主要复现命令（仓库根，专项脚本和截图在忽略目录）：
+
+```powershell
+$v = 'Godot/GodotProject/.godot/validation'
+$b = "$v/art_theme_icons_20261118"
+$runner = "$v/movement_presets/run_godot.py"
+python $runner art_theme_icons_import_verified_20261118 --headless --editor --import
+foreach ($width in 1920,2400,2520) {
+    python $runner "art_theme_icons_after_${width}_20261118" --windowed --resolution "${width}x1080" --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 2300 --script res://.godot/validation/art_theme_icons_20261118/verify_settings.gd -- after $width
+}
+python $runner art_theme_icons_after_fullscreen_3840_20261118 --fullscreen --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 --quit-after 2300 --script res://.godot/validation/art_theme_icons_20261118/verify_settings.gd -- after 3840
+python $runner art_theme_icons_final_frontend_1920_20261118 --windowed --resolution 1920x1080 --rendering-method gl_compatibility --audio-driver Dummy --max-fps 120 -- --smoketest=frontend
+python $runner art_theme_icons_native_20261118 --windowed --resolution 640x384 --rendering-method gl_compatibility --audio-driver Dummy --quit-after 240 --script res://.godot/validation/art_theme_icons_20261118/verify_icon_sources.gd
+& 'S:/Godot4/Godot4CSharp_console.exe' --headless --path Godot/GodotProject --export-debug 'Windows Desktop' (Join-Path (Resolve-Path "$b/after/windows") 'GameZMXY.exe')
+python "$b/extract_windows_icons.py" "$b/after/windows/GameZMXY.exe" "$b/after/windows_icons"
+python "$b/make_review.py"
+python Tools/ProjectMaintenance/validate_game_references.py
+git diff --check
+```
+
+## 关卡背景、地形、平台与前景接入（2026-11-18，已认可继续）
 
 基线Git `898f494f`，原37PNG和`.import`、11场景置于`before/`。更新17张正式原路径PNG：12张按原矩阵局部提清，5张只补天空覆盖。新增20幅采样分片及导入文件；8个场景只调整美术层绘制，未调整物理或窗口。Collection Res按集中规范50经原生成器更新；七星洞既有校验改按分片合成逻辑边界校对相机，并对齐已在用的导出字段与地图动画根。框架、配置、生成器本身未改。
 

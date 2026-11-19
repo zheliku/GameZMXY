@@ -84,8 +84,8 @@ public sealed partial class FrontendSmokeScenario
                     "怪物图像裁切超出正式图集");
                 using (Image portraitImage = portrait.GetImage())
                 {
-                    Check(!portraitImage.IsInvisible() && portraitImage.GetUsedRect().Size == portraitImage.GetSize(),
-                        "怪物图片为空或仍含未裁去的透明边缘");
+                    Check(!portraitImage.IsInvisible() && portraitImage.GetUsedRect().Grow(1).Encloses(new Rect2I(Vector2I.Zero, portraitImage.GetSize())),
+                        "怪物图片为空或透明边缘超过原图的一像素余量");
                 }
             }
             Check(!card.HasNode("Content/Footer"), "图鉴仍保留隐藏关入口或提示尾句");

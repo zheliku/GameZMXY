@@ -87,48 +87,56 @@ script = ExtResource("item")
 _equipmentId = 1
 _inventoryIcon = ExtResource("icon_0")
 _groundIcon = ExtResource("ground_0")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="item_1"]
 script = ExtResource("item")
 _equipmentId = 2
 _inventoryIcon = ExtResource("icon_1")
 _groundIcon = ExtResource("ground_1")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="item_2"]
 script = ExtResource("item")
 _equipmentId = 3
 _inventoryIcon = ExtResource("icon_2")
 _groundIcon = ExtResource("ground_2")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="item_3"]
 script = ExtResource("item")
 _equipmentId = 4
 _inventoryIcon = ExtResource("icon_3")
 _groundIcon = ExtResource("ground_3")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="item_4"]
 script = ExtResource("item")
 _equipmentId = 5
 _inventoryIcon = ExtResource("icon_4")
 _groundIcon = ExtResource("ground_4")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="item_5"]
 script = ExtResource("item")
 _equipmentId = 6
 _inventoryIcon = ExtResource("icon_5")
 _groundIcon = ExtResource("ground_5")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="item_6"]
 script = ExtResource("item")
 _equipmentId = 7
 _inventoryIcon = ExtResource("icon_6")
 _groundIcon = ExtResource("ground_6")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="item_7"]
 script = ExtResource("item")
 _equipmentId = 8
 _inventoryIcon = ExtResource("icon_7")
 _groundIcon = ExtResource("ground_7")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="item_8"]
 script = ExtResource("item")
@@ -156,180 +164,210 @@ script = ExtResource("item")
 _equipmentId = 9
 _inventoryIcon = ExtResource("22_tm68k")
 _groundIcon = ExtResource("21_3dokt")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="Resource_lsvhc"]
 script = ExtResource("item")
 _equipmentId = 10
 _inventoryIcon = ExtResource("24_q2vte")
 _groundIcon = ExtResource("23_6rtwy")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="Resource_2w53e"]
 script = ExtResource("item")
 _equipmentId = 11
 _inventoryIcon = ExtResource("26_5xb6t")
 _groundIcon = ExtResource("25_ylv31")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="Resource_qso1b"]
 script = ExtResource("item")
 _equipmentId = 12
 _inventoryIcon = ExtResource("28_lsvhc")
 _groundIcon = ExtResource("27_nffhv")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="Resource_sl8he"]
 script = ExtResource("item")
 _equipmentId = 13
 _inventoryIcon = ExtResource("30_g60o7")
 _groundIcon = ExtResource("29_2w53e")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="Resource_0o6xw"]
 script = ExtResource("item")
 _equipmentId = 14
 _inventoryIcon = ExtResource("32_gpnwk")
 _groundIcon = ExtResource("31_hncxc")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="Resource_hncxc"]
 script = ExtResource("item")
 _equipmentId = 15
 _inventoryIcon = ExtResource("34_g60o7")
 _groundIcon = ExtResource("33_2w53e")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="Resource_eisir"]
 script = ExtResource("item")
 _equipmentId = 16
 _inventoryIcon = ExtResource("36_sl8he")
 _groundIcon = ExtResource("35_qso1b")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="Resource_f1vab"]
 script = ExtResource("item")
 _equipmentId = 17
 _inventoryIcon = ExtResource("38_ntvsi")
 _groundIcon = ExtResource("37_0o6xw")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="Resource_0wvu8"]
 script = ExtResource("item")
 _equipmentId = 18
 _inventoryIcon = ExtResource("40_xlus6")
 _groundIcon = ExtResource("39_u318k")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="Resource_tj18l"]
 script = ExtResource("item")
 _equipmentId = 19
 _inventoryIcon = ExtResource("42_7jjev")
 _groundIcon = ExtResource("41_fcca0")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="Resource_yd3qi"]
 script = ExtResource("item")
 _equipmentId = 20
 _inventoryIcon = ExtResource("44_ltrpw")
 _groundIcon = ExtResource("43_byts6")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="Resource_ujqmv"]
 script = ExtResource("item")
 _equipmentId = 21
 _inventoryIcon = ExtResource("46_i16ca")
 _groundIcon = ExtResource("45_2wnw5")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="Resource_byts6"]
 script = ExtResource("item")
 _equipmentId = 22
 _inventoryIcon = ExtResource("48_7jjev")
 _groundIcon = ExtResource("47_fcca0")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="Resource_us0jl"]
 script = ExtResource("item")
 _equipmentId = 23
 _inventoryIcon = ExtResource("50_i16ca")
 _groundIcon = ExtResource("49_2wnw5")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="Resource_v2wlt"]
 script = ExtResource("item")
 _equipmentId = 24
 _inventoryIcon = ExtResource("52_tj18l")
 _groundIcon = ExtResource("51_0wvu8")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="Resource_x2rw0"]
 script = ExtResource("item")
 _equipmentId = 25
 _inventoryIcon = ExtResource("54_l8ecr")
 _groundIcon = ExtResource("53_5ee6d")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="Resource_4hy15"]
 script = ExtResource("item")
 _equipmentId = 26
 _inventoryIcon = ExtResource("56_thg6h")
 _groundIcon = ExtResource("55_fwqh5")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="Resource_d0lab"]
 script = ExtResource("item")
 _equipmentId = 27
 _inventoryIcon = ExtResource("58_l3bkn")
 _groundIcon = ExtResource("57_71ovh")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="Resource_7ns5v"]
 script = ExtResource("item")
 _equipmentId = 28
 _inventoryIcon = ExtResource("60_pun65")
 _groundIcon = ExtResource("59_hq5fu")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="Resource_txl0m"]
 script = ExtResource("item")
 _equipmentId = 29
 _inventoryIcon = ExtResource("62_s06j1")
 _groundIcon = ExtResource("61_52w4g")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="Resource_j62qw"]
 script = ExtResource("item")
 _equipmentId = 30
 _inventoryIcon = ExtResource("64_ggyxv")
 _groundIcon = ExtResource("63_duw5r")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="Resource_8ya2x"]
 script = ExtResource("item")
 _equipmentId = 31
 _inventoryIcon = ExtResource("66_d3r6k")
 _groundIcon = ExtResource("65_3kqec")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="Resource_x5qkd"]
 script = ExtResource("item")
 _equipmentId = 32
 _inventoryIcon = ExtResource("68_x2unm")
 _groundIcon = ExtResource("67_utpa2")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="Resource_ojaey"]
 script = ExtResource("item")
 _equipmentId = 33
 _inventoryIcon = ExtResource("70_ubkm2")
 _groundIcon = ExtResource("69_vuxb4")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="Resource_51i05"]
 script = ExtResource("item")
 _equipmentId = 34
 _inventoryIcon = ExtResource("72_ltui6")
 _groundIcon = ExtResource("71_dntbv")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="Resource_27doa"]
 script = ExtResource("item")
 _equipmentId = 35
 _inventoryIcon = ExtResource("74_if8hb")
 _groundIcon = ExtResource("73_xux81")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="Resource_40po5"]
 script = ExtResource("item")
 _equipmentId = 36
 _inventoryIcon = ExtResource("76_5xu1j")
 _groundIcon = ExtResource("75_i6q24")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="Resource_eaqwb"]
 script = ExtResource("item")
 _equipmentId = 37
 _inventoryIcon = ExtResource("78_qglo8")
 _groundIcon = ExtResource("77_p22el")
+_groundScale = Vector2(0.35, 0.35)
 
 [sub_resource type="Resource" id="Resource_jla7x"]
 script = ExtResource("item")
 _equipmentId = 38
 _inventoryIcon = ExtResource("80_3hjtd")
 _groundIcon = ExtResource("79_lvx4v")
+_groundScale = Vector2(0.35, 0.35)
 
 [resource]
 script = ExtResource("library")

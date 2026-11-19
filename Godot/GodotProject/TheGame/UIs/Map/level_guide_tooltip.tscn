@@ -3,133 +3,113 @@
 [ext_resource type="Theme" uid="uid://s48yl51sqo68" path="res://TheGame/MainPack/Themes/brown_gold_theme.tres" id="1_3l2qw"]
 [ext_resource type="StyleBox" uid="uid://bb6obrgg6pv7m" path="res://TheGame/MainPack/Themes/Styles/brown_guide_panel.tres" id="2_vgndu"]
 [ext_resource type="Script" uid="uid://y705t8clygtu" path="res://TheGame/GameScripts/UI/MapForm/Components/LevelGuideTooltip.cs" id="3_5cxao"]
-[ext_resource type="Texture2D" uid="uid://u5ac8itnrlqb" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Ground/huaguoshan_monkey/huaguoshan_monkey_official_body.png" id="4_ut8bj"]
-[ext_resource type="Texture2D" uid="uid://duybemtonqsd7" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Ground/demon_monkey/demon_monkey_official_body.png" id="5_1f3i8"]
-[ext_resource type="Texture2D" uid="uid://ch157lpx54pki" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Ground/gorilla/gorilla_official_body.png" id="6_qoyf6"]
-[ext_resource type="Texture2D" uid="uid://c32b7ynckb4qj" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_02_macaque_king/macaque_king_body.png" id="7_bcrpk"]
-[ext_resource type="Texture2D" uid="uid://d1m3ulls2uy2b" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_03_tamarin_king/tamarin_king_body.png" id="8_rkwav"]
-[ext_resource type="Texture2D" uid="uid://cj0q6t24o877t" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Ground/cave_brute/cave_brute.png" id="9_bs3g6"]
-[ext_resource type="Texture2D" uid="uid://cdnhjjnymc2q5" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Sky/bat/bat_body.png" id="10_o6pj3"]
-[ext_resource type="Texture2D" uid="uid://48q8lotx0xbt" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_04_bat_cave/bat_cave_statue_body.png" id="11_ne5g6"]
-[ext_resource type="Texture2D" uid="uid://bdp6dxlb28y8y" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_05_qixing_cave/lion_camel_king_2.png" id="12_0bjey"]
-[ext_resource type="Texture2D" uid="uid://4y38ir3drgsa" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_06_garuda_cave/peng_demon_king_body.png" id="13_hrr30"]
-[ext_resource type="Texture2D" uid="uid://bciwx4ac37wqr" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Ground/knife_demon/knife_demon.png" id="14_gjlrm"]
-[ext_resource type="Texture2D" uid="uid://ccygk4sqva52l" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Sea/shrimp_demon/shrimp_demon_official_body.png" id="15_8jjnh"]
-[ext_resource type="Texture2D" uid="uid://dbhe1j8mi6qjv" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Sky/flying_demon/flying_demon_body.png" id="16_w8snk"]
-[ext_resource type="Texture2D" uid="uid://bme814cgo0v6e" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Sea/tide_demon/tide_demon_official_body.png" id="17_mo2eq"]
-[ext_resource type="Texture2D" uid="uid://d8xd6rhtwns2" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Sea/turtle_minister/turtle_minister_official_body.png" id="18_4sy02"]
-[ext_resource type="Texture2D" uid="uid://14fc07jsl50h" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_08_east_sea/jiao_demon_king_official_body_2.png" id="19_1r0cs"]
-[ext_resource type="Texture2D" uid="uid://p1e4o675qtqx" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Sea/shark_spawn/shark_spawn_official_body.png" id="20_fudko"]
-[ext_resource type="Texture2D" uid="uid://ddf1ukdj03cl" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_09_shark_whirlpool/shark_demon_king_official_body_2.png" id="21_brojh"]
-[ext_resource type="Texture2D" uid="uid://daboqx36kwmew" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Sea/lantern_fish/lantern_fish_official_body.png" id="22_i8tww"]
-[ext_resource type="Texture2D" uid="uid://cj1faivhuysb1" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_10_bull_demon_valley/bull_demon_beast_official_body.png" id="23_ybx6s"]
-[ext_resource type="Texture2D" uid="uid://cvdrlp2330e21" path="res://TheGame/Sprites/Characters/Enemies/Monsters/Ground/bull_guard/bull_guard_official_body.png" id="24_xmueb"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/frontend/map_guide_portraits.png" id="guide_portraits"]
 [ext_resource type="Resource" uid="uid://b0cqamjcontb4" path="res://TheGame/Sprites/Items/item_appearances.tres" id="25_qypc3"]
 [ext_resource type="PackedScene" uid="uid://chvobw0b1sdxo" path="res://TheGame/UIs/Map/guide_equipment_icon.tscn" id="26_rgniy"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_vwih8"]
-atlas = ExtResource("4_ut8bj")
-region = Rect2(133, 334, 83, 123)
+atlas = ExtResource("guide_portraits")
+region = Rect2(497, 1141, 83, 123)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_l8573"]
-atlas = ExtResource("5_1f3i8")
-region = Rect2(1874, 272, 104, 183)
+atlas = ExtResource("guide_portraits")
+region = Rect2(787, 913, 104, 183)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_rrli0"]
-atlas = ExtResource("6_qoyf6")
-region = Rect2(1206, 406, 215, 231)
+atlas = ExtResource("guide_portraits")
+region = Rect2(312, 392, 215, 231)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_bvjx3"]
-atlas = ExtResource("7_bcrpk")
-region = Rect2(1671, 376, 222, 270)
+atlas = ExtResource("guide_portraits")
+region = Rect2(570, 16, 222, 270)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_wjwuh"]
-atlas = ExtResource("8_rkwav")
-region = Rect2(2442, 734, 182, 196)
+atlas = ExtResource("guide_portraits")
+region = Rect2(16, 913, 182, 196)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_rdwx3"]
-atlas = ExtResource("9_bs3g6")
-region = Rect2(864, 241, 82, 83)
+atlas = ExtResource("guide_portraits")
+region = Rect2(349, 1337, 82, 83)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_pk6x4"]
-atlas = ExtResource("10_o6pj3")
-region = Rect2(243, 1284, 57, 59)
+atlas = ExtResource("guide_portraits")
+region = Rect2(463, 1337, 57, 59)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_m817n"]
-atlas = ExtResource("13_hrr30")
-region = Rect2(1201, 2289, 264, 236)
+atlas = ExtResource("guide_portraits")
+region = Rect2(16, 392, 264, 236)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_i8ac5"]
-atlas = ExtResource("19_1r0cs")
-region = Rect2(243, 2552, 194, 228)
+atlas = ExtResource("guide_portraits")
+region = Rect2(559, 392, 194, 228)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_w6ol6"]
-atlas = ExtResource("12_0bjey")
-region = Rect2(3496, 2204, 270, 194)
+atlas = ExtResource("guide_portraits")
+region = Rect2(230, 913, 270, 194)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_jw1cf"]
-atlas = ExtResource("14_gjlrm")
-region = Rect2(1746, 634, 115, 158)
+atlas = ExtResource("guide_portraits")
+region = Rect2(154, 1141, 115, 158)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_6mg53"]
-atlas = ExtResource("15_8jjnh")
-region = Rect2(906, 32, 146, 237)
+atlas = ExtResource("guide_portraits")
+region = Rect2(824, 16, 146, 237)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_uwes8"]
-atlas = ExtResource("16_w8snk")
-region = Rect2(568, 84, 164, 139)
+atlas = ExtResource("guide_portraits")
+region = Rect2(301, 1141, 164, 139)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_d75bf"]
-atlas = ExtResource("17_mo2eq")
-region = Rect2(1732, 2754, 276, 102)
+atlas = ExtResource("guide_portraits")
+region = Rect2(612, 1141, 276, 102)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_mexvv"]
-atlas = ExtResource("18_4sy02")
-region = Rect2(1116, 1413, 106, 164)
+atlas = ExtResource("guide_portraits")
+region = Rect2(16, 1141, 106, 164)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_q6011"]
-atlas = ExtResource("20_fudko")
-region = Rect2(398, 3334, 301, 99)
+atlas = ExtResource("guide_portraits")
+region = Rect2(16, 1337, 301, 99)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_c12ke"]
-atlas = ExtResource("21_brojh")
-region = Rect2(578, 1545, 522, 344)
+atlas = ExtResource("guide_portraits")
+region = Rect2(16, 16, 522, 344)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_t1gri"]
-atlas = ExtResource("22_i8tww")
-region = Rect2(2736, 244, 247, 203)
+atlas = ExtResource("guide_portraits")
+region = Rect2(313, 660, 247, 203)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_6akdi"]
-atlas = ExtResource("11_ne5g6")
-region = Rect2(0, 1, 265, 221)
+atlas = ExtResource("guide_portraits")
+region = Rect2(16, 660, 265, 221)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_sbwk4"]
-atlas = ExtResource("23_ybx6s")
-region = Rect2(32, 32, 244, 200)
+atlas = ExtResource("guide_portraits")
+region = Rect2(592, 660, 244, 200)
 filter_clip = true
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_l4oc6"]
-atlas = ExtResource("24_xmueb")
-region = Rect2(616, 915, 223, 183)
+atlas = ExtResource("guide_portraits")
+region = Rect2(532, 913, 223, 183)
 filter_clip = true
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_2tvns"]

@@ -7,6 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://dqfivd87uituo" path="res://TheGame/Sprites/Levels/zm1_08_east_sea/east_sea_front_2.png" id="Front_page2"]
 [ext_resource type="Texture2D" uid="uid://3kdnlrmwrj5o" path="res://TheGame/Sprites/Levels/zm1_08_east_sea/east_sea_front_3.png" id="Front_page3"]
 [ext_resource type="Texture2D" uid="uid://cnk657rhj36yb" path="res://TheGame/Sprites/Levels/zm1_08_east_sea/east_sea_ground.png" id="5_8cfyk"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Levels/zm1_08_east_sea/east_sea_ground_page_2.png" id="SeaShoreGround_page_2"]
 [ext_resource type="Script" uid="uid://bkq4g0l6t4k15" path="res://TheGame/GameScripts/Entity/Level/Spawning/LevelSpawnPointsNode.cs" id="6_k2rv4"]
 [ext_resource type="Script" uid="uid://dd28ay4bkp1fl" path="res://TheGame/GameScripts/Entity/Level/Markers/LevelMarkerResource.cs" id="7_5ho2t"]
 [ext_resource type="Script" uid="uid://b7abdk6hcrmws" path="res://TheGame/GameScripts/Entity/Level/Stages/LevelTriggersNode.cs" id="8_my7y6"]
@@ -301,6 +302,15 @@ centered = false
 position = Vector2(-11.6, 205.05)
 texture = ExtResource("5_8cfyk")
 centered = false
+region_enabled = true
+region_rect = Rect2(0, 0, 2350, 391)
+
+[node name="Page2" type="Sprite2D" parent="World/Geometry/Artwork/SeaShoreGround"]
+position = Vector2(2350, 0)
+texture = ExtResource("SeaShoreGround_page_2")
+centered = false
+region_enabled = true
+region_rect = Rect2(8, 0, 2350, 391)
 
 [node name="Ground" type="Node2D" parent="World/Geometry" unique_id=1742909712]
 

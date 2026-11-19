@@ -34,7 +34,7 @@ func _author() -> void:
         assert(ResourceSaver.set_uid(icon_path, icon_uid) == OK)
     icon.free()
     var card_path := "res://TheGame/UIs/Map/level_guide_tooltip.tscn"
-    var card_uid := ResourceLoader.get_resource_uid(card_path) if FileAccess.file_exists(card_path) else -1
+    var card_uid := ResourceLoader.get_resource_uid(card_path)
     var card := PanelContainer.new()
     card.name = "LevelGuideTooltip"
     card.set_script(load("res://TheGame/GameScripts/UI/MapForm/Components/LevelGuideTooltip.cs"))
@@ -81,40 +81,10 @@ func _author() -> void:
     enemies.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
     enemies.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
     card.set("_enemies", enemies)
-    var portraits: Dictionary[int, Texture2D] = {}
-    var sources := {
-        1: "Monsters/Ground/huaguoshan_monkey/huaguoshan_monkey_official_frames.tres",
-        2: "Monsters/Ground/demon_monkey/demon_monkey_official_frames.tres",
-        3: "Monsters/Ground/gorilla/gorilla_official_frames.tres",
-        4: "Bosses/zm1_02_macaque_king/macaque_king_body_frames.tres",
-        6: "Bosses/zm1_03_tamarin_king/tamarin_king_body_frames.tres",
-        7: "Monsters/Ground/cave_brute/cave_brute_frames.tres",
-        8: "Monsters/Sky/bat/bat_frames.tres",
-        21: "Bosses/zm1_04_bat_cave/bat_cave_statue_frames.tres",
-        11: "Bosses/zm1_05_qixing_cave/lion_camel_king_frames.tres",
-        9: "Bosses/zm1_06_garuda_cave/peng_demon_king_frames.tres",
-        13: "Monsters/Ground/knife_demon/knife_demon_frames.tres",
-        14: "Monsters/Sea/shrimp_demon/shrimp_demon_official_frames.tres",
-        15: "Monsters/Sky/flying_demon/flying_demon_frames.tres",
-        16: "Monsters/Sea/tide_demon/tide_demon_official_frames.tres",
-        17: "Monsters/Sea/turtle_minister/turtle_minister_official_frames.tres",
-        10: "Bosses/zm1_08_east_sea/jiao_demon_king_official_frames.tres",
-        18: "Monsters/Sea/shark_spawn/shark_spawn_official_frames.tres",
-        19: "Bosses/zm1_09_shark_whirlpool/shark_demon_king_official_frames.tres",
-        20: "Monsters/Sea/lantern_fish/lantern_fish_official_frames.tres",
-        22: "Bosses/zm1_10_bull_demon_valley/bull_demon_beast_official_frames.tres",
-        25: "Monsters/Ground/bull_guard/bull_guard_official_frames.tres"
-    }
-    for id in sources:
-        var frames: SpriteFrames = load("res://TheGame/Sprites/Characters/Enemies/" + sources[id])
-        var frame: AtlasTexture = frames.get_frame_texture("idle", 0)
-        # Read the stored atlas region directly: get_image() excludes registration margins.
-        var used := frame.atlas.get_image().get_region(frame.region).get_used_rect()
-        var portrait := AtlasTexture.new()
-        portrait.atlas = frame.atlas
-        portrait.region = Rect2(frame.region.position + Vector2(used.position), Vector2(used.size))
-        portrait.filter_clip = true
-        portraits[id] = portrait
+    # Retain the approved EntityId keys and registered map portrait crops.
+    var previous_card := (load(card_path) as PackedScene).instantiate()
+    var portraits: Dictionary = previous_card.get("_enemyTextures")
+    previous_card.free()
     card.set("_enemyTextures", portraits)
     var loot: VBoxContainer = _child(content, VBoxContainer.new(), "Loot", card)
     loot.add_theme_constant_override("separation", 2)

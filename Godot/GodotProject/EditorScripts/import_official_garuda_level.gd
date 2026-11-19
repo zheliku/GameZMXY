@@ -4,6 +4,8 @@ extends SceneTree
 const DESTINATION := "res://TheGame/Scenes/Levels/zm1_06_garuda_cave/level_6.tscn"
 const ART_ROOT := "res://TheGame/Sprites/Levels/zm1_06_garuda_cave/"
 
+const Geometry = preload("res://EditorScripts/normalize_level_geometry.gd")
+
 var m_Source: Dictionary
 var m_Scene: Node2D
 
@@ -59,6 +61,7 @@ func _geometry() -> void:
     artwork.centered = false
     artwork.position = Vector2(-7.55, 152.05)
     _add(root.get_node("Artwork"), artwork)
+    Geometry.page_art(artwork, m_Scene)
     for index in m_Source.geometry.size():
         var source: Dictionary = m_Source.geometry[index]
         var corners: Array = source.corners

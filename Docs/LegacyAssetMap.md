@@ -1,5 +1,51 @@
 # 素材来源与复现
 
+## 装备、技能图标与近景浮台的原位图（2026-11-19）
+
+| 正式素材 | 来源及保真登记 |
+| --- | --- |
+| 38 套装备的 `equipment_*` 与 `ground_*` | 已登记的 OtherMat_v9 内嵌位图及 1 倍正式导出，原身份与文件映射见下文。普通品质按各自原 RGBA 保留背包白边，粗糙品质保留比掉落图多出的每边 4 逻辑像素留白。每张 2 倍图按原像素覆盖重建，同一图形的锚点、轮廓和颜色层保留。掉落复用 `item_appearances.tres` 原字段；只对装备设置 0.35 密度补偿。 |
+| `battle_skill_icons.png`、`skill_*_learned.png` 及 `skill_*_unlearned.png` | OtherMat_v9 原缩略素材及已核对的原生滤镜。战斗图集 11 格分开处理，一格是通用未学，另 10 格是各技能已学；源格从 45 到 90，SpriteFrames 的状态、时序与映射保持。学习页 20 图从 65 到 130，继续使用原图内的效果与原生按钮绘制框。 |
+| `huaguoshan_platform.png` / `shuiliandong_platform.png` | 主程序 v25928 的 shape 56 → bitmap 55（263×75）、shape 88 → bitmap 87（179×51），均用本关自己的 1 倍正式导出。平台边缘重建为 526×150 和 358×102；分别有 3、5 处注册，现用 `Sprite2D.scale=0.5` 绘制于原位置。导出器仍可取原密度源；花果山编辑器装配复用原 Sprite2D 设置密度。 |
+| 花果山起点路牌 | sprite 161 → shape 160 内的 bitmap 142（500×500，含透明区）。其原矩阵 20 TWIPS/像素，平移 (-45678, -3679)。路牌字样和木纹已烘焙；限制在不透明内部的试样保留原合成和 alpha，原位对照无足够提升，不替换。 |
+
+三类均沿用现有导出的正式原图约束局部像素覆盖；没有改为新绘，也没有接受外来高精度图。原图、散列、脚本和结果见[验证](Validation.md#装备技能图标与近景浮台2026-11-19)。历史 A1a 的 2 倍是原位图参照；本轮只把浮台边缘局部改善合入正式路径，未改其精度来源结论。
+
+## HUD 彩色原件、长图无损分页与图鉴原裁框（2026-11-19）
+
+| 产物 | 来源与装配 |
+| --- | --- |
+| 5 个 HUD 彩色按钮普通及悬停 | 保留 OtherMat 3 旧图元件 134/136（设置）、141/143（背包）、147/149（技能）、153/155（法宝）、159/161（宠物）。原 47×37 PNG 做颜色和透明覆盖约束重建，存 94×74；Godot `TextureButton` 用原逻辑矩形按比例采样，仍保留原右下空隙、题签及交互。原件与 [原位生成数据](../Godot/GodotProject/.godot/validation/art_hud_buttons_trial_20261119/coverage.json) 留本机验证。 |
+| 气血／法力／经验、Boss 与无双条 | OtherMatv3570 原 144×12 三色填充，Boss OtherMat 3 / 主程序两层各 340×29，无双 OtherMat_v9 的 329/332 位图 221×27/221×12；按颜色与 alpha 面积重建为 2 倍。保留原引擎九宫格缩放；无双自然尺寸的两条仅按半缩放补回同样大小和原偏移。 |
+| 7 套怪物/Boss、9 张关卡 PNG | 现正式 PNG 必要像素和 alpha 均原样复制，新页仅拆分。不删重复帧，不重新修剪锚点。全图合回 RGBA 逐像素等同，所有 `SpriteFrames` 原动作、速度、循环、margin 和帧时刻保持。原图/资源及页裁框见 [图集清单](../Godot/GodotProject/.godot/validation/art_texture_pages_20261119/atlas_manifest.json)、[地形清单](../Godot/GodotProject/.godot/validation/art_texture_pages_20261119/terrain_manifest.json)；复用原 Godot AtlasTexture/Region 及 Collection Res。 |
+| 图鉴 `map_guide_portraits.png` | 真实 `level_guide_tooltip.tscn` 的 21 个 `AtlasTexture` 全裁框（含原透明留白、不重新取最小包围框），使用 `compact_registered_atlas` 的摆放，成图 1024×1452；原像素和 8px 采样邻边复制。资源里只换底图与图集原点。[原 PNG／裁框和新裁框](../Godot/GodotProject/.godot/validation/art_map_guide_atlas_20261119/guide_atlas_manifest.json) 对应每个 EntityId，原战斗资源留原用途。图鉴作者脚本重建控件时从当前图鉴读取正式肖像字典。 |
+
+原件在 Git 和相应验证目录的 `before/`。屏幕裁切与 GPU 采样的结果见 [Validation](Validation.md#hud-边缘分页与地图图鉴减载2026-11-19)。
+
+## 战斗 HUD、英雄状态与三套菜单外围（2026-11-19）
+
+| 正式资源 | 原件、范围与复现 |
+| --- | --- |
+| 战斗 HUD 九 PNG | 既有战斗 UI 迁入记录及正式原图：OtherMat 3 元件 133/140/146/152/158 是五张 30×17 字图，95 是 169×133 墨底；OtherMat_v9 位图 297/303/335 是状态墨底、无双条墨底、灰无双。工作目录 `art_hud_caption_delivery_20261119` 的 `before/` 保留原件，复用飘字覆盖计算，对原黑白与透明覆盖重建 2 倍亚像素边缘。按原像素面积还原，预乘色和透明度最大差小于 0.26/255；4 倍样本字内采样不自然，未采用。彩色按钮、存档槽和标题分隔线未换。 |
+| 唐僧水幻影 | Role_v7 唐僧分身 1050/1081/1131，混合源 SHA-256 `11cae2f4f4e63dbb1e7199b9d1a8ed432036138b72e2d04d1da974329133fbe7`，1 倍复现 116 时刻可见 RGBA 全等。原矢量轮廓重导，位图细节受原件精度限制。已有 `compact_atlases` 共享等同画格生成 2400×800，保持六列；第 0～115 时刻逐一映射在 [安装清单](../Godot/GodotProject/.godot/validation/art_hero_status_delivery_20261118/install_manifest.json)。图集中 400 像素格经缩放为原 200 逻辑格，原库只变画格索引。 |
+| 中毒、冰冻和墓碑 | Monster2/Frozen 官方现有帧注册：骷髅 sprite 204 以原矢量重导，原缩小烟雾按原层合成，图出 82×106，定位和源范围保持；身上毒雾 sprite 220 的 41 时刻、冰冻 sprite 114 的 35 时刻与现用原精度可见 RGBA 全等，保留。墓碑用已迁入的旧 `RoleDeath.png`；浏览候选 `OtherMat_v9` sprite 273 图形和帧内容不匹配，[对照](../Godot/GodotProject/.godot/validation/art_hero_status_20261117/tombstone_source_mismatch.png) 留档。 |
+| 标题、技能和结算背景 | 复用已有 [外围合成清单](../Godot/GodotProject/.godot/validation/art_static_ui_outskirts_20261117/composition.json)；原 `Art/MainGame/Bg1.png` 941×591、OtherMat 技能 JPEG 940×590（Godot 解码）、OtherMatv3570 bitmap 231 结算 940×590 均按原位置 +234 回贴，中心严格同像素，只用已有 ECPA 候选的两侧环境。标题原透明边有同色黑底，技能保留原 JPG 并新增正式 `skills_backdrop.png`；原按钮、正文、动画无改。 |
+
+Godot 运行实际调用场景仍为 `battle_form.tscn`、`start_form.tscn`、`skill_form.tscn`、`settlement_form.tscn`，以及原两英雄混合源。除技能新 PNG 及其原生导入外，原图路径、UID 和消费入口保持。完整进度见 [ArtProgress](ArtProgress.md)。
+
+## 设置主题与图标的原件和实际消费者（2026-11-18）
+
+基线 `72df176f`。SVG、PNG、UID、消费者路径都保留；正式只改三份 `.import`。原导入参数记在Git与本批 `before/`。
+
+| 资源 | 来源与处理 |
+| --- | --- |
+| `TheGame/MainPack/Themes/Styles/settings_slider_grabber.svg`、`settings_slider_grabber_active.svg` | 项目现有两张10×18 SVG：同一圆角矩形、`#222`描边、白色或`#ff7700`。`settings_theme.tres` 绑定 `HSlider` 的 `grabber`/`grabber_highlight`，两条音量控件同用。Godot `svg` 导入器生成 `DPITexture`，`base_scale=1.0`、沿原透明边处理；原 UID `811jgm0gwwvb` / `dtryy3l5lfah3`。 |
+| `icon.svg` | Godot 现有128×128矢量；Windows `application/icon` 经 UID `c47qf54rnfq8f` 使用。导入 `svg/scale=2.0`，256档在实际 EXE 中与原 SVG 2倍栅格和透明边处理后的 RGBA 全等；其余5档保留同一标识。 |
+| `TheGame/Sprites/bhpic.png` | `application/config/icon` 的 UID `0qvr220neg1y`。文件与旧工程 `Art/MainGame/bhpic.png` 字节相同，SHA256 `ec85df2fea6e35f297d90b665afa877fa261a7a074c20bf1d236256632502b87`。旧 `bhico.ico` 内含相同512×512图像，另两份 `GameIcon*.ico` 是较小的254×223图标。当前512原件用于窗口，保留。 |
+| `addons/asset_bundle/images/asset_bundle.svg` | 插件 `AssetBundle.gd` 通过 `@icon` 使用的64×64编辑器图标；编辑器比例与主题颜色转换开启，现有 `.editor.ctex` 变体验证通过；插件只读原件保留。 |
+
+[滑块同尺寸对照](../Godot/GodotProject/.godot/validation/art_theme_icons_20261118/slider_1080p_comparison.png) · [EXE 提取图标与工程实际资源](../Godot/GodotProject/.godot/validation/art_theme_icons_20261118/icon_review.png)。
+
 ## 关卡整类：原矩阵精度与外围来源（2026-11-18）
 
 [37原图清册](../Godot/GodotProject/.godot/validation/art_terrain_delivery_20261118/manifest.json)记录运行路径、消费者、Git原PNG与导入文件散列、SWF依赖、原图尺寸及分片逻辑裁框。原件保留Git `898f494f` 和本批 `before/`。官方主程序内层SWF SHA256 `f8e3e1f5b545bc2423a02f5c6155f87215e01c14d21554d77681f32a7defb75b`；34张在官方素材/原补缝规则下1倍可见RGBA完全复现，另3张对应旧工程PNG。旧183裁图可见区少量RGB不同、alpha一致，继续保留当前裁图；旧19_1与官方bitmap19同为1440×690且同构图，解码颜色略有差，不以官方替换当前中心。旧177原样保留。

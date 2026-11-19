@@ -14,12 +14,16 @@ static func normalize(level: Node2D, data: Dictionary, number: int) -> void:
 		geometry.remove_child(water)
 	if number != 1:
 		for child in geometry.find_children("*", "Sprite2D", true, false):
+			if child.get_parent() is Sprite2D and child.name.begins_with("Page"):
+				continue
 			artwork.append(child)
 			var position: Vector2 = child.global_position
 			child.owner = null
 			child.get_parent().remove_child(child)
 			child.position = position
 		for child in platforms.find_children("*", "Sprite2D", true, false):
+			if child.get_parent() is Sprite2D and child.name.begins_with("Page"):
+				continue
 			artwork.append(child)
 			var position: Vector2 = child.global_position
 			child.owner = null
@@ -40,8 +44,7 @@ static func normalize(level: Node2D, data: Dictionary, number: int) -> void:
 	if number == 1:
 		var floor_art := _sprite(ground, "Artwork", "huaguoshan_ground", Vector2(-8.35, 431.65), level)
 		# 保留本项目 4700 的完整地形右界，裁去原版画布外的圆角收尾。
-		floor_art.region_enabled = true
-		floor_art.region_rect = Rect2(0, 0, 4708.35, floor_art.texture.get_height())
+		page_art(floor_art, level, 4708.35)
 	var bodies: Array[StaticBody2D] = []
 	var hill_parts := {}
 	for hill in hill_geometry(data.geometry):
@@ -115,7 +118,8 @@ static func normalize(level: Node2D, data: Dictionary, number: int) -> void:
 			if int(item.characterId) == 56:
 				var position := Vector2(item.position[0], item.position[1]) + Vector2(2210.45, 192.5)
 				var body := _nearest(bodies, position + Vector2(131.5, 10), true)
-				_sprite(body, "Artwork", "huaguoshan_platform", position - body.position, level)
+				var platform_art := _sprite(body, "Artwork", "huaguoshan_platform", position - body.position, level)
+				platform_art.scale = Vector2(0.5, 0.5)
 	else:
 		for sprite in artwork:
 			var position := sprite.position
@@ -126,9 +130,40 @@ static func normalize(level: Node2D, data: Dictionary, number: int) -> void:
 				parent = _nearest(bodies, position, false)
 			parent.add_child(sprite)
 			sprite.position = position - (parent.position if parent is StaticBody2D else Vector2.ZERO)
-			sprite.owner = level
+			_own(sprite, level)
 			if sprite.name.begins_with("GroundArtwork") or sprite.name.begins_with("PlatformArtwork"):
 				sprite.name = "Artwork"
+
+## 同源纹理按 8 像素采样重叠拆页时，沿用原绘制范围和局部坐标。
+static func page_art(sprite: Sprite2D, level: Node, draw_width := 0.0) -> void:
+	const GUTTER := 8
+	var source := sprite.texture.resource_path
+	var right_path := source.get_basename() + "_page_2.png"
+	var height := sprite.texture.get_height()
+	if not ResourceLoader.exists(right_path):
+		if draw_width > 0.0:
+			sprite.region_enabled = true
+			sprite.region_rect = Rect2(0, 0, draw_width, height)
+		return
+	var right: Texture2D = load(right_path)
+	var cut := sprite.texture.get_width() - GUTTER
+	var width := draw_width if draw_width > 0.0 else float(cut + right.get_width() - GUTTER)
+	# 新关卡从花果山复制结构时，替换源前景自带的布景分片。
+	for child in sprite.get_children():
+		if child is Sprite2D and child.name.begins_with("Page"):
+			child.free()
+	sprite.scale = Vector2.ONE
+	sprite.region_enabled = true
+	sprite.region_rect = Rect2(0, 0, cut, height)
+	var page := Sprite2D.new()
+	page.name = "Page2"
+	page.texture = right
+	page.centered = false
+	page.position = Vector2(cut, 0)
+	page.region_enabled = true
+	page.region_rect = Rect2(GUTTER, 0, width - cut, height)
+	sprite.add_child(page)
+	page.owner = level
 
 ## Flash 地面逐轴吸附允许微小交叠；Godot 实体侧边会卡住，土坡平台须与相邻坡顶共享顶点。
 static func hill_geometry(geometry: Array) -> Array[Dictionary]:

@@ -1,10 +1,11 @@
 [gd_resource type="SpriteFrames" format=3 uid="uid://h2jo8andscuk"]
 
 [ext_resource type="Texture2D" uid="uid://4j17xfkgvkof" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_torrent.png" id="atlas"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Characters/Enemies/Bosses/zm1_11_hidden_dragon_palace/dragon_king_torrent_2.png" id="source_page_2"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0000"]
-atlas = ExtResource("atlas")
-region = Rect2(240, 4272, 1, 1)
+atlas = ExtResource("source_page_2")
+region = Rect2(240, 2040, 1, 1)
 margin = Rect2(0, 0, 191, 191)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0001"]
@@ -88,80 +89,80 @@ atlas = ExtResource("atlas")
 region = Rect2(240, 2032, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0021"]
-atlas = ExtResource("atlas")
-region = Rect2(16, 2256, 192, 192)
+atlas = ExtResource("source_page_2")
+region = Rect2(16, 24, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0022"]
-atlas = ExtResource("atlas")
-region = Rect2(240, 2256, 192, 192)
+atlas = ExtResource("source_page_2")
+region = Rect2(240, 24, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0023"]
-atlas = ExtResource("atlas")
-region = Rect2(16, 2480, 192, 192)
+atlas = ExtResource("source_page_2")
+region = Rect2(16, 248, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0024"]
-atlas = ExtResource("atlas")
-region = Rect2(240, 2480, 192, 192)
+atlas = ExtResource("source_page_2")
+region = Rect2(240, 248, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0025"]
-atlas = ExtResource("atlas")
-region = Rect2(16, 2704, 192, 192)
+atlas = ExtResource("source_page_2")
+region = Rect2(16, 472, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0026"]
-atlas = ExtResource("atlas")
-region = Rect2(240, 2704, 192, 192)
+atlas = ExtResource("source_page_2")
+region = Rect2(240, 472, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0027"]
-atlas = ExtResource("atlas")
-region = Rect2(16, 2928, 192, 192)
+atlas = ExtResource("source_page_2")
+region = Rect2(16, 696, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0028"]
-atlas = ExtResource("atlas")
-region = Rect2(240, 2928, 192, 192)
+atlas = ExtResource("source_page_2")
+region = Rect2(240, 696, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0029"]
-atlas = ExtResource("atlas")
-region = Rect2(16, 3152, 192, 192)
+atlas = ExtResource("source_page_2")
+region = Rect2(16, 920, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0030"]
-atlas = ExtResource("atlas")
-region = Rect2(240, 3152, 192, 192)
+atlas = ExtResource("source_page_2")
+region = Rect2(240, 920, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0031"]
-atlas = ExtResource("atlas")
-region = Rect2(16, 3376, 192, 192)
+atlas = ExtResource("source_page_2")
+region = Rect2(16, 1144, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0032"]
-atlas = ExtResource("atlas")
-region = Rect2(240, 3376, 192, 192)
+atlas = ExtResource("source_page_2")
+region = Rect2(240, 1144, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0033"]
-atlas = ExtResource("atlas")
-region = Rect2(16, 3600, 192, 192)
+atlas = ExtResource("source_page_2")
+region = Rect2(16, 1368, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0034"]
-atlas = ExtResource("atlas")
-region = Rect2(240, 3600, 192, 192)
+atlas = ExtResource("source_page_2")
+region = Rect2(240, 1368, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0035"]
-atlas = ExtResource("atlas")
-region = Rect2(16, 3824, 192, 192)
+atlas = ExtResource("source_page_2")
+region = Rect2(16, 1592, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0036"]
-atlas = ExtResource("atlas")
-region = Rect2(240, 3824, 192, 192)
+atlas = ExtResource("source_page_2")
+region = Rect2(240, 1592, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0037"]
-atlas = ExtResource("atlas")
-region = Rect2(16, 4048, 192, 192)
+atlas = ExtResource("source_page_2")
+region = Rect2(16, 1816, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0038"]
-atlas = ExtResource("atlas")
-region = Rect2(240, 4048, 192, 192)
+atlas = ExtResource("source_page_2")
+region = Rect2(240, 1816, 192, 192)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0039"]
-atlas = ExtResource("atlas")
-region = Rect2(16, 4272, 192, 192)
+atlas = ExtResource("source_page_2")
+region = Rect2(16, 2040, 192, 192)
 
 [resource]
 animations = [{

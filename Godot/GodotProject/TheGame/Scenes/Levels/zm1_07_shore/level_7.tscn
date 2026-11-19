@@ -4,7 +4,9 @@
 [ext_resource type="Script" uid="uid://cwi2bj6ocy16c" path="res://TheGame/GameScripts/Entity/FloatingText/FloatingTextPresenter.cs" id="2_pmrf3"]
 [ext_resource type="Texture2D" uid="uid://2xymg6187a7n" path="res://TheGame/Sprites/Levels/zm1_07_shore/sea_shore_sky.png" id="3_pjhrp"]
 [ext_resource type="Texture2D" uid="uid://cph22w5cvnq1" path="res://TheGame/Sprites/Levels/zm1_07_shore/sea_shore_front.png" id="4_22oep"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Levels/zm1_07_shore/sea_shore_front_page_2.png" id="Front_page_2"]
 [ext_resource type="Texture2D" uid="uid://cbul2nr0togxx" path="res://TheGame/Sprites/Levels/zm1_07_shore/sea_shore_ground.png" id="5_fwfok"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Levels/zm1_07_shore/sea_shore_ground_page_2.png" id="SeaShoreGround_page_2"]
 [ext_resource type="Script" uid="uid://bkq4g0l6t4k15" path="res://TheGame/GameScripts/Entity/Level/Spawning/LevelSpawnPointsNode.cs" id="6_2qo1l"]
 [ext_resource type="Script" uid="uid://dd28ay4bkp1fl" path="res://TheGame/GameScripts/Entity/Level/Markers/LevelMarkerResource.cs" id="7_jihua"]
 [ext_resource type="Script" uid="uid://b7abdk6hcrmws" path="res://TheGame/GameScripts/Entity/Level/Stages/LevelTriggersNode.cs" id="8_tj8dk"]
@@ -233,6 +235,15 @@ centered = false
 position = Vector2(-30, 97)
 texture = ExtResource("4_22oep")
 centered = false
+region_enabled = true
+region_rect = Rect2(0, 0, 2511, 509)
+
+[node name="Page2" type="Sprite2D" parent="World/Background/Front"]
+position = Vector2(2511, 0)
+texture = ExtResource("Front_page_2")
+centered = false
+region_enabled = true
+region_rect = Rect2(8, 0, 2512, 509)
 
 [node name="Geometry" type="Node2D" parent="World" unique_id=930087367]
 
@@ -242,6 +253,15 @@ centered = false
 position = Vector2(-11.6, 195.2)
 texture = ExtResource("5_fwfok")
 centered = false
+region_enabled = true
+region_rect = Rect2(0, 0, 2350, 402)
+
+[node name="Page2" type="Sprite2D" parent="World/Geometry/Artwork/SeaShoreGround"]
+position = Vector2(2350, 0)
+texture = ExtResource("SeaShoreGround_page_2")
+centered = false
+region_enabled = true
+region_rect = Rect2(8, 0, 2350, 402)
 
 [node name="Ground" type="Node2D" parent="World/Geometry" unique_id=1437443820]
 

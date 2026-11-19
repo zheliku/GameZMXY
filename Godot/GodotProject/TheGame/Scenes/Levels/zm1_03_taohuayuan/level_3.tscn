@@ -7,6 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://dbtnx7n2u3uqd" path="res://TheGame/Sprites/Levels/zm1_03_taohuayuan/taohuayuan_front_2.png" id="Front_page2"]
 [ext_resource type="Texture2D" uid="uid://42pq1umk3prt" path="res://TheGame/Sprites/Levels/zm1_03_taohuayuan/taohuayuan_front_3.png" id="Front_page3"]
 [ext_resource type="Texture2D" uid="uid://ded21w6qkvpq7" path="res://TheGame/Sprites/Levels/zm1_03_taohuayuan/taohuayuan_ground.png" id="5_5d4yh"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Levels/zm1_03_taohuayuan/taohuayuan_ground_page_2.png" id="Artwork23_page_2"]
 [ext_resource type="Texture2D" uid="uid://co8fkgdpbj5fy" path="res://TheGame/Sprites/Levels/zm1_03_taohuayuan/taohuayuan_rock.png" id="6_ggrho"]
 [ext_resource type="Script" uid="uid://bkq4g0l6t4k15" path="res://TheGame/GameScripts/Entity/Level/Spawning/LevelSpawnPointsNode.cs" id="7_ng8vg"]
 [ext_resource type="Script" uid="uid://dd28ay4bkp1fl" path="res://TheGame/GameScripts/Entity/Level/Markers/LevelMarkerResource.cs" id="8_ugxod"]
@@ -315,6 +316,15 @@ z_index = -15
 position = Vector2(-16.9, 451.7)
 texture = ExtResource("5_5d4yh")
 centered = false
+region_enabled = true
+region_rect = Rect2(0, 0, 2362, 148)
+
+[node name="Page2" type="Sprite2D" parent="World/Geometry/Ground/Artwork23"]
+position = Vector2(2362, 0)
+texture = ExtResource("Artwork23_page_2")
+centered = false
+region_enabled = true
+region_rect = Rect2(8, 0, 2362, 148)
 
 [node name="Slopes" type="Node2D" parent="World/Geometry" unique_id=499938163]
 

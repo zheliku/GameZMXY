@@ -1,6 +1,7 @@
 [gd_resource type="SpriteFrames" format=3 uid="uid://3gvufadifwik"]
 
 [ext_resource type="Texture2D" uid="uid://dsk56c51bw2c4" path="res://TheGame/Sprites/Effects/Enemies/zm1_06_garuda_cave/peng_fire.png" id="atlas"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Effects/Enemies/zm1_06_garuda_cave/peng_fire_2.png" id="source_page_2"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0000"]
 atlas = ExtResource("atlas")
@@ -19,20 +20,20 @@ atlas = ExtResource("atlas")
 region = Rect2(1866, 0, 622, 648)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0004"]
-atlas = ExtResource("atlas")
-region = Rect2(2488, 0, 622, 648)
+atlas = ExtResource("source_page_2")
+region = Rect2(8, 0, 622, 648)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0005"]
-atlas = ExtResource("atlas")
-region = Rect2(3110, 0, 622, 648)
+atlas = ExtResource("source_page_2")
+region = Rect2(630, 0, 622, 648)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0006"]
-atlas = ExtResource("atlas")
-region = Rect2(3732, 0, 622, 648)
+atlas = ExtResource("source_page_2")
+region = Rect2(1252, 0, 622, 648)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0007"]
-atlas = ExtResource("atlas")
-region = Rect2(4354, 0, 622, 648)
+atlas = ExtResource("source_page_2")
+region = Rect2(1874, 0, 622, 648)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0008"]
 atlas = ExtResource("atlas")
@@ -51,16 +52,16 @@ atlas = ExtResource("atlas")
 region = Rect2(1866, 648, 622, 648)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0012"]
-atlas = ExtResource("atlas")
-region = Rect2(2488, 648, 622, 648)
+atlas = ExtResource("source_page_2")
+region = Rect2(8, 648, 622, 648)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0013"]
-atlas = ExtResource("atlas")
-region = Rect2(3110, 648, 622, 648)
+atlas = ExtResource("source_page_2")
+region = Rect2(630, 648, 622, 648)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0014"]
-atlas = ExtResource("atlas")
-region = Rect2(3732, 648, 622, 648)
+atlas = ExtResource("source_page_2")
+region = Rect2(1252, 648, 622, 648)
 
 [resource]
 animations = [{

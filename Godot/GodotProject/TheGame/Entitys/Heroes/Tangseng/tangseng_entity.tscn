@@ -191,9 +191,10 @@ frame_progress = 1.0
 [node name="m_PoisonHead" type="AnimatedSprite2D" parent="m_StatusEffects" unique_id=970449794]
 visible = false
 position = Vector2(0, -70)
+scale = Vector2(0.5, 0.5)
 sprite_frames = ExtResource("14_lj6ud")
 animation = &"play"
-offset = Vector2(0.5, -13.5)
+offset = Vector2(1, -27)
 
 [node name="m_PoisonPulse" type="AnimatedSprite2D" parent="m_StatusEffects" unique_id=623994259]
 visible = false

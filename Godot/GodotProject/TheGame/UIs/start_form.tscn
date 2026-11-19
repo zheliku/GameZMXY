@@ -27,6 +27,16 @@ _single = NodePath("Frame/m_PlayerCountMenu/m_Single")
 _double = NodePath("Frame/m_PlayerCountMenu/m_Double")
 _back = NodePath("Frame/m_PlayerCountMenu/m_Back")
 
+[node name="BackgroundMatte" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+
 [node name="Frame" type="Control" parent="."]
 layout_mode = 1
 anchors_preset = 8
@@ -43,9 +53,9 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="Background" type="TextureRect" parent="Frame"]
-offset_left = 0.0
+offset_left = -234.0
 offset_top = 0.0
-offset_right = 940.0
+offset_right = 1174.0
 offset_bottom = 590.0
 mouse_filter = 2
 texture = ExtResource("bg")

@@ -3,7 +3,7 @@
 [ext_resource type="Texture2D" uid="uid://crqn2wjhowq8q" path="res://TheGame/Sprites/UI/skills/skills_active_hover.png" id="active_hover"]
 [ext_resource type="Texture2D" uid="uid://cd0m21lfubf7p" path="res://TheGame/Sprites/UI/skills/skills_active_normal.png" id="active_normal"]
 [ext_resource type="Script" uid="uid://cti7n14nm56xr" path="res://TheGame/GameScripts/UI/SkillForm/Components/ActiveSkillsPage.cs" id="active_page"]
-[ext_resource type="Texture2D" uid="uid://c8syxoafd2udv" path="res://TheGame/Sprites/UI/skills/skills_background.jpg" id="background"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/UI/skills/skills_backdrop.png" id="background"]
 [ext_resource type="Texture2D" uid="uid://dmngkpfhqgrdg" path="res://TheGame/Sprites/UI/skills/skills_back_hover.png" id="back_hover"]
 [ext_resource type="Texture2D" uid="uid://d0t0ukf08noa4" path="res://TheGame/Sprites/UI/skills/skills_back_normal.png" id="back_normal"]
 [ext_resource type="Texture2D" uid="uid://d34itltgenk3s" path="res://TheGame/Sprites/UI/skills/skill_blazing_flash_learned.png" id="learned_BlazingFlash"]
@@ -78,10 +78,12 @@ mouse_filter = 2
 
 [node name="Backdrop" type="TextureRect" parent="Content" unique_id=1410101841]
 layout_mode = 0
-offset_right = 940.0
+offset_left = -234.0
+offset_right = 1174.0
 offset_bottom = 590.0
 mouse_filter = 2
 texture = ExtResource("background")
+expand_mode = 1
 
 [node name="Header" type="Control" parent="Content" unique_id=1643931355]
 anchors_preset = 0

@@ -1,6 +1,8 @@
 extends SceneTree
 ## Assemble official 3-1 from extracted source coordinates and staged sea artwork.
 
+const Geometry = preload("res://EditorScripts/normalize_level_geometry.gd")
+
 var m_Source: Dictionary
 var m_Scene: Node2D
 var m_Destination: String
@@ -38,6 +40,7 @@ func _build() -> void:
     front.texture = load(m_ArtRoot + m_ArtPrefix + "_front.png")
     front.position = _vec(m_Source.backgroundPosition)
     front.centered = false
+    Geometry.page_art(front, m_Scene)
     var sky: Sprite2D = m_Scene.get_node("World/Background/Sky/End")
     sky.texture = load("res://TheGame/Sprites/Levels/zm1_07_shore/sea_shore_sky.png")
     sky.position = Vector2.ZERO
@@ -79,6 +82,7 @@ func _geometry(ground_position: Vector2) -> void:
     artwork.centered = false
     artwork.position = ground_position
     _add(root.get_node("Artwork"), artwork)
+    Geometry.page_art(artwork, m_Scene)
     for index in m_Source.geometry.size():
         var item: Dictionary = m_Source.geometry[index]
         var corners: Array = item.corners

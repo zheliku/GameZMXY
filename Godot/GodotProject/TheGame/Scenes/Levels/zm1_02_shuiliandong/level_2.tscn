@@ -7,6 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://das528ns3bnfe" path="res://TheGame/Sprites/Levels/zm1_02_shuiliandong/shuiliandong_front_2.png" id="Front_page2"]
 [ext_resource type="Texture2D" uid="uid://bkhkqcq7kwxho" path="res://TheGame/Sprites/Levels/zm1_02_shuiliandong/shuiliandong_front_3.png" id="Front_page3"]
 [ext_resource type="Texture2D" uid="uid://dr7yjbgnknw45" path="res://TheGame/Sprites/Levels/zm1_02_shuiliandong/shuiliandong_ground.png" id="5_dmtn2"]
+[ext_resource type="Texture2D" path="res://TheGame/Sprites/Levels/zm1_02_shuiliandong/shuiliandong_ground_page_2.png" id="Artwork41_page_2"]
 [ext_resource type="Texture2D" uid="uid://0ydcxtjvgsbj" path="res://TheGame/Sprites/Levels/zm1_02_shuiliandong/shuiliandong_platform.png" id="6_bh6t7"]
 [ext_resource type="Texture2D" uid="uid://c7rqjbmrivf0" path="res://TheGame/Sprites/Levels/zm1_02_shuiliandong/shuiliandong_water.png" id="7_v3h78"]
 [ext_resource type="Texture2D" uid="uid://ck5dont8dcdmo" path="res://TheGame/Sprites/Levels/zm1_02_shuiliandong/shuiliandong_waves.png" id="8_dsb7p"]
@@ -429,6 +430,15 @@ z_index = -14
 position = Vector2(-18, 346.6)
 texture = ExtResource("5_dmtn2")
 centered = false
+region_enabled = true
+region_rect = Rect2(0, 0, 2362, 314)
+
+[node name="Page2" type="Sprite2D" parent="World/Geometry/Ground/Artwork41"]
+position = Vector2(2362, 0)
+texture = ExtResource("Artwork41_page_2")
+centered = false
+region_enabled = true
+region_rect = Rect2(8, 0, 2362, 314)
 
 [node name="Slopes" type="Node2D" parent="World/Geometry" unique_id=1000764320]
 
@@ -680,6 +690,7 @@ one_way_collision = true
 [node name="Artwork3" type="Sprite2D" parent="World/Platforms/Platform00" unique_id=883991608]
 z_index = -15
 position = Vector2(-8.975586, -5.4850464)
+scale = Vector2(0.5, 0.5)
 texture = ExtResource("6_bh6t7")
 centered = false
 
@@ -706,6 +717,7 @@ one_way_collision = true
 [node name="Artwork45" type="Sprite2D" parent="World/Platforms/Platform02" unique_id=1804939913]
 z_index = -13
 position = Vector2(-7.975586, -5.4850464)
+scale = Vector2(0.5, 0.5)
 texture = ExtResource("6_bh6t7")
 centered = false
 
@@ -722,6 +734,7 @@ one_way_collision = true
 [node name="Artwork49" type="Sprite2D" parent="World/Platforms/Platform09" unique_id=662251311]
 z_index = -12
 position = Vector2(-7.975342, -5.4850464)
+scale = Vector2(0.5, 0.5)
 texture = ExtResource("6_bh6t7")
 centered = false
 
@@ -738,6 +751,7 @@ one_way_collision = true
 [node name="Artwork53" type="Sprite2D" parent="World/Platforms/Platform10" unique_id=2117077777]
 z_index = -11
 position = Vector2(-7.975342, -5.4850464)
+scale = Vector2(0.5, 0.5)
 texture = ExtResource("6_bh6t7")
 centered = false
 
@@ -754,6 +768,7 @@ one_way_collision = true
 [node name="Artwork57" type="Sprite2D" parent="World/Platforms/Platform11" unique_id=642946073]
 z_index = -10
 position = Vector2(-7.975342, -5.4850464)
+scale = Vector2(0.5, 0.5)
 texture = ExtResource("6_bh6t7")
 centered = false
 
